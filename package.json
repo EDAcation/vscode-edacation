@@ -1,4 +1,5 @@
 {
+  "publisher": "edacation",
   "name": "edacation",
   "displayName": "EDAcation",
   "description": "Learning environment for digital hardware design with Yosys and nextpnr.",
