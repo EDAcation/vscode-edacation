@@ -19,7 +19,24 @@
         "command": "edacation.helloWorld",
         "title": "Hello World"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "edacation-container",
+          "title": "EDAcation",
+          "icon": "resources/icons/edacation.svg"
+        }
+      ]
+    },
+    "views": {
+      "edacation-container": [
+        {
+          "id": "edacation-files",
+          "name": "Files"
+        }
+      ]
+    }
   },
   "scripts": {
     "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/index.js",
