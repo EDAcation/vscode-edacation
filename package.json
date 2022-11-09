@@ -11,15 +11,31 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:edacation.helloWorld",
-    "onCustomEditor:edacation.project"
+    "onCommand:edacation.newProject",
+    "onCommand:edacation.openProject",
+    "onCommand:edacation.closeProject",
+    "onCustomEditor:edacation.project",
+    "onView:edacation-projects",
+    "onView:edacation-files",
+    "onView:edacation-configuration"
   ],
   "browser": "./dist/web/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "edacation.helloWorld",
-        "title": "Hello World"
+        "command": "edacation.newProject",
+        "title": "New project",
+        "icon": "$(file-directory-create)"
+      },
+      {
+        "command": "edacation.openProject",
+        "title": "Open project",
+        "icon": "$(file-directory)"
+      },
+      {
+        "command": "edacation.closeProject",
+        "title": "Close project",
+        "icon": "$(close)"
       }
     ],
     "customEditors": [
@@ -32,6 +48,58 @@
           }
         ],
         "priority": "default"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "edacation.newProject",
+          "when": "view == edacation-projects",
+          "group": "navigation"
+        },
+        {
+          "command": "edacation.openProject",
+          "when": "view == edacation-projects",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "edacation.closeProject",
+          "when": "view == edacation-projects",
+          "group": "inline"
+        }
+      ]
+    },
+    "views": {
+      "edacation-container": [
+        {
+          "id": "edacation-projects",
+          "name": "Projects"
+        },
+        {
+          "id": "edacation-files",
+          "name": "Files"
+        },
+        {
+          "id": "edacation-configuration",
+          "name": "Configuration"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "edacation-container",
+          "title": "EDAcation",
+          "icon": "resources/icons/edacation.svg"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "edacation-projects",
+        "contents": "No EDA project are open.\n[New Project](command:edacation.newProject)\n[Open Project](command:edacation.openProject)\nTo learn more about how to use EDA projects [read the documentation](https://github.com/EDAcation/vscode-edacation)."
       }
     ]
   },

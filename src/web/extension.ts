@@ -1,26 +1,32 @@
 import * as vscode from 'vscode';
 
-import {ProjectEditor} from './editors/project';
+import * as commands from './commands';
+import * as editors from './editors';
+import {Projects} from './projects';
+import * as trees from './trees';
+import {BaseTreeDataProvider} from './trees/base';
 
 export const activate = (context: vscode.ExtensionContext) => {
+    const projects = new Projects(context);
+    projects.load();
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "edacation" is now active in the web extension host!');
+    // Register commands
+    for (const commandType of Object.values(commands)) {
+        const command = new commandType(context, projects);
+        context.subscriptions.push(vscode.commands.registerCommand(commandType.getID(), command.execute.bind(command)));
+    }
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('edacation.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
+    // Register custom editors
+    for (const editorType of Object.values(editors)) {
+        const editor = new editorType(context, projects);
+        context.subscriptions.push(vscode.window.registerCustomEditorProvider(editorType.getViewType(), editor));
+    }
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from EDAcation in a web extension host!');
-	});
-
-	context.subscriptions.push(disposable);
-
-	context.subscriptions.push(vscode.window.registerCustomEditorProvider('edacation.project', new ProjectEditor(context)));
+    // Register tree data providers
+    for (const treeType of Object.values(trees)) {
+        const tree = new treeType(context, projects);
+        context.subscriptions.push(vscode.window.registerTreeDataProvider(treeType.getViewID(), tree as BaseTreeDataProvider<unknown>));
+    }
 };
 
 export const deactivate = () => {};

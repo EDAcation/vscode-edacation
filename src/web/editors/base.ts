@@ -1,13 +1,20 @@
 import * as vscode from 'vscode';
 
+import {Projects} from '../projects';
 import {getWebviewUri} from '../util';
 
 export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
 
     protected readonly context: vscode.ExtensionContext;
+    protected readonly projects: Projects;
 
-    constructor(context: vscode.ExtensionContext) {
+    constructor(context: vscode.ExtensionContext, projects: Projects) {
         this.context = context;
+        this.projects = projects;
+    }
+
+    static getViewType(): string {
+        throw new Error('Not implemented.');
     }
 
     public resolveCustomTextEditor(_document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken): void | Thenable<void> {
@@ -24,7 +31,7 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
         const styleUri = getWebviewUri(webview, this.context, ['views', 'project', 'dist', 'assets', 'index.css']);
         const scriptUri = getWebviewUri(webview, this.context, ['views', 'project', 'dist', 'assets', 'index.js']);
 
-        return /*html*/ `
+        return /*html*/`
             <!doctype html>
             <html lang="en">
                 <head>
