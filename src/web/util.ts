@@ -4,6 +4,13 @@ export const getWebviewUri = (webview: vscode.Webview, context: vscode.Extension
     return webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, ...path));
 };
 
+export const getFileName = (uri: vscode.Uri, includeExtension: boolean = true) => {
+    const lastSlash = uri.path.lastIndexOf('/');
+    const lastDot = uri.path.lastIndexOf('.');
+
+    return uri.path.substring(lastSlash + 1, includeExtension ? uri.path.length : lastDot > lastSlash ? lastDot : uri.path.length);
+};
+
 export const ensureFile = async (uri: vscode.Uri, exists: boolean) => {
     try {
         const stat = await vscode.workspace.fs.stat(uri);
@@ -39,7 +46,7 @@ const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
 export const encodeText = (input: string) => textEncoder.encode(input.endsWith('\n') ? input : `${input}\n`);
-export const encodeJSON = (input: unknown) => encodeText(JSON.stringify(input));
+export const encodeJSON = (input: unknown, pretty: boolean = false) => encodeText(JSON.stringify(input, undefined, pretty ? 4 : undefined));
 
 export const decodeText = (input: BufferSource) => textDecoder.decode(input);
 export const decodeJSON = (input: BufferSource) => JSON.parse(decodeText(input));

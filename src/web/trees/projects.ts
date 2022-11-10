@@ -8,7 +8,7 @@ export class ProjectProvider extends BaseTreeDataProvider<Project> {
     constructor(context: vscode.ExtensionContext, projects: Projects) {
         super(context, projects);
 
-        this.onDidChangeTreeData = projects.getEmitter().event;
+        this.onDidChangeTreeData = projects.getProjectEmitter().event;
     }
 
     static getViewID() {
@@ -17,7 +17,7 @@ export class ProjectProvider extends BaseTreeDataProvider<Project> {
 
     getTreeItem(element: Project): vscode.TreeItem {
         return {
-            label: element.getName(),
+            label: `${element.getName()}${this.projects.getCurrent() === element ? ' (current)' : ''}`,
             iconPath: vscode.ThemeIcon.Folder,
             collapsibleState: vscode.TreeItemCollapsibleState.None,
             command: {
@@ -30,7 +30,7 @@ export class ProjectProvider extends BaseTreeDataProvider<Project> {
 
     async getChildren(element?: Project): Promise<Project[]> {
         if (!element) {
-            return this.projects.get();
+            return this.projects.getAll();
         }
 
         return [];

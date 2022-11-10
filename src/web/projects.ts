@@ -1,16 +1,24 @@
 import * as vscode from 'vscode';
 
-import {decodeJSON, encodeJSON} from './util';
+import {decodeJSON, encodeJSON, getFileName} from './util';
+
+export type ProjectFile = vscode.Uri;
 
 export class Project {
 
+    private readonly projects: Projects;
+
     private uri: vscode.Uri;
+    private root: vscode.Uri;
     private name: string;
     private files: vscode.Uri[];
 
-    constructor(uri: vscode.Uri, name?: string, files: vscode.Uri[] = []) {
+    constructor(projects: Projects, uri: vscode.Uri, root: vscode.Uri, name?: string, files: vscode.Uri[] = []) {
+        this.projects = projects;
+
         this.uri = uri;
-        this.name = name ? name : this.uri.path.substring(this.uri.path.lastIndexOf('/') + 1, this.uri.path.lastIndexOf('.edaproject'));
+        this.root = root;
+        this.name = name ? name : getFileName(this.uri, false);
         this.files = files;
     }
 
@@ -22,6 +30,10 @@ export class Project {
         return this.uri.toString() === uri.toString();
     }
 
+    getRoot() {
+        return this.root;
+    }
+
     getName() {
         return this.name;
     }
@@ -30,26 +42,66 @@ export class Project {
         return this.files;
     }
 
+    hasFile(uri: vscode.Uri) {
+        return this.files.some((file) => file.toString() === uri.toString());
+    }
+
+    async addFiles(fileUris: vscode.Uri[]) {
+        for (const fileUri of fileUris) {
+            if (!this.hasFile(fileUri)) {
+                this.files.push(fileUri);
+            }
+        }
+
+        this.sortFiles();
+
+        this.projects.emitFileChange();
+
+        await this.save();
+    }
+
+    async removeFiles(fileUris: vscode.Uri[]) {
+        this.files = this.files.filter((file) => !fileUris.some((fileUri) => fileUri.toString() === file.toString()));
+
+        this.projects.emitFileChange();
+
+        await this.save();
+    }
+
+    sortFiles() {
+        this.files.sort((a, b) => {
+            const nameA = a.path.replace(`${this.getRoot().path}/`, '');
+            const nameB = b.path.replace(`${this.getRoot().path}/`, '');
+            return nameA < nameB ? -1 : 1;
+        });
+    }
+
+    private async save() {
+        await Project.store(this);
+    }
+
     private static serialize(project: Project): any {
         return {
             uri: project.uri.toString(),
+            root: project.root.toString(),
             name: project.name,
             files: project.files.map((file) => file.toString())
         };
     }
 
-    private static deserialize(data: any): Project {
+    private static deserialize(projects: Projects, data: any): Project {
         const uri = vscode.Uri.parse(data.uri);
-        const name = data.name;
-        const files = data.files ? data.files.map((fileData: string) => vscode.Uri.parse(fileData)) : [];
+        const root = vscode.Uri.parse(data.root);
+        const name: string = data.name;
+        const files: vscode.Uri[] = data.files ? data.files.map((fileData: string) => vscode.Uri.parse(fileData)) : [];
 
-        return new Project(uri, name, files);
+        return new Project(projects, uri, root, name, files);
     }
 
-    static async load(uri: vscode.Uri): Promise<Project> {
+    static async load(projects: Projects, uri: vscode.Uri): Promise<Project> {
         const data = decodeJSON(await vscode.workspace.fs.readFile(uri));
         data.uri = uri;
-        const project = Project.deserialize(data);
+        const project = Project.deserialize(projects, data);
         return project;
     }
 
@@ -63,7 +115,10 @@ export class Project {
 export class Projects {
 
     protected readonly context: vscode.ExtensionContext;
-    private emitter = new vscode.EventEmitter<Project | Project[] | undefined>();
+
+    private projectEmitter = new vscode.EventEmitter<Project | Project[] | undefined>();
+    private fileEmitter = new vscode.EventEmitter<ProjectFile | ProjectFile[] | undefined>();
+
     private projects: Project[];
     private currentProject?: Project;
 
@@ -72,16 +127,73 @@ export class Projects {
         this.projects = [];
     }
 
-    getEmitter() {
-        return this.emitter;
+    getProjectEmitter() {
+        return this.projectEmitter;
     }
 
-    private emitChange(changed: Project | Project[] | undefined = undefined) {
-        this.emitter.fire(changed);
+    getFileEmitter() {
+        return this.fileEmitter;
     }
 
-    get() {
+    emitProjectChange(changed: Project | Project[] | undefined = undefined) {
+        this.projectEmitter.fire(changed);
+    }
+
+    emitFileChange(changed: ProjectFile | ProjectFile[] | undefined = undefined) {
+        this.fileEmitter.fire(changed);
+    }
+
+    getAll() {
         return this.projects;
+    }
+
+    has(uri: vscode.Uri) {
+        return this.projects.some((project) => project.isUri(uri));
+    }
+
+    get(uri: vscode.Uri) {
+        return this.projects.find((project) => project.isUri(uri));
+    }
+
+    async add(uri: vscode.Uri, shouldCreate: false): Promise<void>;
+    async add(uri: vscode.Uri, shouldCreate: true, root: vscode.Uri): Promise<void>;
+    async add(uri: vscode.Uri, shouldCreate: boolean, root?: vscode.Uri) {
+        let project: Project | undefined;
+
+        if (!this.has(uri)) {
+            if (shouldCreate) {
+                if (!root) {
+                    throw new Error('Missing project root.');
+                }
+
+                project = new Project(this, uri, root);
+                await Project.store(project);
+            } else {
+                project = await Project.load(this, uri);
+            }
+
+            this.projects.push(project);
+        }
+
+        await this.store(false);
+
+        if (project) {
+            this.setCurrent(project);
+        }
+    }
+
+    async remove(uri: vscode.Uri) {
+        this.projects = this.projects.filter((project) => !project.isUri(uri));
+
+        await this.store(false);
+
+        if (this.currentProject && this.currentProject.getUri().toString() === uri.toString()) {
+            if (this.projects.length > 0) {
+                this.setCurrent(this.projects[0]);
+            } else {
+                this.clearCurrent();
+            }
+        }
     }
 
     async load() {
@@ -93,7 +205,7 @@ export class Projects {
 
             this.projects = [];
             for (const projectUri of projectUris) {
-                const project = await Project.load(vscode.Uri.parse(projectUri));
+                const project = await Project.load(this, vscode.Uri.parse(projectUri));
 
                 this.projects.push(project);
             }
@@ -103,7 +215,11 @@ export class Projects {
             throw err;
         }
 
-        this.emitChange();
+        this.emitProjectChange();
+
+        if (this.projects.length > 0) {
+            this.setCurrent(this.projects[0]);
+        }
     }
 
     async store(full: boolean = true) {
@@ -114,30 +230,8 @@ export class Projects {
         }
 
         await this.context.workspaceState.update('projects', projectUris.map((uri) => uri.toString()));
-    }
 
-    async add(uri: vscode.Uri, shouldLoad: boolean) {
-        if (!this.projects.some((project) => project.isUri(uri))) {
-            if (shouldLoad) {
-                this.projects.push(await Project.load(uri));
-            } else {
-                const project = new Project(uri);
-                await Project.store(project);
-                this.projects.push(project);
-            }
-        }
-
-        await this.store(false);
-
-        this.emitChange();
-    }
-
-    async remove(uri: vscode.Uri) {
-        this.projects = this.projects.filter((project) => !project.isUri(uri));
-
-        await this.store(false);
-
-        this.emitChange();
+        this.emitProjectChange();
     }
 
     getCurrent() {
@@ -145,10 +239,18 @@ export class Projects {
     }
 
     async setCurrent(project: Project) {
+        const previousProject = this.currentProject;
         this.currentProject = project;
+
+        this.emitProjectChange(previousProject ? [previousProject, this.currentProject] : this.currentProject);
+        this.emitFileChange();
     }
 
     clearCurrent() {
+        const previousProject = this.currentProject;
         this.currentProject = undefined;
+
+        this.emitProjectChange(previousProject ? previousProject : undefined);
+        this.emitFileChange();
     }
 }

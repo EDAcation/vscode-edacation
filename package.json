@@ -30,12 +30,27 @@
       {
         "command": "edacation.openProject",
         "title": "Open project",
-        "icon": "$(file-directory)"
+        "icon": "$(folder-opened)"
       },
       {
         "command": "edacation.closeProject",
         "title": "Close project",
         "icon": "$(close)"
+      },
+      {
+        "command": "edacation.addFile",
+        "title": "Add existing file",
+        "icon": "$(add)"
+      },
+      {
+        "command": "edacation.newFile",
+        "title": "New file",
+        "icon": "$(file-add)"
+      },
+      {
+        "command": "edacation.removeFile",
+        "title": "Remove file",
+        "icon": "$(remove)"
       }
     ],
     "customEditors": [
@@ -61,12 +76,27 @@
           "command": "edacation.openProject",
           "when": "view == edacation-projects",
           "group": "navigation"
+        },
+        {
+          "command": "edacation.addFile",
+          "when": "view == edacation-files",
+          "group": "navigation"
+        },
+        {
+          "command": "edacation.newFile",
+          "when": "view == edacation-files",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
         {
           "command": "edacation.closeProject",
           "when": "view == edacation-projects",
+          "group": "inline"
+        },
+        {
+          "command": "edacation.removeFile",
+          "when": "view == edacation-files",
           "group": "inline"
         }
       ]
