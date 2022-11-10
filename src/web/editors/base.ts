@@ -17,14 +17,17 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
         throw new Error('Not implemented.');
     }
 
-    public resolveCustomTextEditor(_document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken): void | Thenable<void> {
+    public resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken): void | Thenable<void> {
         webviewPanel.webview.options = {
             enableScripts: true
         };
 
         webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
 
+        webviewPanel.onDidChangeViewState(this.onDidChangeViewState);
         webviewPanel.webview.onDidReceiveMessage(this.onDidReceiveMessage);
+
+        this.update(document, webviewPanel);
     }
 
     private getHtmlForWebview(webview: vscode.Webview): string {
@@ -48,5 +51,12 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
         `;
     }
 
+    protected onDidChangeViewState(event: vscode.WebviewPanelOnDidChangeViewStateEvent) {
+        // this.update(event.webviewPanel);
+        // TODO: update?
+    }
+
     protected abstract onDidReceiveMessage(message: any): void;
+
+    protected abstract update(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel): void;
 }

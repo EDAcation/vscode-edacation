@@ -80,7 +80,7 @@ export class Project {
         await Project.store(this);
     }
 
-    private static serialize(project: Project): any {
+    static serialize(project: Project): any {
         return {
             uri: project.uri.toString(),
             root: project.root.toString(),
@@ -89,7 +89,7 @@ export class Project {
         };
     }
 
-    private static deserialize(projects: Projects, data: any): Project {
+    static deserialize(projects: Projects, data: any): Project {
         const uri = vscode.Uri.parse(data.uri);
         const root = vscode.Uri.parse(data.root);
         const name: string = data.name;

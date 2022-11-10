@@ -24,32 +24,38 @@
     "commands": [
       {
         "command": "edacation.newProject",
-        "title": "New project",
+        "category": "EDAcation",
+        "title": "New Project",
         "icon": "$(file-directory-create)"
       },
       {
         "command": "edacation.openProject",
-        "title": "Open project",
+        "category": "EDAcation",
+        "title": "Open Project",
         "icon": "$(folder-opened)"
       },
       {
         "command": "edacation.closeProject",
-        "title": "Close project",
+        "category": "EDAcation",
+        "title": "Close Project",
         "icon": "$(close)"
       },
       {
         "command": "edacation.addFile",
-        "title": "Add existing file",
+        "category": "EDAcation",
+        "title": "Add Existing File",
         "icon": "$(add)"
       },
       {
         "command": "edacation.newFile",
-        "title": "New file",
+        "category": "EDAcation",
+        "title": "New File",
         "icon": "$(file-add)"
       },
       {
         "command": "edacation.removeFile",
-        "title": "Remove file",
+        "category": "EDAcation",
+        "title": "Remove File",
         "icon": "$(remove)"
       }
     ],
