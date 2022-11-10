@@ -5,7 +5,6 @@ import {BaseTreeDataProvider} from './base';
 
 export class ProjectProvider extends BaseTreeDataProvider<Project> {
 
-
     constructor(context: vscode.ExtensionContext, projects: Projects) {
         super(context, projects);
 
@@ -18,9 +17,14 @@ export class ProjectProvider extends BaseTreeDataProvider<Project> {
 
     getTreeItem(element: Project): vscode.TreeItem {
         return {
-            label: element.uri.path.substring(element.uri.path.lastIndexOf('/') + 1),
+            label: element.getName(),
             iconPath: vscode.ThemeIcon.Folder,
-            collapsibleState: vscode.TreeItemCollapsibleState.None
+            collapsibleState: vscode.TreeItemCollapsibleState.None,
+            command: {
+                command: 'edacation.selectProject',
+                arguments: [element],
+                title: 'Select project',
+            }
         };
     }
 

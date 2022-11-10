@@ -6,9 +6,8 @@ import {Projects} from './projects';
 import * as trees from './trees';
 import {BaseTreeDataProvider} from './trees/base';
 
-export const activate = (context: vscode.ExtensionContext) => {
+export const activate = async (context: vscode.ExtensionContext) => {
     const projects = new Projects(context);
-    projects.load();
 
     // Register commands
     for (const commandType of Object.values(commands)) {
@@ -27,6 +26,8 @@ export const activate = (context: vscode.ExtensionContext) => {
         const tree = new treeType(context, projects);
         context.subscriptions.push(vscode.window.registerTreeDataProvider(treeType.getViewID(), tree as BaseTreeDataProvider<unknown>));
     }
+
+    await projects.load();
 };
 
 export const deactivate = () => {};

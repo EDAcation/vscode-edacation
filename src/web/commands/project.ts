@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 
 import {ProjectEditor} from '../editors/project';
-import {DEFAULT_PROJECT_SETTINGS, Project, Projects} from '../projects';
-import {encodeJSON, ensureFileAbsent} from '../util';
+import {Project} from '../projects';
+import {ensureFileAbsent} from '../util';
 import {BaseCommand} from './base';
 
 export class NewProjectCommand extends BaseCommand {
@@ -69,11 +69,8 @@ export class NewProjectCommand extends BaseCommand {
             // Ensure the project file does not exist
             await ensureFileAbsent(projectUri);
 
-            // Write project file
-            await vscode.workspace.fs.writeFile(projectUri, encodeJSON(DEFAULT_PROJECT_SETTINGS));
-
             // Add project
-            await this.projects.add(projectUri);
+            await this.projects.add(projectUri, false);
 
             // Open project file
             vscode.commands.executeCommand('vscode.openWith', projectUri, ProjectEditor.getViewType());
@@ -104,7 +101,7 @@ export class OpenProjectCommand extends BaseCommand {
         const projectUri = fileUris[0];
 
         // Add project
-        await this.projects.add(projectUri);
+        await this.projects.add(projectUri, true);
 
         // Open project file
         vscode.commands.executeCommand('vscode.openWith', projectUri, ProjectEditor.getViewType());
@@ -118,6 +115,17 @@ export class CloseProject extends BaseCommand {
     }
 
     async execute(project: Project) {
-        await this.projects.remove(project.uri);
+        await this.projects.remove(project.getUri());
+    }
+}
+
+export class SelectProject extends BaseCommand {
+
+    static getID() {
+        return 'edacation.selectProject';
+    }
+
+    async execute(project: Project) {
+        await this.projects.setCurrent(project);
     }
 }
