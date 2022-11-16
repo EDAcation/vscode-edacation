@@ -1,0 +1,9 @@
+{
+    "name": "workers",
+    "private": true,
+    "scripts": {},
+    "dependencies": {
+        "nextpnr": "^0.4.7",
+        "yosys": "^0.23.0"
+    }
+}

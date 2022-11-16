@@ -68,4 +68,53 @@ const webExtensionConfig = {
     },
 };
 
-module.exports = [ webExtensionConfig ];
+/** @type WebpackConfig */
+const workerConfig = {
+    context: path.join(__dirname, 'workers'),
+    mode: 'none',
+    target: 'webworker',
+    entry: {
+        'yosys': './src/yosys.ts',
+        'nextpnr': './src/nextpnr.ts',
+    },
+    output: {
+        filename: '[name].js',
+        path: path.join(__dirname, 'workers', 'dist'),
+        library: {
+            name: 'exportVar',
+            type: 'var'
+        }
+    },
+    resolve: {
+        mainFields: ['browser', 'module', 'main'],
+        extensions: ['.ts', '.js'],
+        alias: {
+            fs: false
+        },
+        fallback: {
+            crypto: false,
+            path: false
+        }
+    },
+    module: {
+        rules: [{
+            test: /\.ts$/,
+            exclude: /node_modules/,
+            use: [{
+                loader: 'ts-loader'
+            }]
+        }, {
+            test: /\.wasm$/,
+            type: 'asset/inline'
+        }]
+    },
+    externals: {
+        'vscode': 'commonjs vscode', // ignored because it doesn't exist
+    },
+    performance: {
+        hints: false
+    },
+    devtool: 'source-map'
+};
+
+module.exports = [webExtensionConfig, workerConfig];
