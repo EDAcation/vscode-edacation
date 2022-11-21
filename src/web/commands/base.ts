@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import {Projects} from '../projects';
+import {Project, Projects} from '../projects';
 
 export abstract class BaseCommand {
 
@@ -17,4 +17,19 @@ export abstract class BaseCommand {
     }
 
     abstract execute(...args: unknown[]): Promise<void>;
+}
+
+export abstract class CurrentProjectCommand extends BaseCommand {
+
+    abstract executeForCurrentProject(project: Project, ...args: unknown[]): Promise<void>;
+
+    async execute(...args: unknown[]) {
+        const project = this.projects.getCurrent();
+        if (!project) {
+            vscode.window.showWarningMessage('No EDA project selected.');
+            return;
+        }
+
+        await this.executeForCurrentProject(project, ...args);
+    }
 }

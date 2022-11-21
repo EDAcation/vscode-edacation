@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import * as commands from './commands';
 import * as editors from './editors';
 import {Projects} from './projects';
+import * as tasks from './tasks';
 import * as trees from './trees';
 import {BaseTreeDataProvider} from './trees/base';
 
@@ -19,6 +20,12 @@ export const activate = async (context: vscode.ExtensionContext) => {
     for (const editorType of Object.values(editors)) {
         const editor = new editorType(context, projects);
         context.subscriptions.push(vscode.window.registerCustomEditorProvider(editorType.getViewType(), editor));
+    }
+
+    // Register task providers
+    for (const taskType of Object.values(tasks)) {
+        const task = new taskType(context, projects);
+        context.subscriptions.push(vscode.tasks.registerTaskProvider(taskType.getType(), task));
     }
 
     // Register tree data providers

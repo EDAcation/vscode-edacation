@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 
 import {ProjectFile, Projects} from '../projects';
-import {getFileName} from '../util';
 import {BaseTreeDataProvider} from './base';
 
 export class FilesProvider extends BaseTreeDataProvider<ProjectFile> {

@@ -70,7 +70,7 @@ export class NewProjectCommand extends BaseCommand {
             await ensureFileAbsent(projectUri);
 
             // Add project
-            await this.projects.add(projectUri, true, projectLocation);
+            await this.projects.add(projectUri, true, true, projectLocation);
 
             // Open project file
             vscode.commands.executeCommand('vscode.openWith', projectUri, ProjectEditor.getViewType());
@@ -101,7 +101,7 @@ export class OpenProjectCommand extends BaseCommand {
         const projectUri = fileUris[0];
 
         // Add project
-        await this.projects.add(projectUri, false);
+        await this.projects.add(projectUri, true, false);
 
         // Open project file
         vscode.commands.executeCommand('vscode.openWith', projectUri, ProjectEditor.getViewType());

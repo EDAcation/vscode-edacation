@@ -155,9 +155,9 @@ export class Projects {
         return this.projects.find((project) => project.isUri(uri));
     }
 
-    async add(uri: vscode.Uri, shouldCreate: false): Promise<void>;
-    async add(uri: vscode.Uri, shouldCreate: true, root: vscode.Uri): Promise<void>;
-    async add(uri: vscode.Uri, shouldCreate: boolean, root?: vscode.Uri) {
+    async add(uri: vscode.Uri, shouldSetCurrent: boolean, shouldCreate: false): Promise<Project>;
+    async add(uri: vscode.Uri, shouldSetCurrent: boolean, shouldCreate: true, root: vscode.Uri): Promise<Project>;
+    async add(uri: vscode.Uri, shouldSetCurrent: boolean, shouldCreate: boolean, root?: vscode.Uri): Promise<Project> {
         let project: Project | undefined;
 
         if (!this.has(uri)) {
@@ -177,9 +177,15 @@ export class Projects {
 
         await this.store(false);
 
-        if (project) {
+        if (!project) {
+            throw new Error(`Failed to open project "${uri.toString()}".`);
+        }
+
+        if (shouldSetCurrent) {
             this.setCurrent(project);
         }
+
+        return project;
     }
 
     async remove(uri: vscode.Uri) {

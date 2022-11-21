@@ -14,6 +14,7 @@
     "onCommand:edacation.newProject",
     "onCommand:edacation.openProject",
     "onCommand:edacation.closeProject",
+		"onCommand:workbench.action.tasks.runTask",
     "onCustomEditor:edacation.project",
     "onView:edacation-projects",
     "onView:edacation-files",
@@ -57,6 +58,21 @@
         "category": "EDAcation",
         "title": "Remove File",
         "icon": "$(remove)"
+      },
+      {
+        "command": "edacation.openProjectConfiguration",
+        "category": "EDAcation",
+        "title": "Open Project Configuration"
+      },
+      {
+        "command": "edacation.runYosys",
+        "category": "EDAcation",
+        "title": "Synthesize using Yosys"
+      },
+      {
+        "command": "edacation.runNextpnr",
+        "category": "EDAcation",
+        "title": "Place and route using nextpnr"
       }
     ],
     "customEditors": [
@@ -107,6 +123,28 @@
         }
       ]
     },
+    "taskDefinitions": [
+      {
+        "type": "yosys",
+        "required": ["project"],
+        "properties": {
+          "project": {
+            "type": "string",
+            "description": "Path of the EDA project."
+          }
+        }
+      },
+      {
+        "type": "nextpnr",
+        "required": ["project"],
+        "properties": {
+          "project": {
+            "type": "string",
+            "description": "Path of the EDA project."
+          }
+        }
+      }
+    ],
     "views": {
       "edacation-container": [
         {
@@ -118,8 +156,8 @@
           "name": "Files"
         },
         {
-          "id": "edacation-configuration",
-          "name": "Configuration"
+          "id": "edacation-actions",
+          "name": "Actions"
         }
       ]
     },
@@ -136,6 +174,10 @@
       {
         "view": "edacation-projects",
         "contents": "No EDA project are open.\n[New Project](command:edacation.newProject)\n[Open Project](command:edacation.openProject)\nTo learn more about how to use EDA projects [read the documentation](https://github.com/EDAcation/vscode-edacation)."
+      },
+      {
+        "view": "edacation-actions",
+        "contents": "[Open Configuration](command:edacation.openProjectConfiguration)\n[Synthesize using Yosys](command:edacation.runYosys)\n[Place and route using nextpnr](command:edacation.runNextpnr)\n"
       }
     ]
   },

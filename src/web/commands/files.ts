@@ -1,21 +1,15 @@
 import * as vscode from 'vscode';
-import {ProjectFile} from '../projects';
+import {Project, ProjectFile} from '../projects';
 
-import {BaseCommand} from './base';
+import {CurrentProjectCommand} from './base';
 
-export class AddFileCommand extends BaseCommand {
+export class AddFileCommand extends CurrentProjectCommand {
 
     static getID() {
         return 'edacation.addFile';
     }
 
-    async execute() {
-        const project = this.projects.getCurrent();
-        if (!project) {
-            vscode.window.showWarningMessage('No EDA project selected.');
-            return;
-        }
-
+    async executeForCurrentProject(project: Project) {
         const fileUris = await vscode.window.showOpenDialog({
             title: 'Open EDA Project',
             canSelectFolders: false,
@@ -35,19 +29,13 @@ export class AddFileCommand extends BaseCommand {
     }
 }
 
-export class RemoveFileCommand extends BaseCommand {
+export class RemoveFileCommand extends CurrentProjectCommand {
 
     static getID() {
         return 'edacation.removeFile';
     }
 
-    async execute(file: ProjectFile) {
-        const project = this.projects.getCurrent();
-        if (!project) {
-            vscode.window.showWarningMessage('No EDA project selected.');
-            return;
-        }
-
+    async executeForCurrentProject(project: Project, file: ProjectFile) {
         await project.removeFiles([file]);
     }
 }
