@@ -21,9 +21,9 @@ export class YosysTaskProvider extends WorkerTaskProvider {
 class YosysTaskTerminal extends WorkerTaskTerminal {
 
     protected async run(project: Project): Promise<number> {
-        this.println(`Synthesizing EDA project "${project.getName()} using Yosys..."`);
+        this.println(`Synthesizing EDA project "${project.getName()}" using Yosys...`);
 
-        this.println(`Finished synthesizing EDA project "${project.getName()} using Yosys."`);
+        this.println(`Finished synthesizing EDA project "${project.getName()}" using Yosys.`);
         this.println();
 
         return 0;

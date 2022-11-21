@@ -21,9 +21,9 @@ export class NextpnrTaskProvider extends WorkerTaskProvider {
 class NextpnrTaskTerminal extends WorkerTaskTerminal {
 
     protected async run(project: Project): Promise<number> {
-        this.println(`Synthesizing EDA project "${project.getName()} using Yosys..."`);
+        this.println(`Placing and routing EDA project "${project.getName()}" using nextpnr...`);
 
-        this.println(`Finished synthesizing EDA project "${project.getName()} using Yosys."`);
+        this.println(`Finished placing and routing EDA project "${project.getName()}" using nextpnr.`);
         this.println();
 
         return 0;
