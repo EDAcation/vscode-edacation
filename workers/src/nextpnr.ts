@@ -1,19 +1,27 @@
 import {Nextpnr} from 'nextpnr';
-import wasmBinary from 'nextpnr/dist/nextpnr-ice40.wasm';
+import wasmBinaryUrl from 'nextpnr/dist/nextpnr-ice40.wasm';
 
 import {WorkerTool} from './worker';
 
 export class WorkerNextpnr extends WorkerTool<Nextpnr> {
 
     async initialize(): Promise<Nextpnr> {
-        const nextpnr = await Nextpnr.initialize({
+        // Fetch WebAssembly binary from data URL
+        const wasmBinary = await this.fetchBinary(wasmBinaryUrl);
+
+        // Initialize Yosys
+        const yosys = await Nextpnr.initialize({
             wasmBinary
         });
-        return nextpnr;
+
+        return yosys;
     }
 
     async execute(): Promise<void> {
         console.log('execute');
+
+        const tool = await this.getTool();
+        console.log(tool);
     }
 }
 

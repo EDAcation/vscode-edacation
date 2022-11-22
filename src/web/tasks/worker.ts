@@ -55,7 +55,7 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
 
     protected abstract getTaskType(): string;
 
-    protected abstract createTaskTerminal(projects: Projects, folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition): WorkerTaskTerminal;
+    protected abstract createTaskTerminal(folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition): WorkerTaskTerminal;
 
     private async findTasks(): Promise<vscode.Task[]> {
         const tasks: vscode.Task[] = [];
@@ -84,14 +84,15 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
         };
 
         return new vscode.Task(definition, vscode.TaskScope.Workspace, `${folder.name}/${project}`, this.getTaskType(), new vscode.CustomExecution(async () =>
-            this.createTaskTerminal(this.projects, folder, definition)
+            this.createTaskTerminal(folder, definition)
         ));
     }
 }
 
 export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
 
-    private projects: Projects;
+    protected context: vscode.ExtensionContext;
+    protected projects: Projects;
     private folder: vscode.WorkspaceFolder;
     private definition: WorkerTaskDefinition;
 
@@ -101,7 +102,8 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
     onDidWrite = this.writeEmitter.event;
     onDidClose = this.closeEmitter.event;
 
-    constructor(projects: Projects, folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition) {
+    constructor(context: vscode.ExtensionContext, projects: Projects, folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition) {
+        this.context = context;
         this.projects = projects;
         this.folder = folder;
         this.definition = definition;
@@ -121,14 +123,13 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
         this.closeEmitter.fire(code);
     }
 
-    protected abstract run(project: Project): Promise<number>;
+    protected abstract run(project: Project): Promise<void>;
 
     private async execute(): Promise<void> {
         try {
             const project = await Project.load(this.projects, this.definition.uri || vscode.Uri.joinPath(this.folder.uri, this.definition.project));
 
-            const code = await this.run(project);
-            this.exit(code);
+            await this.run(project);
         } catch (err) {
             if (err instanceof Error) {
                 this.println(err.stack || err.message);

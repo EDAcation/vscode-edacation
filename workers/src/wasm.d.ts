@@ -1,4 +1,4 @@
 declare module '*.wasm' {
-    const value: any;
+    const value: string;
     export = value;
 }
