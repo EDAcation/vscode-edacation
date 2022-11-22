@@ -1,3 +1,5 @@
+import path from 'path';
+
 export const run = () => {
     console.log('run');
 };
@@ -8,15 +10,15 @@ export interface EmscriptenWrapper {
     getFS(): EmscriptenFS;
 }
 
-interface ToolMessageInput {
+export interface ToolMessageInput {
     type: 'input';
+    files: {
+        path: string;
+        data: Uint8Array;
+    }[];
 }
 
-interface ToolMessageExecute {
-    type: 'execute';
-}
-
-type ToolMessage = ToolMessageInput | ToolMessageExecute;
+export type ToolMessage = ToolMessageInput;
 
 export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
 
@@ -27,8 +29,8 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
     constructor() {
         this.toolPromise = this.initialize();
 
-        addEventListener('message', this.onMessage);
-        addEventListener('messageerror', this.onMessageError);
+        addEventListener('message', this.handleMessage.bind(this));
+        addEventListener('messageerror', this.handleMessageError.bind(this));
     }
 
     async getTool(): Promise<Tool> {
@@ -52,15 +54,48 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
         return await response.arrayBuffer();
     }
 
-    private async onMessage(event: MessageEvent<ToolMessage>) {
+    private async handleMessage(event: MessageEvent<ToolMessage>) {
         switch (event.data.type) {
             case 'input': {
                 // TODO: input
                 console.log(event.data);
 
-                break;
-            }
-            case 'execute': {
+                const fs = await this.getFS();
+
+                // Write files
+                for (const file of event.data.files) {
+                    if (file.path.startsWith('/')) {
+                        continue;
+                    }
+
+                    const dirname = path.dirname(file.path);
+                    console.log(dirname);
+
+                    let position = 0;
+                    while (position < dirname.length) {
+                        position = dirname.indexOf('/', position + 1);
+                        if (position === -1) {
+                            break;
+                        }
+
+                        const directoryPath = dirname.substring(0, position);
+                        console.log('checking', directoryPath);
+
+                        try {
+                            fs.stat(directoryPath);
+                        } catch (err) {
+                            fs.mkdir(directoryPath);
+                        }
+
+                        console.log(fs.readdir(directoryPath));
+                    }
+
+                    console.log('dirs exist');
+
+                    fs.writeFile(file.path, file.data);
+                    console.log('file written');
+                }
+
                 await this.execute();
 
                 // TODO: output
@@ -70,7 +105,7 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
         }
     }
 
-    private onMessageError(event: MessageEvent) {
+    private handleMessageError(event: MessageEvent) {
         console.error('Message error:', event);
     }
 }

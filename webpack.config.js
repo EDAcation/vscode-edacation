@@ -93,7 +93,7 @@ const workerConfig = {
         },
         fallback: {
             crypto: false,
-            path: false
+            path: require.resolve('path-browserify')
         }
     },
     module: {

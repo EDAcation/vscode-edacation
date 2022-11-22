@@ -89,6 +89,12 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
     }
 }
 
+export interface ToolMessageOutput {
+    type: 'output';
+}
+
+export type ToolMessage = ToolMessageOutput;
+
 export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
 
     protected context: vscode.ExtensionContext;
@@ -115,6 +121,12 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
 
     close() {}
 
+    protected abstract getWorkerFileName(): string;
+
+    protected abstract handleStart(project: Project): Promise<void>;
+
+    protected abstract handleEnd(project: Project): Promise<void>;
+
     protected println(line: string = '') {
         this.writeEmitter.fire(`${line}\r\n`);
     }
@@ -123,18 +135,86 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
         this.closeEmitter.fire(code);
     }
 
-    protected abstract run(project: Project): Promise<void>;
+    protected error(error: unknown) {
+        if (error instanceof Error) {
+            this.println(error.stack || error.message);
+        } else if (typeof error === 'string') {
+            this.println(error);
+        }
+        this.exit(1);
+    }
 
     private async execute(): Promise<void> {
         try {
+            // Load EDA project
             const project = await Project.load(this.projects, this.definition.uri || vscode.Uri.joinPath(this.folder.uri, this.definition.project));
 
-            await this.run(project);
-        } catch (err) {
-            if (err instanceof Error) {
-                this.println(err.stack || err.message);
+            await this.handleStart(project);
+
+            // Create worker
+            const worker = this.createWorker(project);
+
+            // Read files
+            const files: {path: string; data: Uint8Array}[] = [];
+            for (const file of project.getFiles()) {
+                // TODO: improve support for relative paths
+                const path = file.path.replace(`${project.getRoot().path}/`, '');
+
+                const data = await vscode.workspace.fs.readFile(file);
+
+                files.push({
+                    path,
+                    data
+                });
             }
-            this.exit(1);
+
+            // Send input to worker
+            worker.postMessage({
+                type: 'input',
+                files
+            }, files.map(({data}) => data.buffer));
+        } catch (err) {
+            this.error(err);
         }
+    }
+
+    private createWorker(project: Project): Worker {
+        const worker = new Worker(vscode.Uri.joinPath(this.context.extensionUri, 'workers', 'dist', this.getWorkerFileName()).toString(true));
+
+        worker.addEventListener('message', this.handleMessage.bind(this, project));
+        worker.addEventListener('messageerror',this.handleMessageError.bind(this));
+        worker.addEventListener('error', this.handleError.bind(this));
+
+        return worker;
+    }
+
+    private async handleMessage(project: Project, event: MessageEvent<ToolMessage>) {
+        try {
+            switch (event.data.type) {
+                case 'output': {
+                    console.log('output', event.data);
+
+                    // TODO: handle output
+
+                    await this.handleEnd(project);
+
+                    this.exit(0);
+
+                    break;
+                }
+            }
+        } catch (err) {
+            this.error(err);
+        }
+    }
+
+    private handleMessageError(event: MessageEvent) {
+        console.error('Message error:', event);
+
+        this.error(new Error('Message error'));
+    }
+
+    private handleError(event: ErrorEvent) {
+        this.error(event.error);
     }
 }

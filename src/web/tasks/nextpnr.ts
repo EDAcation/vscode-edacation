@@ -20,12 +20,16 @@ export class NextpnrTaskProvider extends WorkerTaskProvider {
 
 class NextpnrTaskTerminal extends WorkerTaskTerminal {
 
-    protected async run(project: Project) {
-        this.println(`Placing and routing EDA project "${project.getName()}" using nextpnr...`);
+    protected getWorkerFileName() {
+        return 'nextpnr.js';
+    }
 
+    protected async handleStart(project: Project) {
+        this.println(`Placing and routing EDA project "${project.getName()}" using nextpnr...`);
+    }
+
+    protected async handleEnd(project: Project) {
         this.println(`Finished placing and routing EDA project "${project.getName()}" using nextpnr.`);
         this.println();
-
-        this.exit(0);
     }
 }

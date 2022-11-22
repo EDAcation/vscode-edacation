@@ -20,27 +20,16 @@ export class YosysTaskProvider extends WorkerTaskProvider {
 
 class YosysTaskTerminal extends WorkerTaskTerminal {
 
-    protected async run(project: Project) {
+    protected getWorkerFileName() {
+        return 'yosys.js';
+    }
+
+    protected async handleStart(project: Project) {
         this.println(`Synthesizing EDA project "${project.getName()}" using Yosys...`);
+    }
 
-        const worker = new Worker(vscode.Uri.joinPath(this.context.extensionUri, 'workers', 'dist', 'yosys.js').toString(true));
-        worker.addEventListener('message', (event) => {
-            console.log('worker message', event.data);
-        });
-        worker.addEventListener('messageerror', (event) => {
-            console.error('worker messageerror', event.data);
-        });
-        worker.addEventListener('error', (event) => {
-            console.error('worker error', event.error);
-        });
-
-        worker.postMessage({
-            type: 'input'
-        });
-
+    protected async handleEnd(project: Project) {
         this.println(`Finished synthesizing EDA project "${project.getName()}" using Yosys.`);
         this.println();
-
-        this.exit(0);
     }
 }

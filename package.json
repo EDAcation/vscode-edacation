@@ -14,7 +14,7 @@
     "onCommand:edacation.newProject",
     "onCommand:edacation.openProject",
     "onCommand:edacation.closeProject",
-		"onCommand:workbench.action.tasks.runTask",
+    "onCommand:workbench.action.tasks.runTask",
     "onCustomEditor:edacation.project",
     "onView:edacation-projects",
     "onView:edacation-files",
@@ -126,7 +126,9 @@
     "taskDefinitions": [
       {
         "type": "yosys",
-        "required": ["project"],
+        "required": [
+          "project"
+        ],
         "properties": {
           "project": {
             "type": "string",
@@ -136,7 +138,9 @@
       },
       {
         "type": "nextpnr",
-        "required": ["project"],
+        "required": [
+          "project"
+        ],
         "properties": {
           "project": {
             "type": "string",
@@ -207,5 +211,8 @@
     "typescript": "^4.8.4",
     "webpack": "^5.74.0",
     "webpack-cli": "^4.10.0"
+  },
+  "dependencies": {
+    "path-browserify": "^1.0.1"
   }
 }
