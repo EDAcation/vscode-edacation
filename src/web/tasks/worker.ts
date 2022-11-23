@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import {ExtensionMessage, MessageFile, WorkerMessage} from '../messages';
 
 import {Project, Projects} from '../projects';
 import {BaseTaskProvider} from './base';
@@ -89,11 +90,10 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
     }
 }
 
-export interface ToolMessageOutput {
-    type: 'output';
+export interface WorkerOutputFile {
+    path: string;
+    uri: vscode.Uri;
 }
-
-export type ToolMessage = ToolMessageOutput;
 
 export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
 
@@ -123,9 +123,15 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
 
     protected abstract getWorkerFileName(): string;
 
+    protected abstract getInputArgs(project: Project): string[];
+
+    protected abstract getInputFiles(project: Project): MessageFile[];
+
+    protected abstract getOutputFiles(project: Project): string[];
+
     protected abstract handleStart(project: Project): Promise<void>;
 
-    protected abstract handleEnd(project: Project): Promise<void>;
+    protected abstract handleEnd(project: Project, outputFiles: WorkerOutputFile[]): Promise<void>;
 
     protected println(line: string = '') {
         this.writeEmitter.fire(`${line}\r\n`);
@@ -144,6 +150,10 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
         this.exit(1);
     }
 
+    protected send(worker: Worker, message: WorkerMessage, transferables: Transferable[] = []) {
+        worker.postMessage(message, transferables);
+    }
+
     private async execute(): Promise<void> {
         try {
             // Load EDA project
@@ -155,7 +165,7 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
             const worker = this.createWorker(project);
 
             // Read files
-            const files: {path: string; data: Uint8Array}[] = [];
+            const files: MessageFile[] = [];
             for (const file of project.getFiles()) {
                 // TODO: improve support for relative paths
                 const path = file.path.replace(`${project.getRoot().path}/`, '');
@@ -169,9 +179,11 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
             }
 
             // Send input to worker
-            worker.postMessage({
+            this.send(worker, {
                 type: 'input',
-                files
+                args: this.getInputArgs(project),
+                inputFiles: files.concat(this.getInputFiles(project)),
+                outputFiles: this.getOutputFiles(project)
             }, files.map(({data}) => data.buffer));
         } catch (err) {
             this.error(err);
@@ -188,17 +200,35 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
         return worker;
     }
 
-    private async handleMessage(project: Project, event: MessageEvent<ToolMessage>) {
+    private async handleMessage(project: Project, event: MessageEvent<ExtensionMessage>) {
         try {
             switch (event.data.type) {
+                case 'terminal': {
+                    this.println(event.data.data);
+
+                    break;
+                }
                 case 'output': {
-                    console.log('output', event.data);
+                    // Write output files
+                    const files: WorkerOutputFile[] = [];
+                    for (const file of event.data.files) {
+                        const uri = vscode.Uri.joinPath(project.getRoot(), file.path);
+                        files.push({
+                            path: file.path,
+                            uri
+                        });
 
-                    // TODO: handle output
+                        await vscode.workspace.fs.writeFile(uri, file.data);
+                    }
 
-                    await this.handleEnd(project);
+                    await this.handleEnd(project, files);
 
                     this.exit(0);
+
+                    break;
+                }
+                case 'error': {
+                    this.error(event.data.error);
 
                     break;
                 }

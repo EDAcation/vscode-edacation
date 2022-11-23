@@ -11,17 +11,12 @@ export class WorkerYosys extends WorkerTool<Yosys> {
 
         // Initialize Yosys
         const yosys = await Yosys.initialize({
-            wasmBinary
+            wasmBinary,
+            print: this.print.bind(this, 'stdout'),
+            printErr: this.print.bind(this, 'stderr')
         });
 
         return yosys;
-    }
-
-    async execute(): Promise<void> {
-        console.log('execute');
-
-        const tool = await this.getTool();
-        console.log(tool);
     }
 }
 

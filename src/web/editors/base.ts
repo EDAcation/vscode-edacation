@@ -51,7 +51,7 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
         `;
     }
 
-    protected onDidChangeViewState(event: vscode.WebviewPanelOnDidChangeViewStateEvent) {
+    protected onDidChangeViewState(_event: vscode.WebviewPanelOnDidChangeViewStateEvent) {
         // this.update(event.webviewPanel);
         // TODO: update?
     }

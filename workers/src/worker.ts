@@ -1,5 +1,7 @@
 import path from 'path';
 
+import {ExtensionMessage, MessageFile, WorkerMessage} from './messages';
+
 export const run = () => {
     console.log('run');
 };
@@ -10,21 +12,10 @@ export interface EmscriptenWrapper {
     getFS(): EmscriptenFS;
 }
 
-export interface ToolMessageInput {
-    type: 'input';
-    files: {
-        path: string;
-        data: Uint8Array;
-    }[];
-}
-
-export type ToolMessage = ToolMessageInput;
-
 export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
 
     private toolPromise: Promise<Tool>;
     private tool?: Tool;
-    private fs?: EmscriptenFS;
 
     constructor() {
         this.toolPromise = this.initialize();
@@ -47,65 +38,106 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
 
     abstract initialize(): Promise<Tool>;
 
-    abstract execute(): Promise<void>;
-
     protected async fetchBinary(url: string): Promise<ArrayBuffer> {
         const response = await fetch(url);
         return await response.arrayBuffer();
     }
 
-    private async handleMessage(event: MessageEvent<ToolMessage>) {
-        switch (event.data.type) {
-            case 'input': {
-                // TODO: input
-                console.log(event.data);
+    protected send(message: ExtensionMessage, transferables: Transferable[] = []) {
+        postMessage(message, transferables);
+    }
 
-                const fs = await this.getFS();
+    protected print(stream: 'stdout' | 'stderr', data: string) {
+        if (data.startsWith('warning: unsupported syscall:')) {
+            return;
+        }
 
-                // Write files
-                for (const file of event.data.files) {
-                    if (file.path.startsWith('/')) {
-                        continue;
-                    }
+        this.send({
+            type: 'terminal',
+            stream,
+            data
+        });
+    }
 
-                    const dirname = path.dirname(file.path);
-                    console.log(dirname);
+    protected error(error: unknown) {
+        this.send({
+            type: 'error',
+            error: error instanceof Error || typeof error === 'string' ? error : 'Unknown error'
+        });
+    }
 
-                    let position = 0;
-                    while (position < dirname.length) {
-                        position = dirname.indexOf('/', position + 1);
-                        if (position === -1) {
-                            break;
+    private async handleMessage(event: MessageEvent<WorkerMessage>) {
+        try {
+            switch (event.data.type) {
+                case 'input': {
+                    // Obtain Emscripten tool and its FS
+                    const tool = await this.getTool();
+                    const fs = await this.getFS();
+
+                    // Write input files
+                    for (const file of event.data.inputFiles) {
+                        if (file.path.startsWith('/')) {
+                            throw new Error('Absolute file paths are currently not supported.');
                         }
 
-                        const directoryPath = dirname.substring(0, position);
-                        console.log('checking', directoryPath);
+                        const dirname = path.dirname(file.path);
+                        console.log(dirname);
 
-                        try {
-                            fs.stat(directoryPath);
-                        } catch (err) {
-                            fs.mkdir(directoryPath);
+                        let position = 0;
+                        while (position < dirname.length) {
+                            position = dirname.indexOf('/', position + 1);
+                            if (position === -1) {
+                                break;
+                            }
+
+                            const directoryPath = dirname.substring(0, position);
+                            console.log('checking', directoryPath);
+
+                            try {
+                                fs.stat(directoryPath);
+                            } catch (err) {
+                                fs.mkdir(directoryPath);
+                            }
+
+                            console.log(fs.readdir(directoryPath));
                         }
 
-                        console.log(fs.readdir(directoryPath));
+                        console.log('dirs exist');
+
+                        fs.writeFile(file.path, file.data);
+                        console.log('file written');
                     }
 
-                    console.log('dirs exist');
+                    // Execute Emscripten tool
+                    // @ts-ignore: TODO
+                    tool.getModule().callMain(event.data.args);
 
-                    fs.writeFile(file.path, file.data);
-                    console.log('file written');
+                    // Read output files
+                    const files: MessageFile[] = [];
+                    for (const outputFilePath of event.data.outputFiles) {
+                        files.push({
+                            path: outputFilePath,
+                            data: fs.readFile(outputFilePath)
+                        });
+                    }
+
+                    // Send output to extension
+                    this.send({
+                        type: 'output',
+                        files
+                    }, files.map((file) => file.data.buffer));
+
+                    break;
                 }
-
-                await this.execute();
-
-                // TODO: output
-
-                break;
             }
+        } catch (err) {
+            this.error(err);
         }
     }
 
     private handleMessageError(event: MessageEvent) {
         console.error('Message error:', event);
+
+        this.error(new Error('Message error'));
     }
 }

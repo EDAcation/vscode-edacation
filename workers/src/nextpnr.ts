@@ -9,19 +9,14 @@ export class WorkerNextpnr extends WorkerTool<Nextpnr> {
         // Fetch WebAssembly binary from data URL
         const wasmBinary = await this.fetchBinary(wasmBinaryUrl);
 
-        // Initialize Yosys
-        const yosys = await Nextpnr.initialize({
-            wasmBinary
+        // Initialize nextpnr
+        const nextpnr = await Nextpnr.initialize({
+            wasmBinary,
+            print: this.print.bind(this, 'stdout'),
+            printErr: this.print.bind(this, 'stderr')
         });
 
-        return yosys;
-    }
-
-    async execute(): Promise<void> {
-        console.log('execute');
-
-        const tool = await this.getTool();
-        console.log(tool);
+        return nextpnr;
     }
 }
 

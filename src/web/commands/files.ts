@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
-import {Project, ProjectFile} from '../projects';
 
+import {Project, ProjectFile} from '../projects';
+import {FILE_FILTERS_HDL} from '../util';
 import {CurrentProjectCommand} from './base';
 
 export class AddFileCommand extends CurrentProjectCommand {
@@ -15,10 +16,7 @@ export class AddFileCommand extends CurrentProjectCommand {
             canSelectFolders: false,
             canSelectFiles: true,
             canSelectMany: true,
-            filters: {
-                /* eslint-disable-next-line @typescript-eslint/naming-convention */
-                'HDL (*.v, *.vh, *.sv, *.svh, *.vhd)': ['v', 'vh', 'sv', 'svh', 'vhd'],
-            }
+            filters: FILE_FILTERS_HDL
         });
 
         if (!fileUris || fileUris.length === 0) {

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import {MessageFile} from '../messages';
 
 import {Project} from '../projects';
 import {WorkerTaskDefinition, WorkerTaskProvider, WorkerTaskTerminal} from './worker';
@@ -22,6 +23,30 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal {
 
     protected getWorkerFileName() {
         return 'nextpnr.js';
+    }
+
+    protected getInputArgs(_project: Project): string[] {
+        // TODO: luts.json input isn't in included in project files right now
+        return [
+            '--lp384',
+            '--package', 'qn32',
+            '--json', 'luts.json',
+            '--write', 'routed.json',
+            '--placed-svg', 'placed.svg',
+            '--routed-svg', 'routed.svg'
+        ];
+    }
+
+    protected getInputFiles(_project: Project): MessageFile[] {
+        return [];
+    }
+
+    protected getOutputFiles(_project: Project): string[] {
+        return [
+            'routed.json',
+            'placed.svg',
+            'routed.svg'
+        ];
     }
 
     protected async handleStart(project: Project) {
