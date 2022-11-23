@@ -59,9 +59,11 @@ class YosysTaskTerminal extends WorkerTaskTerminal {
 
     protected async handleStart(project: Project) {
         this.println(`Synthesizing EDA project "${project.getName()}" using Yosys...`);
+        this.println();
     }
 
     protected async handleEnd(project: Project, outputFiles: WorkerOutputFile[]) {
+        this.println();
         this.println(`Finished synthesizing EDA project "${project.getName()}" using Yosys.`);
         this.println();
 
