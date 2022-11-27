@@ -31,8 +31,11 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
     }
 
     private getHtmlForWebview(webview: vscode.Webview): string {
-        const styleUri = getWebviewUri(webview, this.context, ['views', 'project', 'dist', 'assets', 'index.css']);
-        const scriptUri = getWebviewUri(webview, this.context, ['views', 'project', 'dist', 'assets', 'index.js']);
+        const stylePath = this.getStylePath();
+        const scriptPath = this.getScriptPath();
+
+        const styleUri = stylePath && getWebviewUri(webview, this.context, stylePath);
+        const scriptUri = scriptPath && getWebviewUri(webview, this.context, scriptPath);
 
         return /*html*/`
             <!doctype html>
@@ -41,11 +44,12 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
                     <meta charset="utf-8" />
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-                    <link rel="stylesheet" type="text/css" href="${styleUri}">
+                    ${styleUri ? /*html*/`<link rel="stylesheet" type="text/css" href="${styleUri}">` : ''}
                 </head>
                 <body>
                     <div id="app"></div>
-                    <script type="module" src="${scriptUri}"></script>
+
+                    ${scriptUri ? /*html*/`<script type="module" src="${scriptUri}"></script>` : ''}
                 </body>
             </html>
         `;
@@ -55,6 +59,10 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
         // this.update(event.webviewPanel);
         // TODO: update?
     }
+
+    protected abstract getStylePath(): string[] | undefined;
+
+    protected abstract getScriptPath(): string[] | undefined;
 
     protected abstract onDidReceiveMessage(message: any): void;
 

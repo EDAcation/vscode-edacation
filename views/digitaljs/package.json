@@ -1,0 +1,21 @@
+{
+  "name": "digitaljs",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "postinstall": "sed -i '/^#/d' node_modules/yosys2digitaljs/dist/index.js",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/vscode-webview": "^1.57.0",
+    "typescript": "^4.6.4",
+    "vite": "^3.2.3"
+  },
+  "dependencies": {
+    "digitaljs": "^0.12.1",
+    "yosys2digitaljs": "^0.6.0"
+  }
+}

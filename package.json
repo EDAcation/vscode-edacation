@@ -186,7 +186,7 @@
     ]
   },
   "scripts": {
-    "postinstall": "cd worker && npm install && cd ..",
+    "postinstall": "find . -type d -regextype posix-egrep -regex \"\\./(views/\\w+|workers)$\" -exec sh -c 'echo {}; cd {}; npm install' \\; && echo './'",
     "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/index.js",
     "pretest": "npm run compile-web",
     "vscode:prepublish": "npm run package-web",

@@ -3,18 +3,18 @@ import * as vscode from 'vscode';
 import {Project} from '../projects';
 import {BaseEditor} from './base';
 
-export class ProjectEditor extends BaseEditor {
+export class DigitalJSEditor extends BaseEditor {
 
     public static getViewType() {
-        return 'edacation.project';
+        return 'edacation.digitaljs';
     }
 
     protected getStylePath(): string[] | undefined {
-        return ['views', 'project', 'dist', 'assets', 'index.css'];
+        return ['views', 'digitaljs', 'dist', 'assets', 'index.css'];
     }
 
     protected getScriptPath(): string[] | undefined {
-        return ['views', 'project', 'dist', 'assets', 'index.js'];
+        return ['views', 'digitaljs', 'dist', 'assets', 'index.js'];
     }
 
     protected onDidReceiveMessage(message: any): void {
