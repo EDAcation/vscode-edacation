@@ -14,11 +14,18 @@
     "onCommand:edacation.newProject",
     "onCommand:edacation.openProject",
     "onCommand:edacation.closeProject",
+    "onCommand:edacation.addFile",
+    "onCommand:edacation.newFile",
+    "onCommand:edacation.removeFile",
+    "onCommand:edacation.openProjectConfiguration",
+    "onCommand:edacation.runYosys",
+    "onCommand:edacation.runNextpnr",
     "onCommand:workbench.action.tasks.runTask",
+    "onCustomEditor:edacation.digitaljs",
     "onCustomEditor:edacation.project",
     "onView:edacation-projects",
     "onView:edacation-files",
-    "onView:edacation-configuration"
+    "onView:edacation-actions"
   ],
   "browser": "./dist/web/extension.js",
   "contributes": {
@@ -85,6 +92,16 @@
           }
         ],
         "priority": "default"
+      },
+      {
+        "viewType": "edacation.digitaljs",
+        "displayName": "DigitalJS",
+        "selector": [
+          {
+            "filenamePattern": "*.json"
+          }
+        ],
+        "priority": "option"
       }
     ],
     "menus": {

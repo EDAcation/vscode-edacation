@@ -45,7 +45,10 @@ class YosysTaskTerminal extends WorkerTaskTerminal {
                 'proc;',
                 'opt;',
                 'show;',
-                'synth_ecp5 -json luts.json;',
+                // 'synth_ecp5 -json luts.json;',
+                // 'synth -json luts.json;',
+                'synth -lut 4',
+                'write_json luts.json',
                 ''
             ].join('\n'))
         }];
@@ -69,7 +72,7 @@ class YosysTaskTerminal extends WorkerTaskTerminal {
 
         const lutsFile = outputFiles.find((file) => file.path === 'luts.json');
         if (lutsFile) {
-            vscode.commands.executeCommand('vscode.open', lutsFile.uri);
+            vscode.commands.executeCommand('vscode.openWith', lutsFile.uri, 'edacation.digitaljs');
         }
     }
 }

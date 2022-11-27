@@ -22,20 +22,22 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
             enableScripts: true
         };
 
-        webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
+        webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview, document);
 
-        webviewPanel.onDidChangeViewState(this.onDidChangeViewState);
-        webviewPanel.webview.onDidReceiveMessage(this.onDidReceiveMessage);
+        webviewPanel.onDidChangeViewState(this.onDidChangeViewState.bind(this, document));
+        webviewPanel.webview.onDidReceiveMessage(this.onDidReceiveMessage.bind(this, document, webviewPanel.webview));
 
         this.update(document, webviewPanel);
     }
 
-    private getHtmlForWebview(webview: vscode.Webview): string {
+    private getHtmlForWebview(webview: vscode.Webview, _document: vscode.TextDocument): string {
         const stylePath = this.getStylePath();
         const scriptPath = this.getScriptPath();
 
         const styleUri = stylePath && getWebviewUri(webview, this.context, stylePath);
         const scriptUri = scriptPath && getWebviewUri(webview, this.context, scriptPath);
+
+        // const initialData = JSON.stringify(this.getInitialData(document));
 
         return /*html*/`
             <!doctype html>
@@ -53,9 +55,10 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
                 </body>
             </html>
         `;
+        // ${initialData ? /*html*/`<script type="application/javascript">window.initialData = JSON.parse('${initialData}');</script>` : ''}
     }
 
-    protected onDidChangeViewState(_event: vscode.WebviewPanelOnDidChangeViewStateEvent) {
+    protected onDidChangeViewState(_document: vscode.TextDocument, _event: vscode.WebviewPanelOnDidChangeViewStateEvent) {
         // this.update(event.webviewPanel);
         // TODO: update?
     }
@@ -64,7 +67,9 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
 
     protected abstract getScriptPath(): string[] | undefined;
 
-    protected abstract onDidReceiveMessage(message: any): void;
+    protected abstract getInitialData(document: vscode.TextDocument): any | undefined;
+
+    protected abstract onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: any): void;
 
     protected abstract update(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel): void;
 }

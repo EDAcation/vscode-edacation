@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 
-import {Project} from '../projects';
 import {BaseEditor} from './base';
 
 export class DigitalJSEditor extends BaseEditor {
@@ -9,32 +8,34 @@ export class DigitalJSEditor extends BaseEditor {
         return 'edacation.digitaljs';
     }
 
-    protected getStylePath(): string[] | undefined {
+    protected getStylePath() {
         return ['views', 'digitaljs', 'dist', 'assets', 'index.css'];
     }
 
-    protected getScriptPath(): string[] | undefined {
+    protected getScriptPath() {
         return ['views', 'digitaljs', 'dist', 'assets', 'index.js'];
     }
 
-    protected onDidReceiveMessage(message: any): void {
-        console.log(message);
+    protected getInitialData(document: vscode.TextDocument) {
+        return {
+            document: document.getText()
+        };
     }
 
-    protected update(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel) {
+    protected onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: any): void {
+        console.log(message);
+
+        if (message.type === 'ready') {
+            webview.postMessage({
+                type: 'document',
+                document: document.getText()
+            });
+        }
+    }
+
+    protected update(document: vscode.TextDocument) {
         vscode.commands.executeCommand('edacation-projects.focus');
 
-        const project = this.projects.get(document.uri);
-        console.log(project);
-        if (project) {
-            // TODO: update from document?
-
-            webviewPanel.webview.postMessage({
-                type: 'project',
-                project: Project.serialize(project)
-            });
-        } else {
-            // TODO: show open document button or just read it?
-        }
+        console.log(document.uri);
     }
 }

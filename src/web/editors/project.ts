@@ -9,12 +9,16 @@ export class ProjectEditor extends BaseEditor {
         return 'edacation.project';
     }
 
-    protected getStylePath(): string[] | undefined {
+    protected getStylePath() {
         return ['views', 'project', 'dist', 'assets', 'index.css'];
     }
 
-    protected getScriptPath(): string[] | undefined {
+    protected getScriptPath() {
         return ['views', 'project', 'dist', 'assets', 'index.js'];
+    }
+
+    protected getInitialData(_document: vscode.TextDocument) {
+        return undefined;
     }
 
     protected onDidReceiveMessage(message: any): void {
