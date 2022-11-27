@@ -88,9 +88,16 @@ class View {
             // Convert it to DigitalJS format
             const digitalJs = yosys2digitaljs(json);
 
+            console.log('digitaljs', digitalJs);
+
             // Initialize and display DigitalJS circuit
             const circuit = new Circuit(digitalJs);
+
+            console.log('circuit', circuit);
+
             circuit.displayOn(this.root);
+
+            console.log('done', circuit, this.root);
         } catch (err) {
             this.handleError(err);
         }

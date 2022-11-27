@@ -17,8 +17,8 @@
     "vite": "^3.2.3"
   },
   "dependencies": {
-    "digitaljs": "^0.12.1",
+    "digitaljs": "github:tilk/digitaljs",
     "jquery": "^3.6.1",
-    "yosys2digitaljs": "^0.6.0"
+    "yosys2digitaljs": "github:tilk/yosys2digitaljs"
   }
 }
