@@ -3,6 +3,7 @@ import {yosys2digitaljs} from 'yosys2digitaljs';
 // @ts-ignore: TODO: add module declaration (digitaljs.d.ts)
 import {Circuit} from 'digitaljs';
 
+import './main.css';
 import {vscode} from './vscode';
 
 interface State {
@@ -95,7 +96,11 @@ class View {
 
             console.log('circuit', circuit);
 
-            circuit.displayOn(this.root);
+            const element = document.createElement('div');
+            element.style.width = `${this.root.getBoundingClientRect().width}`;
+            element.style.height = `${this.root.getBoundingClientRect().height}`;
+            this.root.replaceChildren(element);
+            circuit.displayOn(element);
 
             console.log('done', circuit, this.root);
         } catch (err) {
