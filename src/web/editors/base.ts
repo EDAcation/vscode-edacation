@@ -43,7 +43,6 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
                 </head>
                 <body>
                     <div id="app">
-                        <h1>Loading</h1>
                         <vscode-progress-ring></vscode-progress-ring>
                     </div>
 

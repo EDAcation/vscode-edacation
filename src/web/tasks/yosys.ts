@@ -21,6 +21,8 @@ export class YosysTaskProvider extends WorkerTaskProvider {
     }
 }
 
+// TODO: keep track of logs and write it to file
+
 class YosysTaskTerminal extends WorkerTaskTerminal {
 
     protected getWorkerFileName() {

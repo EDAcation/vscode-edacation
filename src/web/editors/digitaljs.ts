@@ -3,6 +3,8 @@ import {getWebviewUri} from '../util';
 
 import {BaseEditor} from './base';
 
+// TODO: use file system watcher to detect changes on disk (i.e. Yosys task rewrites file)
+
 export class DigitalJSEditor extends BaseEditor {
 
     public static getViewType() {
