@@ -9,36 +9,50 @@ export class ProjectEditor extends BaseEditor {
         return 'edacation.project';
     }
 
-    protected getStylePath() {
-        return ['views', 'project', 'dist', 'assets', 'index.css'];
+    protected getStylePaths() {
+        return [
+            // ['views', 'project', 'dist', 'assets', 'index.css']
+        ];
     }
 
-    protected getScriptPath() {
-        return ['views', 'project', 'dist', 'assets', 'index.js'];
+    protected getScriptPaths() {
+        return [
+            ['views', 'project', 'dist', 'assets', 'index.js']
+        ];
     }
 
-    protected getInitialData(_document: vscode.TextDocument) {
-        return undefined;
-    }
-
-    protected onDidReceiveMessage(message: any): void {
-        console.log(message);
-    }
-
-    protected update(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel) {
-        vscode.commands.executeCommand('edacation-projects.focus');
-
+    protected getInitialData(document: vscode.TextDocument) {
         const project = this.projects.get(document.uri);
-        console.log(project);
-        if (project) {
-            // TODO: update from document?
 
-            webviewPanel.webview.postMessage({
-                type: 'project',
+        if (project) {
+            return {
                 project: Project.serialize(project)
-            });
+            };
         } else {
-            // TODO: show open document button or just read it?
+            return {
+                project: undefined
+            };
         }
+    }
+
+    protected onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: any): void {
+        console.log(message);
+
+        if (message.type === 'ready') {
+            const project = this.projects.get(document.uri);
+
+            console.log(document.uri);
+
+            if (project) {
+                webview.postMessage({
+                    type: 'project',
+                    project: Project.serialize(project)
+                });
+            }
+        }
+    }
+
+    protected update(_document: vscode.TextDocument) {
+        vscode.commands.executeCommand('edacation-projects.focus');
     }
 }

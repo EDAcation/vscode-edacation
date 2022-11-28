@@ -3,3 +3,7 @@ html, body, #app {
     height: 100%;
     margin: 0px;
 }
+
+foreignObject > body {
+    padding: 0px;
+}

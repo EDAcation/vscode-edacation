@@ -1,4 +1,5 @@
 <script lang="ts">
+import {vscode} from '../vscode';
 
 export default {
     data() {
@@ -8,15 +9,16 @@ export default {
     },
     mounted() {
         window.addEventListener('message', this.message);
+        vscode.postMessage({
+            type: 'ready'
+        });
     },
     unmounted() {
         window.removeEventListener('message', this.message);
     },
     methods: {
         message(event: MessageEvent) {
-            if (event.data.type) {
-                console.log('message', event.data);
-            }
+            console.log('message', event.data);
 
             switch (event.data.type) {
                 case 'project':

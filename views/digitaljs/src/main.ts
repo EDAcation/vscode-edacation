@@ -1,10 +1,15 @@
-import 'jquery-ui';
+import 'jquery-ui/dist/jquery-ui.min.js';
+import '@vscode/codicons/dist/codicon.css';
+import {allComponents} from '@vscode/webview-ui-toolkit/dist/toolkit.js';
 import {yosys2digitaljs} from 'yosys2digitaljs';
 // @ts-ignore: TODO: add module declaration (digitaljs.d.ts)
 import {Circuit} from 'digitaljs';
 
 import './main.css';
 import {vscode} from './vscode';
+
+// Force bundler to include VS Code Webview UI Toolkit
+allComponents;
 
 interface State {
     document?: string;
@@ -29,8 +34,6 @@ class View {
         addEventListener('message', this.handleMessage.bind(this));
         addEventListener('messageerror', this.handleMessageError.bind(this));
 
-        console.log('init');
-
         if (this.state.document) {
             this.renderDocument();
         } else {
@@ -49,8 +52,6 @@ class View {
     }
 
     handleMessage(message: MessageEvent<Message>) {
-        console.log('message', message);
-
         switch (message.data.type) {
             case 'document': {
                 this.updateState({
@@ -75,34 +76,61 @@ class View {
     }
 
     renderDocument() {
-        console.log('rendering document', this.state);
-
         try {
             if (!this.state.document) {
                 throw new Error('No document to render.');
             }
 
-
-            // Parse JSON netlist
+            // Parse Yosys netlist from JSON string
             const json = JSON.parse(this.state.document);
 
-            // Convert it to DigitalJS format
+            // Convert from Yosys netlist to DigitalJS format
             const digitalJs = yosys2digitaljs(json);
 
-            console.log('digitaljs', digitalJs);
-
-            // Initialize and display DigitalJS circuit
+            // Initialize circuit
             const circuit = new Circuit(digitalJs);
 
-            console.log('circuit', circuit);
+            // Clear
+            this.root.replaceChildren();
 
-            const element = document.createElement('div');
-            element.style.width = `${this.root.getBoundingClientRect().width}`;
-            element.style.height = `${this.root.getBoundingClientRect().height}`;
-            this.root.replaceChildren(element);
-            circuit.displayOn(element);
+            // Render actions
+            const elementActions = document.createElement('div');
+            elementActions.style.marginBottom = '1rem';
+            elementActions.innerHTML = /*html*/`
+                <vscode-button id="digitaljs-start" disabled>
+                    Start
+                    <span slot="start" class="codicon codicon-debug-start" />
+                </vscode-button>
+                <vscode-button id="digitaljs-stop" disabled>
+                    Stop
+                    <span slot="start" class="codicon codicon-debug-stop" />
+                </vscode-button>
+            `;
+            this.root.appendChild(elementActions);
 
-            console.log('done', circuit, this.root);
+            const buttonStart = document.getElementById('digitaljs-start');
+            const buttonStop = document.getElementById('digitaljs-stop');
+
+            buttonStart?.addEventListener('click', () => circuit.start());
+            buttonStop?.addEventListener('click', () => circuit.stop());
+
+            circuit.on('changeRunning', () => {
+                if (circuit.running) {
+                    buttonStart?.setAttribute('disabled', '');
+                    buttonStop?.removeAttribute('disabled');
+                } else {
+                    buttonStart?.removeAttribute('disabled');
+                    buttonStop?.setAttribute('disabled', '');
+                }
+            });
+
+            // Render circuit
+            const elementCircuit = document.createElement('div');
+            circuit.displayOn(elementCircuit);
+            this.root.appendChild(elementCircuit);
+
+            // Start circuit
+            circuit.start();
         } catch (err) {
             this.handleError(err);
         }
@@ -115,7 +143,7 @@ class View {
     }
 }
 
-(() => {
+document.addEventListener('DOMContentLoaded', () => {
     const root = document.querySelector<HTMLDivElement>('#app');
 
     let state = vscode.getState() as State;
@@ -125,8 +153,11 @@ class View {
         // @ts-ignore
         state = window.initialData;
 
-        // Default state
-        if (!state) {
+        if (state) {
+            // Store initial state
+            vscode.setState(state);
+        } else {
+            // Default state
             state = {
                 document: undefined
             };
@@ -134,4 +165,4 @@ class View {
     }
 
     new View(root as HTMLDivElement, state);
-})();
+});

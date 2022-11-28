@@ -5,7 +5,6 @@ export default defineConfig({
     build: {
         target: 'es2020',
         outDir: 'dist',
-        sourcemap: 'inline',
         rollupOptions: {
             output: {
                 entryFileNames: 'assets/[name].js',
@@ -21,6 +20,7 @@ export default defineConfig({
         }
     },
     define: {
+        /* eslint-disable-next-line @typescript-eslint/naming-convention */
         'process.env': {},
     },
     resolve: {

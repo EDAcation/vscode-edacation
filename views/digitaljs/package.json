@@ -17,8 +17,14 @@
     "vite": "^3.2.3"
   },
   "dependencies": {
+    "@vscode/codicons": "^0.0.32",
+    "@vscode/webview-ui-toolkit": "^1.2.0",
     "digitaljs": "github:tilk/digitaljs",
     "jquery": "^3.6.1",
+    "jquery-ui": "^1.13.2",
     "yosys2digitaljs": "github:tilk/yosys2digitaljs"
+  },
+  "overrides": {
+    "elkjs": "^0.7.3-dev"
   }
 }

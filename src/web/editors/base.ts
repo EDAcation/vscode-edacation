@@ -24,20 +24,13 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
 
         webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview, document);
 
-        webviewPanel.onDidChangeViewState(this.onDidChangeViewState.bind(this, document));
         webviewPanel.webview.onDidReceiveMessage(this.onDidReceiveMessage.bind(this, document, webviewPanel.webview));
 
         this.update(document, webviewPanel);
     }
 
-    private getHtmlForWebview(webview: vscode.Webview, _document: vscode.TextDocument): string {
-        const stylePath = this.getStylePath();
-        const scriptPath = this.getScriptPath();
-
-        const styleUri = stylePath && getWebviewUri(webview, this.context, stylePath);
-        const scriptUri = scriptPath && getWebviewUri(webview, this.context, scriptPath);
-
-        // const initialData = JSON.stringify(this.getInitialData(document));
+    protected getHtmlForWebview(webview: vscode.Webview, document: vscode.TextDocument): string {
+        const initialData = JSON.stringify(JSON.stringify(this.getInitialData(document)));
 
         return /*html*/`
             <!doctype html>
@@ -46,28 +39,42 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
                     <meta charset="utf-8" />
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-                    ${styleUri ? /*html*/`<link rel="stylesheet" type="text/css" href="${styleUri}">` : ''}
+                    ${this.getHtmlStyles(webview)}
                 </head>
                 <body>
-                    <div id="app"></div>
+                    <div id="app">
+                        <h1>Loading</h1>
+                        <vscode-progress-ring></vscode-progress-ring>
+                    </div>
 
-                    ${scriptUri ? /*html*/`<script type="module" src="${scriptUri}"></script>` : ''}
+                    ${this.getHtmlScripts(webview)}
+                    ${initialData ? /*html*/`<script type="application/javascript">window.initialData = JSON.parse(${initialData});</script>` : ''}
                 </body>
             </html>
         `;
-        // ${initialData ? /*html*/`<script type="application/javascript">window.initialData = JSON.parse('${initialData}');</script>` : ''}
     }
 
-    protected onDidChangeViewState(_document: vscode.TextDocument, _event: vscode.WebviewPanelOnDidChangeViewStateEvent) {
-        // this.update(event.webviewPanel);
-        // TODO: update?
+    protected getInitialData(_document: vscode.TextDocument): any | undefined {
+        return undefined;
     }
 
-    protected abstract getStylePath(): string[] | undefined;
+    protected getHtmlStyles(webview: vscode.Webview): string {
+        const stylePaths = this.getStylePaths();
+        const styleUris = stylePaths.map((stylePath) => getWebviewUri(webview, this.context, stylePath));
 
-    protected abstract getScriptPath(): string[] | undefined;
+        return styleUris.map((styleUri) => /*html*/`<link rel="stylesheet" type="text/css" href="${styleUri}">`).join('\n');
+    }
 
-    protected abstract getInitialData(document: vscode.TextDocument): any | undefined;
+    protected getHtmlScripts(webview: vscode.Webview): string {
+        const scriptPaths = this.getScriptPaths();
+        const scriptUris = scriptPaths.map((scriptPath) => getWebviewUri(webview, this.context, scriptPath));
+
+        return scriptUris.map((scriptUri) => /*html*/`<script type="module" src="${scriptUri}" defer></script>`).join('\n');
+    }
+
+    protected abstract getStylePaths(): string[][];
+
+    protected abstract getScriptPaths(): string[][];
 
     protected abstract onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: any): void;
 

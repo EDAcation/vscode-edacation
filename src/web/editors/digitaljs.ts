@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import {getWebviewUri} from '../util';
 
 import {BaseEditor} from './base';
 
@@ -8,23 +9,36 @@ export class DigitalJSEditor extends BaseEditor {
         return 'edacation.digitaljs';
     }
 
-    protected getStylePath() {
-        return ['views', 'digitaljs', 'dist', 'assets', 'index.css'];
+    protected getStylePaths() {
+        return [
+            ['views', 'digitaljs', 'dist', 'assets', 'index.css']
+        ];
     }
 
-    protected getScriptPath() {
-        return ['views', 'digitaljs', 'dist', 'assets', 'index.js'];
+    protected getScriptPaths() {
+        return [
+            ['views', 'digitaljs', 'dist', 'assets', 'index.js']
+        ];
     }
 
-    protected getInitialData(document: vscode.TextDocument) {
-        return {
-            document: document.getText()
-        };
+    protected getHtmlStyles(webview: vscode.Webview): string {
+        const styles = super.getHtmlStyles(webview);
+
+        const fontUri = getWebviewUri(webview, this.context, ['views', 'digitaljs', 'dist', 'assets', 'codicon.ttf']);
+
+        return `
+            ${styles}
+            <style>
+                @font-face {
+                    font-family: "codicon";
+                    font-display: block;
+                    src: url("${fontUri}") format("truetype");
+                }
+            </style>
+        `;
     }
 
     protected onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: any): void {
-        console.log(message);
-
         if (message.type === 'ready') {
             webview.postMessage({
                 type: 'document',
@@ -33,9 +47,7 @@ export class DigitalJSEditor extends BaseEditor {
         }
     }
 
-    protected update(document: vscode.TextDocument) {
+    protected update(_document: vscode.TextDocument) {
         vscode.commands.executeCommand('edacation-projects.focus');
-
-        console.log(document.uri);
     }
 }
