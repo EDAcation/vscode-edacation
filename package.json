@@ -29,7 +29,6 @@
     "onView:edacation-files",
     "onView:edacation-actions"
   ],
-  "extensionDependencies": ["mshr-h.VerilogHDL"],
   "browser": "./dist/web/extension.js",
   "contributes": {
     "commands": [
