@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import {ExtensionMessage, MessageFile, WorkerMessage} from '../messages';
 
 import {Project, Projects} from '../projects';
+import {encodeText} from '../util';
 import {BaseTaskProvider} from './base';
 
 const PROJECT_PATTERN = '**/*.edaproject';
@@ -102,6 +103,8 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
     private folder: vscode.WorkspaceFolder;
     private definition: WorkerTaskDefinition;
 
+    private logMessages: string[];
+
     private writeEmitter = new vscode.EventEmitter<string>();
     private closeEmitter = new vscode.EventEmitter<number>();
 
@@ -113,6 +116,8 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
         this.projects = projects;
         this.folder = folder;
         this.definition = definition;
+
+        this.logMessages = [];
     }
 
     open() {
@@ -120,6 +125,8 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
     }
 
     close() {}
+
+    protected abstract getWorkerName(): string;
 
     protected abstract getWorkerFileName(): string;
 
@@ -135,19 +142,27 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
 
     protected println(line: string = '') {
         this.writeEmitter.fire(`${line}\r\n`);
+        this.logMessages.push(`${line}\r\n`);
     }
 
-    protected exit(code: number) {
+    protected async exit(code: number, project?: Project) {
         this.closeEmitter.fire(code);
+
+        const uri = vscode.Uri.joinPath(project ? project.getRoot() : this.folder.uri, `${this.getWorkerName()}.log`);
+        await vscode.workspace.fs.writeFile(uri, encodeText(this.logMessages.join('')));
+
+        if (project) {
+            // TODO: add log file to project output
+        }
     }
 
-    protected error(error: unknown) {
+    protected async error(error: unknown, project?: Project) {
         if (error instanceof Error) {
             this.println(error.stack || error.message);
         } else if (typeof error === 'string') {
             this.println(error);
         }
-        this.exit(1);
+        await this.exit(1, project);
     }
 
     protected send(worker: Worker, message: WorkerMessage, transferables: Transferable[] = []) {
@@ -155,10 +170,16 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
     }
 
     private async execute(): Promise<void> {
+        let project: Project;
         try {
             // Load EDA project
-            const project = await Project.load(this.projects, this.definition.uri || vscode.Uri.joinPath(this.folder.uri, this.definition.project));
+            project = await Project.load(this.projects, this.definition.uri || vscode.Uri.joinPath(this.folder.uri, this.definition.project));
+        } catch (err) {
+            this.error(err);
+            return;
+        }
 
+        try {
             await this.handleStart(project);
 
             // Create worker
@@ -186,7 +207,7 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
                 outputFiles: this.getOutputFiles(project)
             }, files.map(({data}) => data.buffer));
         } catch (err) {
-            this.error(err);
+            await this.error(err, project);
         }
     }
 
@@ -194,8 +215,8 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
         const worker = new Worker(vscode.Uri.joinPath(this.context.extensionUri, 'workers', 'dist', this.getWorkerFileName()).toString(true));
 
         worker.addEventListener('message', this.handleMessage.bind(this, project));
-        worker.addEventListener('messageerror',this.handleMessageError.bind(this));
-        worker.addEventListener('error', this.handleError.bind(this));
+        worker.addEventListener('messageerror',this.handleMessageError.bind(this, project));
+        worker.addEventListener('error', this.handleError.bind(this, project));
 
         return worker;
     }
@@ -221,30 +242,32 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
                         await vscode.workspace.fs.writeFile(uri, file.data);
                     }
 
+                    // TODO: add files to project output
+
                     await this.handleEnd(project, files);
 
-                    this.exit(0);
+                    await this.exit(0);
 
                     break;
                 }
                 case 'error': {
-                    this.error(event.data.error);
+                    await this.error(event.data.error, project);
 
                     break;
                 }
             }
         } catch (err) {
-            this.error(err);
+            await this.error(err, project);
         }
     }
 
-    private handleMessageError(event: MessageEvent) {
+    private handleMessageError(project: Project, event: MessageEvent) {
         console.error('Message error:', event);
 
-        this.error(new Error('Message error'));
+        this.error(new Error('Message error'), project);
     }
 
-    private handleError(event: ErrorEvent) {
-        this.error(event.error);
+    private handleError(project: Project, event: ErrorEvent) {
+        this.error(event.error, project);
     }
 }

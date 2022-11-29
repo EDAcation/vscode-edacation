@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import {MessageFile} from '../messages';
 
+import {MessageFile} from '../messages';
 import {Project} from '../projects';
 import {WorkerTaskDefinition, WorkerTaskProvider, WorkerTaskTerminal} from './worker';
 
@@ -20,6 +20,10 @@ export class NextpnrTaskProvider extends WorkerTaskProvider {
 }
 
 class NextpnrTaskTerminal extends WorkerTaskTerminal {
+
+    protected getWorkerName() {
+        return NextpnrTaskProvider.getType();
+    }
 
     protected getWorkerFileName() {
         return 'nextpnr.js';

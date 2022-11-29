@@ -21,9 +21,11 @@ export class YosysTaskProvider extends WorkerTaskProvider {
     }
 }
 
-// TODO: keep track of logs and write it to file
-
 class YosysTaskTerminal extends WorkerTaskTerminal {
+
+    protected getWorkerName() {
+        return YosysTaskProvider.getType();
+    }
 
     protected getWorkerFileName() {
         return 'yosys.js';
@@ -71,6 +73,8 @@ class YosysTaskTerminal extends WorkerTaskTerminal {
         this.println();
         this.println(`Finished synthesizing EDA project "${project.getName()}" using Yosys.`);
         this.println();
+
+        // TODO: add output files to project output
 
         const lutsFile = outputFiles.find((file) => file.path === 'luts.json');
         if (lutsFile) {
