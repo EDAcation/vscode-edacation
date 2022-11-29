@@ -3,8 +3,6 @@ import {getWebviewUri} from '../util';
 
 import {BaseEditor} from './base';
 
-// TODO: use file system watcher to detect changes on disk (i.e. Yosys task rewrites file)
-
 export class DigitalJSEditor extends BaseEditor {
 
     public static getViewType() {
@@ -49,7 +47,12 @@ export class DigitalJSEditor extends BaseEditor {
         }
     }
 
-    protected update(_document: vscode.TextDocument) {
+    protected update(document: vscode.TextDocument, webview: vscode.Webview) {
         vscode.commands.executeCommand('edacation-projects.focus');
+
+        webview.postMessage({
+            type: 'document',
+            document: document.getText()
+        });
     }
 }
