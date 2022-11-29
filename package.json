@@ -3,6 +3,8 @@
   "name": "edacation",
   "displayName": "EDAcation",
   "description": "Learning environment for digital hardware design with Yosys and nextpnr.",
+  "repository": "github:EDAcation/vscode-edacation",
+  "license": "MIT",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.73.0"
@@ -206,7 +208,7 @@
     "postinstall": "find . -type d -regextype posix-egrep -regex \"\\./(views/\\w+|workers)$\" -exec sh -c 'echo {}; cd {}; npm install' \\; && echo './'",
     "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/index.js",
     "pretest": "npm run compile-web",
-    "vscode:prepublish": "npm run package-web",
+    "vscode:adprepublish": "npm run package-web",
     "compile-web": "webpack",
     "watch-web": "webpack --watch",
     "package-web": "webpack --mode production --devtool hidden-source-map",
@@ -214,20 +216,20 @@
     "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.0",
-    "@types/vscode": "^1.73.0",
+    "@types/mocha": "^10.0.1",
+    "@types/vscode": "^1.73.1",
     "@types/webpack-env": "^1.18.0",
-    "@typescript-eslint/eslint-plugin": "^5.42.0",
-    "@typescript-eslint/parser": "^5.42.0",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
     "@vscode/test-web": "^0.0.32",
     "assert": "^2.0.0",
-    "eslint": "^8.26.0",
+    "eslint": "^8.28.0",
     "mocha": "^10.1.0",
     "process": "^0.11.10",
     "ts-loader": "^9.4.1",
-    "typescript": "^4.8.4",
-    "webpack": "^5.74.0",
-    "webpack-cli": "^4.10.0"
+    "typescript": "^4.9.3",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.0"
   },
   "dependencies": {
     "path-browserify": "^1.0.1"
