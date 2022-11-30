@@ -49,10 +49,10 @@ class YosysTaskTerminal extends WorkerTaskTerminal {
                 'proc;',
                 'opt;',
                 'show;',
-                // 'synth_ecp5 -json luts.json;',
-                // 'synth -json luts.json;',
+                'write_json rtl.json',
                 'synth -lut 4',
                 'write_json luts.json',
+                // 'synth_ecp5 -json ecp5.json;',
                 ''
             ].join('\n'))
         }];
@@ -60,7 +60,8 @@ class YosysTaskTerminal extends WorkerTaskTerminal {
 
     protected getOutputFiles(_project: Project): string[] {
         return [
-            'luts.json'
+            'luts.json',
+            'rtl.json'
         ];
     }
 
