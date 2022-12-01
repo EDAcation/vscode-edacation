@@ -12,5 +12,4 @@ The following open source EDA tools are used:
 TODO: feature list and screenshot(s)
 
 ## License
-
-TODO
+This project is available under the [MIT license](LICENSE.md). Note that some dependencies have different licenses.

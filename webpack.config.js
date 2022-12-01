@@ -110,7 +110,13 @@ const workerConfig = {
     performance: {
         hints: false
     },
-    devtool: 'source-map'
+    devtool: 'nosources-source-map',
+    infrastructureLogging: {
+        level: "log",
+    },
+    optimization: {
+        minimize: false
+    },
 };
 
 module.exports = [webExtensionConfig, workerConfig];

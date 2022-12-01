@@ -1,17 +1,19 @@
 import * as vscode from 'vscode';
 
-export const getWebviewUri = (webview: vscode.Webview, context: vscode.ExtensionContext, path: string[]) => {
-    return webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, ...path));
+export const getWebviewUri = (webview: vscode.Webview, context: vscode.ExtensionContext, path: string[]): vscode.Uri => {
+    const uri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, ...path));
+    console.log(context.extensionUri.toString(), ...path, uri.toString());
+    return uri;
 };
 
-export const getFileName = (uri: vscode.Uri, includeExtension: boolean = true) => {
+export const getFileName = (uri: vscode.Uri, includeExtension: boolean = true): string => {
     const lastSlash = uri.path.lastIndexOf('/');
     const lastDot = uri.path.lastIndexOf('.');
 
     return uri.path.substring(lastSlash + 1, includeExtension ? uri.path.length : lastDot > lastSlash ? lastDot : uri.path.length);
 };
 
-export const ensureFile = async (uri: vscode.Uri, exists: boolean) => {
+export const ensureFile = async (uri: vscode.Uri, exists: boolean): Promise<void> => {
     try {
         const stat = await vscode.workspace.fs.stat(uri);
 
