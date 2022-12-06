@@ -12,7 +12,7 @@ export class AddFileCommand extends CurrentProjectCommand {
 
     async executeForCurrentProject(project: Project) {
         const fileUris = await vscode.window.showOpenDialog({
-            title: 'Open EDA Project',
+            title: 'Open File',
             canSelectFolders: false,
             canSelectFiles: true,
             canSelectMany: true,
@@ -26,6 +26,34 @@ export class AddFileCommand extends CurrentProjectCommand {
         await project.addFiles(fileUris);
     }
 }
+
+export class NewFileCommand extends CurrentProjectCommand {
+
+    static getID() {
+        return 'edacation.newFile';
+    }
+
+    async executeForCurrentProject(project: Project) {
+        const fileUri = await vscode.window.showSaveDialog({
+            title: 'New File',
+            filters: FILE_FILTERS_HDL
+        });
+
+        if (!fileUri) {
+            return;
+        }
+
+        // Create file
+        await vscode.workspace.fs.writeFile(fileUri, new Uint8Array());
+
+        // Add file to project
+        await project.addFiles([fileUri]);
+
+        // Open file
+        await vscode.commands.executeCommand('vscode.open', fileUri);
+    }
+}
+
 
 export class RemoveFileCommand extends CurrentProjectCommand {
 

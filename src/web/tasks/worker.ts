@@ -27,8 +27,6 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
     }
 
     provideTasks(): Promise<vscode.Task[]> {
-        console.log('provide tasks');
-
         if (!this.taskPromise) {
             this.taskPromise = this.findTasks();
         }
@@ -37,8 +35,6 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
     }
 
     async resolveTask(task: vscode.Task): Promise<vscode.Task | undefined> {
-        console.log('resolve task', task);
-
         if (!task.definition.project) {
             throw new Error('Yosys task requires the path of an EDA project to be specified.');
         }
@@ -51,7 +47,6 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
     }
 
     dispose() {
-        console.log('dispose');
         this.fileSystemWatcher.dispose();
     }
 

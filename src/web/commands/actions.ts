@@ -30,9 +30,12 @@ abstract class RunTaskCommand extends CurrentProjectCommand {
 
         const tasks = await vscode.tasks.fetchTasks(this.getTaskFilter());
         const task = tasks.find((task) => task.definition.project === filename);
+        console.log(filename, tasks.map((task) => task.definition.project), task);
 
         if (task) {
             vscode.tasks.executeTask(task);
+        } else {
+            vscode.window.showErrorMessage('No task could be found for the current EDA project.');
         }
     }
 }
