@@ -1,8 +1,7 @@
+import path from 'path';
 import * as vscode from 'vscode';
 
 import {decodeJSON, encodeJSON, getFileName} from './util';
-
-export type ProjectFile = vscode.Uri;
 
 export class Project {
 
@@ -11,13 +10,15 @@ export class Project {
     private uri: vscode.Uri;
     private root: vscode.Uri;
     private name: string;
-    private files: vscode.Uri[];
+    private files: string[];
 
-    constructor(projects: Projects, uri: vscode.Uri, root: vscode.Uri, name?: string, files: vscode.Uri[] = []) {
+    constructor(projects: Projects, uri: vscode.Uri, name?: string, files: string[] = []) {
         this.projects = projects;
 
         this.uri = uri;
-        this.root = root;
+        this.root = this.uri.with({
+            path: path.dirname(this.uri.path)
+        });
         this.name = name ? name : getFileName(this.uri, false);
         this.files = files;
     }
@@ -42,38 +43,42 @@ export class Project {
         return this.files;
     }
 
-    hasFile(uri: vscode.Uri) {
-        return this.files.some((file) => file.toString() === uri.toString());
+    getFilesAsUris() {
+        return this.files.map((file) => vscode.Uri.joinPath(this.getRoot(), file));
+    }
+
+    hasFile(file: string) {
+        return this.files.includes(file);
     }
 
     async addFiles(fileUris: vscode.Uri[]) {
         for (const fileUri of fileUris) {
-            if (!this.hasFile(fileUri)) {
-                this.files.push(fileUri);
+            if (!fileUri.path.startsWith(this.getRoot().path)) {
+                await vscode.window.showErrorMessage(`File "${fileUri.path}" must be in the a subfolder of the EDA project root.`);
+                continue;
+            }
+
+            const relativeFileUri = fileUri.path.replace(this.getRoot().path, '.');
+            console.log(fileUri, relativeFileUri);
+
+            if (!this.hasFile(relativeFileUri)) {
+                this.files.push(relativeFileUri);
             }
         }
 
-        this.sortFiles();
+        this.files.sort();
 
         this.projects.emitFileChange();
 
         await this.save();
     }
 
-    async removeFiles(fileUris: vscode.Uri[]) {
-        this.files = this.files.filter((file) => !fileUris.some((fileUri) => fileUri.toString() === file.toString()));
+    async removeFiles(fileUris: string[]) {
+        this.files = this.files.filter((file) => !fileUris.includes(file));
 
         this.projects.emitFileChange();
 
         await this.save();
-    }
-
-    sortFiles() {
-        this.files.sort((a, b) => {
-            const nameA = a.path.replace(`${this.getRoot().path}/`, '');
-            const nameB = b.path.replace(`${this.getRoot().path}/`, '');
-            return nameA < nameB ? -1 : 1;
-        });
     }
 
     private async save() {
@@ -83,25 +88,21 @@ export class Project {
     static serialize(project: Project): any {
         return {
             uri: project.uri.toString(),
-            root: project.root.toString(),
             name: project.name,
             files: project.files.map((file) => file.toString())
         };
     }
 
-    static deserialize(projects: Projects, data: any): Project {
-        const uri = vscode.Uri.parse(data.uri);
-        const root = vscode.Uri.parse(data.root);
+    static deserialize(projects: Projects, uri: vscode.Uri, data: any): Project {
         const name: string = data.name;
-        const files: vscode.Uri[] = data.files ? data.files.map((fileData: string) => vscode.Uri.parse(fileData)) : [];
+        const files: string[] = data.files ?? [];
 
-        return new Project(projects, uri, root, name, files);
+        return new Project(projects, uri, name, files);
     }
 
     static async load(projects: Projects, uri: vscode.Uri): Promise<Project> {
         const data = decodeJSON(await vscode.workspace.fs.readFile(uri));
-        data.uri = uri;
-        const project = Project.deserialize(projects, data);
+        const project = Project.deserialize(projects, uri, data);
         return project;
     }
 
@@ -117,7 +118,7 @@ export class Projects {
     protected readonly context: vscode.ExtensionContext;
 
     private projectEmitter = new vscode.EventEmitter<Project | Project[] | undefined>();
-    private fileEmitter = new vscode.EventEmitter<ProjectFile | ProjectFile[] | undefined>();
+    private fileEmitter = new vscode.EventEmitter<string | string[] | undefined>();
 
     private projects: Project[];
     private currentProject?: Project;
@@ -139,7 +140,7 @@ export class Projects {
         this.projectEmitter.fire(changed);
     }
 
-    emitFileChange(changed: ProjectFile | ProjectFile[] | undefined = undefined) {
+    emitFileChange(changed: string | string[] | undefined = undefined) {
         this.fileEmitter.fire(changed);
     }
 
@@ -155,18 +156,12 @@ export class Projects {
         return this.projects.find((project) => project.isUri(uri));
     }
 
-    async add(uri: vscode.Uri, shouldSetCurrent: boolean, shouldCreate: false): Promise<Project>;
-    async add(uri: vscode.Uri, shouldSetCurrent: boolean, shouldCreate: true, root: vscode.Uri): Promise<Project>;
-    async add(uri: vscode.Uri, shouldSetCurrent: boolean, shouldCreate: boolean, root?: vscode.Uri): Promise<Project> {
+    async add(uri: vscode.Uri, shouldSetCurrent: boolean, shouldCreate: boolean): Promise<Project> {
         let project: Project | undefined;
 
         if (!this.has(uri)) {
             if (shouldCreate) {
-                if (!root) {
-                    throw new Error('Missing project root.');
-                }
-
-                project = new Project(this, uri, root);
+                project = new Project(this, uri);
                 await Project.store(project);
             } else {
                 project = await Project.load(this, uri);

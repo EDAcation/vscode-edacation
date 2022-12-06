@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 
-import {ProjectFile, Projects} from '../projects';
+import {Projects} from '../projects';
 import {BaseTreeDataProvider} from './base';
 
-export class FilesProvider extends BaseTreeDataProvider<ProjectFile> {
+export class FilesProvider extends BaseTreeDataProvider<string> {
 
     constructor(context: vscode.ExtensionContext, projects: Projects) {
         super(context, projects);
@@ -16,14 +16,14 @@ export class FilesProvider extends BaseTreeDataProvider<ProjectFile> {
     }
 
 
-    getTreeItem(element: ProjectFile): vscode.TreeItem {
+    getTreeItem(element: string): vscode.TreeItem {
         const project = this.projects.getCurrent();
         if (!project) {
             throw new Error('Invalid state.');
         }
 
         return {
-            label: element.path.replace(`${project.getRoot().path}/`, ''),
+            label: element.startsWith('./') ? element.substring(2) : element,
             iconPath: vscode.ThemeIcon.File,
             collapsibleState: vscode.TreeItemCollapsibleState.None,
             command: {
@@ -34,7 +34,7 @@ export class FilesProvider extends BaseTreeDataProvider<ProjectFile> {
         };
     }
 
-    async getChildren(element?: ProjectFile): Promise<ProjectFile[]> {
+    async getChildren(element?: string): Promise<string[]> {
         const project = this.projects.getCurrent();
         if (!project) {
             return [];

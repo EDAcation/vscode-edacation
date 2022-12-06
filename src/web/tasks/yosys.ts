@@ -36,11 +36,7 @@ class YosysTaskTerminal extends WorkerTaskTerminal {
     }
 
     protected getInputFiles(project: Project): MessageFile[] {
-        // TODO: improve handeling of relative paths
-
-        const verilogFiles = project.getFiles()
-            .filter((file) => FILE_EXTENSIONS_VERILOG.includes(path.extname(file.path).substring(1)))
-            .map((file) => file.path.replace(`${project.getRoot().path}/`, ''));
+        const verilogFiles = project.getFiles().filter((file) => FILE_EXTENSIONS_VERILOG.includes(path.extname(file).substring(1)));
 
         return [{
             path: 'design.ys',

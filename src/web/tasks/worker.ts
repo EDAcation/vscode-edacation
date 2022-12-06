@@ -183,13 +183,10 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
             // Read files
             const files: MessageFile[] = [];
             for (const file of project.getFiles()) {
-                // TODO: improve support for relative paths
-                const path = file.path.replace(`${project.getRoot().path}/`, '');
-
-                const data = await vscode.workspace.fs.readFile(file);
+                const data = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(project.getRoot(), file));
 
                 files.push({
-                    path,
+                    path: file,
                     data
                 });
             }

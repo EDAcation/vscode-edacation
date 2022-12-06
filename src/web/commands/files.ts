@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import {Project, ProjectFile} from '../projects';
+import {Project} from '../projects';
 import {FILE_FILTERS_HDL} from '../util';
 import {CurrentProjectCommand} from './base';
 
@@ -61,7 +61,7 @@ export class RemoveFileCommand extends CurrentProjectCommand {
         return 'edacation.removeFile';
     }
 
-    async executeForCurrentProject(project: Project, file: ProjectFile) {
+    async executeForCurrentProject(project: Project, file: string) {
         await project.removeFiles([file]);
     }
 }
