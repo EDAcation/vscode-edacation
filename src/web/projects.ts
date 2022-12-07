@@ -56,6 +56,7 @@ export class Project {
     async addInputFiles(fileUris: vscode.Uri[]) {
         for (const fileUri of fileUris) {
             if (!fileUri.path.startsWith(this.getRoot().path)) {
+                console.log(this.getRoot().path, fileUri.path);
                 await vscode.window.showErrorMessage(`File "${fileUri.path}" must be in the a subfolder of the EDA project root.`);
                 continue;
             }

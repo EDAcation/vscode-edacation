@@ -92,6 +92,7 @@ export class NewProjectCommand extends BaseCommand {
 
         // Check if folder is within workspace folder
         if (!projectUri.path.startsWith(projectWorkspace.path)) {
+            console.log(projectWorkspace.path, projectUri.path);
             vscode.window.showErrorMessage('Selected project location must be within the selected workspace folder.');
             return;
         }
@@ -157,6 +158,7 @@ export class OpenProjectCommand extends BaseCommand {
 
         // Check if folder is within workspace folder
         if (!projectUri.path.startsWith(projectWorkspace.path)) {
+            console.log(projectWorkspace.path, projectUri.path);
             vscode.window.showErrorMessage('Selected project location must be within the selected workspace folder.');
             return;
         }
