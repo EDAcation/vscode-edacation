@@ -7,49 +7,25 @@
    viewBox="0 0 25.399999 25.400001"
    version="1.1"
    id="svg5"
-   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
-   sodipodi:docname="edacation.svg"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview7"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:document-units="mm"
-     showgrid="false"
-     units="px"
-     width="96px"
-     inkscape:zoom="2.7865881"
-     inkscape:cx="21.890569"
-     inkscape:cy="42.166261"
-     inkscape:window-width="1920"
-     inkscape:window-height="1016"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
   <defs
      id="defs2" />
   <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
      id="layer1">
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.5833px;line-height:1.25;font-family:FontAwesome;-inkscape-font-specification:FontAwesome;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="0.051923636"
-       y="16.850063"
-       id="text4230"><tspan
-         sodipodi:role="line"
-         id="tspan4228"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11.9944px;font-family:Ubuntu;-inkscape-font-specification:'Ubuntu, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.264583"
-         x="0.051923636"
-         y="16.850063">EDA</tspan></text>
+    <g
+       aria-label="EDA"
+       id="text4230"
+       style="stroke-width:0.264583">
+      <path
+         d="M 1.0114756,16.850063 V 8.5379441 H 6.6248548 V 10.109211 H 2.882602 v 1.631238 h 3.3224488 v 1.535283 H 2.882602 v 2.003065 h 4.0181241 v 1.571266 z"
+         id="path128" />
+      <path
+         d="m 10.151196,15.326775 q 0.131939,0.01199 0.29986,0.02399 0.179916,0 0.419804,0 1.403345,0 2.075032,-0.707669 0.68368,-0.70767 0.68368,-1.955087 0,-1.30739 -0.647697,-1.979076 -0.647698,-0.671687 -2.051043,-0.671687 -0.19191,0 -0.395815,0.012 -0.203905,0 -0.383821,0.02399 z m 5.409475,-2.638768 q 0,1.079496 -0.335843,1.88312 -0.335844,0.803625 -0.959552,1.331379 -0.611715,0.527753 -1.4993,0.79163 -0.887586,0.263877 -1.991071,0.263877 -0.503765,0 -1.1754511,-0.04798 -0.6716864,-0.03598 -1.319384,-0.167921 V 8.6458937 q 0.6476976,-0.119944 1.3433728,-0.1559272 0.7076693,-0.047978 1.2114343,-0.047978 1.067502,0 1.931099,0.239888 0.875591,0.239888 1.4993,0.7556472 0.623708,0.5157592 0.959552,1.3193839 0.335843,0.803625 0.335843,1.931099 z"
+         id="path130" />
+      <path
+         d="M 22.38546,16.850063 Q 22.253521,16.418265 22.0856,15.962478 21.929672,15.506691 21.773745,15.050903 h -3.238488 q -0.155927,0.455788 -0.323849,0.911575 -0.155927,0.455787 -0.287865,0.887585 H 15.98045 q 0.467782,-1.343372 0.887586,-2.48284 0.419804,-1.139468 0.815619,-2.146998 0.407809,-1.00753 0.79163,-1.90711 0.395815,-0.9115741 0.815619,-1.7751709 h 1.787166 q 0.40781,0.8635968 0.803625,1.7751709 0.395815,0.89958 0.79163,1.90711 0.40781,1.00753 0.827614,2.146998 0.419804,1.139468 0.887585,2.48284 z m -2.242953,-6.428998 q -0.05997,0.179916 -0.179916,0.49177 -0.119944,0.311855 -0.275871,0.719664 -0.155928,0.40781 -0.347838,0.89958 -0.179916,0.491771 -0.371826,1.031519 h 2.362896 q -0.19191,-0.539748 -0.371826,-1.031519 -0.179916,-0.49177 -0.347838,-0.89958 -0.155927,-0.407809 -0.275871,-0.719664 -0.119944,-0.311854 -0.19191,-0.49177 z"
+         id="path132" />
+    </g>
   </g>
 </svg>
