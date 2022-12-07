@@ -9,7 +9,7 @@
   "engines": {
     "vscode": "^1.73.0"
   },
-  "icon": "./resources/icons/edacation.png",
+  "icon": "resources/icons/edacation.png",
   "categories": [
     "Education",
     "Other",
