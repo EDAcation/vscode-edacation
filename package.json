@@ -82,7 +82,12 @@
         "title": "Open Project Configuration"
       },
       {
-        "command": "edacation.runYosys",
+        "command": "edacation.runYosysRTL",
+        "category": "EDAcation",
+        "title": "Show RTL using Yosys"
+      },
+      {
+        "command": "edacation.runYosysSynth",
         "category": "EDAcation",
         "title": "Synthesize using Yosys"
       },
@@ -157,7 +162,19 @@
     },
     "taskDefinitions": [
       {
-        "type": "yosys",
+        "type": "yosys-rtl",
+        "required": [
+          "project"
+        ],
+        "properties": {
+          "project": {
+            "type": "string",
+            "description": "Path of the EDA project."
+          }
+        }
+      },
+      {
+        "type": "yosys-synth",
         "required": [
           "project"
         ],
@@ -217,7 +234,7 @@
       },
       {
         "view": "edacation-actions",
-        "contents": "[Open Configuration](command:edacation.openProjectConfiguration)\n[Synthesize using Yosys](command:edacation.runYosys)\n[Place and Route using nextpnr](command:edacation.runNextpnr)\n"
+        "contents": "[Open Configuration](command:edacation.openProjectConfiguration)\n[Show RTL using Yosys](command:edacation.runYosysRTL)\n[Synthesize using Yosys](command:edacation.runYosysSynth)\n[Place and Route using nextpnr](command:edacation.runNextpnr)\n"
       }
     ]
   },

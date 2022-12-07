@@ -27,19 +27,22 @@ export class NewProjectCommand extends BaseCommand {
         projectName = name;
 
         // Ask for project workspace
-        type WorkspaceItem = vscode.QuickPickItem & {uri: vscode.Uri};
-        const workspaceItems = (vscode.workspace.workspaceFolders || [])
+        type WorkspaceItem = vscode.QuickPickItem & {uri?: vscode.Uri};
+        const workspaceItems = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders
             .map((folder) => ({
                 uri: folder.uri,
                 label: `$(folder) ${folder.name}`,
                 description: folder.uri.fsPath
-            }) as WorkspaceItem);
+            }) as WorkspaceItem) : [{
+                label: `$(error) No workspace folders available`,
+                description: 'Please add a folder to the workspace before using EDA projects.'
+            }];
 
         const workspaceSelection = await vscode.window.showQuickPick(workspaceItems, {
             title: 'Choose EDA Project Workspace',
             canPickMany: false
         });
-        if (!workspaceSelection) {
+        if (!workspaceSelection || !workspaceSelection.uri) {
             return;
         }
 
@@ -112,19 +115,22 @@ export class OpenProjectCommand extends BaseCommand {
 
     async execute() {
         // Ask for project workspace
-        type WorkspaceItem = vscode.QuickPickItem & {uri: vscode.Uri};
-        const workspaceItems = (vscode.workspace.workspaceFolders || [])
+        type WorkspaceItem = vscode.QuickPickItem & {uri?: vscode.Uri};
+        const workspaceItems = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders
             .map((folder) => ({
                 uri: folder.uri,
                 label: `$(folder) ${folder.name}`,
                 description: folder.uri.fsPath
-            }) as WorkspaceItem);
+            }) as WorkspaceItem) : [{
+                label: `$(error) No workspace folders available`,
+                description: 'Please add a folder to the workspace before using EDA projects.'
+            }];
 
         const workspaceSelection = await vscode.window.showQuickPick(workspaceItems, {
             title: 'Choose EDA Project Workspace',
             canPickMany: false
         });
-        if (!workspaceSelection) {
+        if (!workspaceSelection || !workspaceSelection.uri) {
             return;
         }
 

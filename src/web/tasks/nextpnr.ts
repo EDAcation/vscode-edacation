@@ -1,7 +1,8 @@
+import path from 'path';
 import * as vscode from 'vscode';
 
 import {MessageFile} from '../messages';
-import {Project} from '../projects';
+import {Project, ProjectFile} from '../projects';
 import {WorkerTaskDefinition, WorkerTaskProvider, WorkerTaskTerminal} from './worker';
 
 export class NextpnrTaskProvider extends WorkerTaskProvider {
@@ -29,12 +30,21 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal {
         return 'nextpnr.js';
     }
 
-    protected getInputArgs(_project: Project): string[] {
-        // TODO: luts.json input isn't in included in project files right now
+    private getInputFile(project: Project) {
+        const jsonFiles = project.getOutputFiles().filter((file) => path.extname(file.path) === '.json');
+
+        // TODO: select JSON file based on architecture
+
+        return jsonFiles.length === 0 ? undefined : jsonFiles[0];
+    }
+
+    protected getInputArgs(project: Project): string[] {
+        const inputFile = this.getInputFile(project);
+
         return [
             '--lp384',
             '--package', 'qn32',
-            '--json', 'luts.json',
+            '--json', inputFile ? inputFile.path : 'missing.json',
             '--write', 'routed.json',
             '--placed-svg', 'placed.svg',
             '--routed-svg', 'routed.svg'
@@ -43,6 +53,11 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal {
 
     protected getInputFiles(_project: Project): MessageFile[] {
         return [];
+    }
+
+    protected getInputFilesFromOutput(project: Project): ProjectFile[] {
+        const inputFile = this.getInputFile(project);
+        return inputFile ? [inputFile] : [];
     }
 
     protected getOutputFiles(_project: Project): string[] {
@@ -55,6 +70,7 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal {
 
     protected async handleStart(project: Project) {
         this.println(`Placing and routing EDA project "${project.getName()}" using nextpnr...`);
+        this.println('NOTE: nextpnr startup may take a while.');
     }
 
     protected async handleEnd(project: Project) {

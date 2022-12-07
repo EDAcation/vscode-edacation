@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import {ExtensionMessage, MessageFile, WorkerMessage} from '../messages';
 
-import {Project, Projects} from '../projects';
+import {Project, ProjectFile, Projects} from '../projects';
 import {encodeText} from '../util';
 import {BaseTaskProvider} from './base';
 
@@ -129,6 +129,8 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
 
     protected abstract getInputFiles(project: Project): MessageFile[];
 
+    protected abstract getInputFilesFromOutput(project: Project): ProjectFile[];
+
     protected abstract getOutputFiles(project: Project): string[];
 
     protected abstract handleStart(project: Project): Promise<void>;
@@ -185,9 +187,19 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
             // Create worker
             const worker = this.createWorker(project);
 
-            // Read files
+            // Read input files
             const files: MessageFile[] = [];
             for (const file of project.getInputFiles()) {
+                const data = await vscode.workspace.fs.readFile(file.uri);
+
+                files.push({
+                    path: file.path,
+                    data
+                });
+            }
+
+            // Read previous output files
+            for (const file of this.getInputFilesFromOutput(project)) {
                 const data = await vscode.workspace.fs.readFile(file.uri);
 
                 files.push({
