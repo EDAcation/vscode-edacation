@@ -16,9 +16,10 @@
     "onCommand:edacation.newProject",
     "onCommand:edacation.openProject",
     "onCommand:edacation.closeProject",
-    "onCommand:edacation.addFile",
-    "onCommand:edacation.newFile",
-    "onCommand:edacation.removeFile",
+    "onCommand:edacation.addInputFile",
+    "onCommand:edacation.newInputFile",
+    "onCommand:edacation.removeInputFile",
+    "onCommand:edacation.removeOutputFile",
     "onCommand:edacation.openProjectConfiguration",
     "onCommand:edacation.runYosys",
     "onCommand:edacation.runNextpnr",
@@ -26,7 +27,8 @@
     "onCustomEditor:edacation.digitaljs",
     "onCustomEditor:edacation.project",
     "onView:edacation-projects",
-    "onView:edacation-files",
+    "onView:edacation-inputFiles",
+    "onView:edacation-outputFiles",
     "onView:edacation-actions"
   ],
   "browser": "./dist/web/extension.js",
@@ -51,21 +53,27 @@
         "icon": "$(close)"
       },
       {
-        "command": "edacation.addFile",
+        "command": "edacation.addInputFile",
         "category": "EDAcation",
-        "title": "Add Existing File",
+        "title": "Add Existing Input File",
         "icon": "$(add)"
       },
       {
-        "command": "edacation.newFile",
+        "command": "edacation.newInputFile",
         "category": "EDAcation",
-        "title": "New File",
+        "title": "New Input File",
         "icon": "$(file-add)"
       },
       {
-        "command": "edacation.removeFile",
+        "command": "edacation.removeInputFile",
         "category": "EDAcation",
-        "title": "Remove File",
+        "title": "Remove Input File",
+        "icon": "$(remove)"
+      },
+      {
+        "command": "edacation.removeOutputFile",
+        "category": "EDAcation",
+        "title": "Remove Output File",
         "icon": "$(remove)"
       },
       {
@@ -100,10 +108,10 @@
         "displayName": "DigitalJS",
         "selector": [
           {
-            "filenamePattern": "*.json"
+            "filenamePattern": "*.djson"
           }
         ],
-        "priority": "option"
+        "priority": "default"
       }
     ],
     "menus": {
@@ -119,13 +127,13 @@
           "group": "navigation"
         },
         {
-          "command": "edacation.addFile",
-          "when": "view == edacation-files",
+          "command": "edacation.addInputFile",
+          "when": "view == edacation-inputFiles",
           "group": "navigation"
         },
         {
-          "command": "edacation.newFile",
-          "when": "view == edacation-files",
+          "command": "edacation.newInputFile",
+          "when": "view == edacation-inputFiles",
           "group": "navigation"
         }
       ],
@@ -136,8 +144,13 @@
           "group": "inline"
         },
         {
-          "command": "edacation.removeFile",
-          "when": "view == edacation-files",
+          "command": "edacation.removeInputFile",
+          "when": "view == edacation-inputFiles",
+          "group": "inline"
+        },
+        {
+          "command": "edacation.removeOutputFile",
+          "when": "view == edacation-outputFiles",
           "group": "inline"
         }
       ]
@@ -175,8 +188,12 @@
           "name": "Projects"
         },
         {
-          "id": "edacation-files",
-          "name": "Files"
+          "id": "edacation-inputFiles",
+          "name": "Input Files"
+        },
+        {
+          "id": "edacation-outputFiles",
+          "name": "Output Files"
         },
         {
           "id": "edacation-actions",

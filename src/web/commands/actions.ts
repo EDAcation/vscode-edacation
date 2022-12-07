@@ -3,7 +3,6 @@ import * as vscode from 'vscode';
 import {ProjectEditor} from '../editors';
 import {Project} from '../projects';
 import {NextpnrTaskProvider, YosysTaskProvider} from '../tasks';
-import {getFileName} from '../util';
 import {CurrentProjectCommand} from './base';
 
 export class OpenProjectConfigurationCommand extends CurrentProjectCommand {
@@ -23,14 +22,15 @@ abstract class RunTaskCommand extends CurrentProjectCommand {
     abstract getTaskFilter(): vscode.TaskFilter;
 
     async executeForCurrentProject(project: Project) {
-        // TODO: improve task matching
-        // TODO: EDA projects should support relative URI's and use them by default
-
-        const filename = getFileName(project.getUri());
-
         const tasks = await vscode.tasks.fetchTasks(this.getTaskFilter());
-        const task = tasks.find((task) => task.definition.project === filename);
-        console.log(filename, tasks.map((task) => task.definition.project), task);
+        const task = tasks.find((task) => {
+            if (task.scope === undefined || task.scope === vscode.TaskScope.Global || task.scope === vscode.TaskScope.Workspace) {
+                return false;
+            }
+
+            const uri = vscode.Uri.joinPath(task.scope.uri, task.definition.project);
+            return uri.toString() === project.getUri().toString();
+        });
 
         if (task) {
             vscode.tasks.executeTask(task);

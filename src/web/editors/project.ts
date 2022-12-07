@@ -41,7 +41,7 @@ export class ProjectEditor extends BaseEditor {
         if (message.type === 'ready') {
             const project = this.projects.get(document.uri);
 
-            console.log(document.uri);
+            console.log('ready project', document.uri);
 
             if (project) {
                 webview.postMessage({
@@ -52,7 +52,18 @@ export class ProjectEditor extends BaseEditor {
         }
     }
 
-    protected update(_document: vscode.TextDocument) {
+    protected update(document: vscode.TextDocument, webview: vscode.Webview) {
         vscode.commands.executeCommand('edacation-projects.focus');
+
+        const project = this.projects.get(document.uri);
+
+        console.log('updating project', document.uri);
+
+        if (project) {
+            webview.postMessage({
+                type: 'project',
+                project: Project.serialize(project)
+            });
+        }
     }
 }

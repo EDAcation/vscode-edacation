@@ -6,13 +6,6 @@ export const getWebviewUri = (webview: vscode.Webview, context: vscode.Extension
     return uri;
 };
 
-export const getFileName = (uri: vscode.Uri, includeExtension: boolean = true): string => {
-    const lastSlash = uri.path.lastIndexOf('/');
-    const lastDot = uri.path.lastIndexOf('.');
-
-    return uri.path.substring(lastSlash + 1, includeExtension ? uri.path.length : lastDot > lastSlash ? lastDot : uri.path.length);
-};
-
 export const ensureFile = async (uri: vscode.Uri, exists: boolean): Promise<void> => {
     try {
         const stat = await vscode.workspace.fs.stat(uri);

@@ -43,7 +43,7 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
             return undefined;
         }
 
-        return this.getTask(task.scope, task.definition.project, task.definition as WorkerTaskDefinition);
+        return this.getTask(task.scope, task.definition.uri, task.definition.project, task.definition as WorkerTaskDefinition);
     }
 
     dispose() {
@@ -64,23 +64,23 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
         for (const folder of vscode.workspace.workspaceFolders) {
             const paths = await vscode.workspace.findFiles(PROJECT_PATTERN);
             for (const path of paths) {
-                tasks.push(this.getTask(folder, vscode.workspace.asRelativePath(path.fsPath, false)));
+                tasks.push(this.getTask(folder, path, vscode.workspace.asRelativePath(path.fsPath, false)));
             }
         }
 
         return tasks;
     }
 
-    private getTask(folder: vscode.WorkspaceFolder, project: string, additionalDefinition?: WorkerTaskDefinition): vscode.Task {
+    private getTask(folder: vscode.WorkspaceFolder, uri: vscode.Uri, project: string, additionalDefinition?: WorkerTaskDefinition): vscode.Task {
         const definition: WorkerTaskDefinition = {
             type: this.getTaskType(),
             project,
-            uri: vscode.Uri.joinPath(folder.uri, project),
+            uri,
 
             ...additionalDefinition
         };
 
-        return new vscode.Task(definition, vscode.TaskScope.Workspace, `${folder.name}/${project}`, this.getTaskType(), new vscode.CustomExecution(async () =>
+        return new vscode.Task(definition, vscode.TaskScope.Workspace, project, this.getTaskType(), new vscode.CustomExecution(async () =>
             this.createTaskTerminal(folder, definition)
         ));
     }
@@ -141,14 +141,19 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
     }
 
     protected async exit(code: number, project?: Project) {
-        this.closeEmitter.fire(code);
-
-        const uri = vscode.Uri.joinPath(project ? project.getRoot() : this.folder.uri, `${this.getWorkerName()}.log`);
-        await vscode.workspace.fs.writeFile(uri, encodeText(this.logMessages.join('')));
-
-        if (project) {
-            // TODO: add log file to project output
+        try {
+            const uri = vscode.Uri.joinPath(project ? project.getRoot() : this.folder.uri, `${this.getWorkerName()}.log`);
+            await vscode.workspace.fs.writeFile(uri, encodeText(this.logMessages.join('')));
+            
+            if (project) {
+                // Add log to output files
+                await project.addOutputFiles([uri]);
+            }
+        } catch (err) {
+            console.error(err);
         }
+
+        this.closeEmitter.fire(code);
     }
 
     protected async error(error: unknown, project?: Project) {
@@ -182,11 +187,11 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
 
             // Read files
             const files: MessageFile[] = [];
-            for (const file of project.getFiles()) {
-                const data = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(project.getRoot(), file));
+            for (const file of project.getInputFiles()) {
+                const data = await vscode.workspace.fs.readFile(file.uri);
 
                 files.push({
-                    path: file,
+                    path: file.path,
                     data
                 });
             }
@@ -234,11 +239,12 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
                         await vscode.workspace.fs.writeFile(uri, file.data);
                     }
 
-                    // TODO: add files to project output
+                    // Add output files to project output
+                    await project.addOutputFiles(files.map((file) => file.uri));
 
                     await this.handleEnd(project, files);
 
-                    await this.exit(0);
+                    await this.exit(0, project);
 
                     break;
                 }

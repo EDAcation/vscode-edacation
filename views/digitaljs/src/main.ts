@@ -137,9 +137,15 @@ class View {
     }
 
     renderError(error: Error | string) {
-        const element = document.createElement('code');
-        element.textContent = typeof error === 'string' ? error : error.stack || error.message;
-        this.root.replaceChildren(element);
+        const elementHeader = document.createElement('h3');
+        elementHeader.textContent = 'Unable to render DigitalJS file';
+
+        const elementCode = document.createElement('code');
+        elementCode.textContent = typeof error === 'string' ? error : error.stack || error.message;
+
+        this.root.replaceChildren();
+        this.root.appendChild(elementHeader);
+        this.root.appendChild(elementCode);
     }
 }
 

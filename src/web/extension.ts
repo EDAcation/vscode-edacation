@@ -7,8 +7,10 @@ import * as tasks from './tasks';
 import * as trees from './trees';
 import {BaseTreeDataProvider} from './trees/base';
 
+let projects: Projects | undefined;
+
 export const activate = async (context: vscode.ExtensionContext) => {
-    const projects = new Projects(context);
+    projects = new Projects(context);
 
     // Register commands
     for (const commandType of Object.values(commands)) {
@@ -37,4 +39,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
     await projects.load();
 };
 
-export const deactivate = () => {};
+export const deactivate = () => {
+    if (projects) {
+        projects.dispose();
+    }
+};

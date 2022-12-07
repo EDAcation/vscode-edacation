@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
 
-import {Project} from '../projects';
+import {Project, ProjectFile} from '../projects';
 import {FILE_FILTERS_HDL} from '../util';
 import {CurrentProjectCommand} from './base';
 
-export class AddFileCommand extends CurrentProjectCommand {
+export class AddInputFileCommand extends CurrentProjectCommand {
 
     static getID() {
-        return 'edacation.addFile';
+        return 'edacation.addInputFile';
     }
 
     async executeForCurrentProject(project: Project) {
@@ -23,14 +23,14 @@ export class AddFileCommand extends CurrentProjectCommand {
             return;
         }
 
-        await project.addFiles(fileUris);
+        await project.addInputFiles(fileUris);
     }
 }
 
-export class NewFileCommand extends CurrentProjectCommand {
+export class NewInputFileCommand extends CurrentProjectCommand {
 
     static getID() {
-        return 'edacation.newFile';
+        return 'edacation.newInputFile';
     }
 
     async executeForCurrentProject(project: Project) {
@@ -47,21 +47,31 @@ export class NewFileCommand extends CurrentProjectCommand {
         await vscode.workspace.fs.writeFile(fileUri, new Uint8Array());
 
         // Add file to project
-        await project.addFiles([fileUri]);
+        await project.addInputFiles([fileUri]);
 
         // Open file
         await vscode.commands.executeCommand('vscode.open', fileUri);
     }
 }
 
-
-export class RemoveFileCommand extends CurrentProjectCommand {
+export class RemoveInputFileCommand extends CurrentProjectCommand {
 
     static getID() {
-        return 'edacation.removeFile';
+        return 'edacation.removeInputFile';
     }
 
-    async executeForCurrentProject(project: Project, file: string) {
-        await project.removeFiles([file]);
+    async executeForCurrentProject(project: Project, file: ProjectFile) {
+        await project.removeInputFiles([file.path]);
+    }
+}
+
+export class RemoveOutputFileCommand extends CurrentProjectCommand {
+
+    static getID() {
+        return 'edacation.removeOutputFile';
+    }
+
+    async executeForCurrentProject(project: Project, file: ProjectFile) {
+        await project.removeOutputFiles([file.path]);
     }
 }
