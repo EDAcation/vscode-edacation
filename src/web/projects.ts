@@ -68,7 +68,9 @@ export class Project {
             }
         }
 
-        this.inputFiles.sort();
+        this.inputFiles.sort((a, b) => {
+            return a.path < b.path ? -1 : 1;
+        });
 
         this.projects.emitInputFileChange();
 
@@ -105,7 +107,9 @@ export class Project {
             }
         }
 
-        this.outputFiles.sort();
+        this.outputFiles.sort((a, b) => {
+            return a.path < b.path ? -1 : 1;
+        });
 
         this.projects.emitOutputFileChange();
 
@@ -338,7 +342,7 @@ export class Projects {
     handleTaskEnd(event: vscode.TaskEndEvent) {
         const task = event.execution.task;
 
-        if (['yosys', 'nextpnr'].includes(task.definition.type)) {
+        if (['yosys-rtl', 'yosys-synth', 'nextpnr'].includes(task.definition.type)) {
             if (task.scope === undefined || task.scope === vscode.TaskScope.Global || task.scope === vscode.TaskScope.Workspace) {
                 return;
             }
