@@ -96,6 +96,8 @@ export class YosysSynthTaskProvider extends WorkerTaskProvider {
 
 class YosysSynthTaskTerminal extends WorkerTaskTerminal {
 
+    private lastLogMessage?: string;
+
     protected getWorkerName() {
         return 'yosys';
     }
@@ -137,6 +139,18 @@ class YosysSynthTaskTerminal extends WorkerTaskTerminal {
             'luts.digitaljs.json',
             'rtl.digitaljs.json'
         ];
+    }
+
+    protected println(line?: string): void {
+        // Ignore duplicate lines, but allow repeated prints
+        if (this.lastLogMessage === line) {
+            this.lastLogMessage = undefined;
+            return;
+        } else {
+            this.lastLogMessage = line;
+        }
+
+        super.println(line);
     }
 
     protected async handleStart(project: Project) {

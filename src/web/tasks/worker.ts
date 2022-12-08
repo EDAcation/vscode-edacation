@@ -137,7 +137,7 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
 
     protected abstract handleEnd(project: Project, outputFiles: WorkerOutputFile[]): Promise<void>;
 
-    protected println(line: string = '') {
+    protected println(line: string = '', _stream: 'stdout' | 'stderr' = 'stdout') {
         this.writeEmitter.fire(`${line}\r\n`);
         this.logMessages.push(`${line}\r\n`);
     }
@@ -234,7 +234,7 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
         try {
             switch (event.data.type) {
                 case 'terminal': {
-                    this.println(event.data.data);
+                    this.println(event.data.data, event.data.stream);
 
                     break;
                 }
