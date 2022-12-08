@@ -18,6 +18,7 @@ const webExtensionConfig = {
     target: 'webworker',
     entry: {
         'extension': './src/web/extension.ts',
+        /* eslint-disable-next-line @typescript-eslint/naming-convention */
         'test/suite/index': './src/web/test/suite/index.ts'
     },
     output: {
@@ -85,7 +86,9 @@ const workerConfig = {
         mainFields: ['browser', 'module', 'main'],
         extensions: ['.ts', '.js'],
         alias: {
-            fs: false
+            fs: false,
+            /* eslint-disable-next-line @typescript-eslint/naming-convention */
+            child_process: false
         },
         fallback: {
             crypto: false,

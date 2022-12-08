@@ -41,9 +41,13 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal {
     protected getInputArgs(project: Project): string[] {
         const inputFile = this.getInputFile(project);
 
+        // ice40 args:
+        // '--lp384',
+        // '--package', 'qn32',
+
         return [
-            '--lp384',
-            '--package', 'qn32',
+            '--25k',
+            '--package', 'CABGA381',
             '--json', inputFile ? inputFile.path : 'missing.json',
             '--write', 'routed.json',
             '--placed-svg', 'placed.svg',

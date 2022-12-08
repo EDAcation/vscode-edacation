@@ -97,7 +97,7 @@ class View {
             const elementActions = document.createElement('div');
             elementActions.style.marginBottom = '1rem';
             elementActions.innerHTML = /*html*/`
-                <vscode-button id="digitaljs-start" disabled>
+                <vscode-button id="digitaljs-start">
                     Start
                     <span slot="start" class="codicon codicon-debug-start" />
                 </vscode-button>
@@ -128,9 +128,6 @@ class View {
             const elementCircuit = document.createElement('div');
             circuit.displayOn(elementCircuit);
             this.root.appendChild(elementCircuit);
-
-            // Start circuit
-            circuit.start();
         } catch (err) {
             this.handleError(err);
         }

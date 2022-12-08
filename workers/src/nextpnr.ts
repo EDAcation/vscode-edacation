@@ -1,5 +1,5 @@
 import {Nextpnr} from 'nextpnr';
-import wasmBinaryUrl from 'nextpnr/dist/nextpnr-ice40.wasm';
+import wasmBinaryUrl from 'nextpnr/dist/nextpnr-ecp5.wasm';
 
 import {WorkerTool} from './worker';
 

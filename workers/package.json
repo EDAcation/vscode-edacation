@@ -3,7 +3,7 @@
     "private": true,
     "scripts": {},
     "dependencies": {
-        "nextpnr": "^0.4.9",
-        "yosys": "^0.23.0"
+        "nextpnr": "^0.4.11",
+        "yosys": "^0.23.3"
     }
 }
