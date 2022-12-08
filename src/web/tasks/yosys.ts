@@ -45,7 +45,7 @@ class YosysRTLTaskTerminal extends WorkerTaskTerminal {
                 'proc;',
                 'opt;',
                 'show;',
-                'write_json rtl.djson',
+                'write_json rtl.digitaljs.json',
                 ''
             ].join('\n'))
         }];
@@ -57,7 +57,7 @@ class YosysRTLTaskTerminal extends WorkerTaskTerminal {
 
     protected getOutputFiles(_project: Project): string[] {
         return [
-            'rtl.djson'
+            'rtl.digitaljs.json'
         ];
     }
 
@@ -72,7 +72,7 @@ class YosysRTLTaskTerminal extends WorkerTaskTerminal {
         this.println();
 
         // Open RTL file in DigitalJS editor
-        const rtlFile = outputFiles.find((file) => file.path === 'rtl.djson');
+        const rtlFile = outputFiles.find((file) => file.path.endsWith('rtl.digitaljs.json'));
         if (rtlFile) {
             vscode.commands.executeCommand('vscode.open', rtlFile.uri);
         }
@@ -118,9 +118,9 @@ class YosysSynthTaskTerminal extends WorkerTaskTerminal {
                 'proc;',
                 'opt;',
                 'show;',
-                'write_json rtl.djson',
+                'write_json rtl.digitaljs.json',
                 'synth -lut 4',
-                'write_json luts.djson',
+                'write_json luts.digitaljs.json',
                 'synth_ecp5 -json ecp5.json;',
                 ''
             ].join('\n'))
@@ -134,8 +134,8 @@ class YosysSynthTaskTerminal extends WorkerTaskTerminal {
     protected getOutputFiles(_project: Project): string[] {
         return [
             'ecp5.json',
-            'luts.djson',
-            'rtl.djson'
+            'luts.digitaljs.json',
+            'rtl.digitaljs.json'
         ];
     }
 
@@ -150,7 +150,8 @@ class YosysSynthTaskTerminal extends WorkerTaskTerminal {
         this.println();
 
         // Open LUT file in DigitalJS editor
-        const lutFile = outputFiles.find((file) => file.path === 'lut.djson');
+        const lutFile = outputFiles.find((file) => file.path.endsWith('luts.digitaljs.json'));
+        console.log(outputFiles, lutFile);
         if (lutFile) {
             vscode.commands.executeCommand('vscode.open', lutFile.uri);
         }

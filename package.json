@@ -28,6 +28,7 @@
     "onCommand:edacation.runNextpnr",
     "onCommand:workbench.action.tasks.runTask",
     "onCustomEditor:edacation.digitaljs",
+    "onCustomEditor:edacation.nextpnr",
     "onCustomEditor:edacation.project",
     "onView:edacation-projects",
     "onView:edacation-inputFiles",
@@ -116,7 +117,17 @@
         "displayName": "DigitalJS",
         "selector": [
           {
-            "filenamePattern": "*.djson"
+            "filenamePattern": "*.digitaljs.json"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "edacation.nextpnr",
+        "displayName": "Nextpnr Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.nextpnr.json"
           }
         ],
         "priority": "default"

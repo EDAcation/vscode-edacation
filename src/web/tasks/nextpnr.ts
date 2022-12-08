@@ -31,7 +31,8 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal {
     }
 
     private getInputFile(project: Project) {
-        const jsonFiles = project.getOutputFiles().filter((file) => path.extname(file.path) === '.json');
+        const jsonFiles = project.getOutputFiles()
+            .filter((file) => path.extname(file.path) === '.json' && !file.path.endsWith('.digitaljs.json') && !file.path.endsWith('.nextpnr.json'));
 
         // TODO: select JSON file based on architecture
 
@@ -46,10 +47,11 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal {
         // '--package', 'qn32',
 
         return [
+            // ECP5
             '--25k',
             '--package', 'CABGA381',
             '--json', inputFile ? inputFile.path : 'missing.json',
-            '--write', 'routed.json',
+            '--write', 'routed.nextpnr.json',
             '--placed-svg', 'placed.svg',
             '--routed-svg', 'routed.svg'
         ];
@@ -66,7 +68,7 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal {
 
     protected getOutputFiles(_project: Project): string[] {
         return [
-            'routed.json',
+            'routed.nextpnr.json',
             'placed.svg',
             'routed.svg'
         ];
@@ -74,11 +76,18 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal {
 
     protected async handleStart(project: Project) {
         this.println(`Placing and routing EDA project "${project.getName()}" using nextpnr...`);
-        this.println('NOTE: nextpnr startup may take a while.');
+        this.println('NOTE: nextpnr startup may take a while. This will be improved in future versions of this extension.');
     }
 
-    protected async handleEnd(project: Project) {
+    protected async handleEnd(project: Project, outputFiles: ProjectFile[]) {
+        this.println();
         this.println(`Finished placing and routing EDA project "${project.getName()}" using nextpnr.`);
         this.println();
+
+        // Open placed and routed file in nextpnr editor
+        const pnrFile = outputFiles.find((file) => file.path === 'routed.nextpnr.json');
+        if (pnrFile) {
+            vscode.commands.executeCommand('vscode.open', pnrFile.uri);
+        }
     }
 }
