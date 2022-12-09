@@ -1,35 +1,52 @@
 <script lang="ts">
-import {provideVSCodeDesignSystem, vsCodeButton} from '@vscode/webview-ui-toolkit';
+import {provideVSCodeDesignSystem, vsCodeButton, vsCodeTextField} from '@vscode/webview-ui-toolkit';
 
 import EDAProject from './components/EDAProject.vue';
+import {state} from './state';
 import {vscode} from './vscode';
 
 provideVSCodeDesignSystem().register(
-  vsCodeButton()
+    vsCodeButton(),
+    vsCodeTextField()
 );
 
 export default {
-  components: {
-    EDAProject
-  },
-  methods: {
-    handleClick() {
-      vscode.postMessage({
-        type: 'test'
-      });
+    components: {
+        EDAProject
+    },
+    data() {
+        return {
+            state
+        };
+    },
+    mounted() {
+        window.addEventListener('message', this.message);
+        vscode.postMessage({
+            type: 'ready'
+        });
+    },
+    unmounted() {
+        window.removeEventListener('message', this.message);
+    },
+    methods: {
+        message(event: MessageEvent) {
+            console.log('message', event.data);
+
+            switch (event.data.type) {
+                case 'project':
+                    this.state.project = event.data.project;
+                    break;
+            }
+        }
     }
-  }
-}
+};
 
 </script>
 
 <template>
-  <main>
-    <h1>Test</h1>
-    <vscode-button @click="handleClick">Test button</vscode-button>
-
-    <EDAProject />
-  </main>
+    <main>
+        <EDAProject />
+    </main>
 </template>
 
 <style scoped>

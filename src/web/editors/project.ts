@@ -49,15 +49,34 @@ export class ProjectEditor extends BaseEditor {
                     project: Project.serialize(project)
                 });
             }
+        } else if (message.type === 'change') {
+            if (document.getText() === message.document) {
+                return;
+            }
+
+            const edit = new vscode.WorkspaceEdit();
+            edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), message.document);
+            vscode.workspace.applyEdit(edit);
         }
     }
 
-    protected update(document: vscode.TextDocument, webview: vscode.Webview) {
+    protected async onSave(document: vscode.TextDocument, webview: vscode.Webview) {
+        // Reload project
+        await this.projects.reload(document.uri);
+
+        this.update(document, webview, false);
+    }
+
+    protected update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean) {
+        if (isDocumentChange) {
+            return;
+        }
+
         vscode.commands.executeCommand('edacation-projects.focus');
 
         const project = this.projects.get(document.uri);
 
-        console.log('updating project', document.uri);
+        console.log('updating project', project);
 
         if (project) {
             webview.postMessage({

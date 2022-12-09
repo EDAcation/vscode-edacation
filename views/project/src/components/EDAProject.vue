@@ -1,38 +1,40 @@
 <script lang="ts">
-import {vscode} from '../vscode';
+import {defineComponent} from 'vue';
 
-export default {
+import {state} from '../state';
+
+export default defineComponent({
     data() {
         return {
-            project: null
+            state
         }
-    },
-    mounted() {
-        window.addEventListener('message', this.message);
-        vscode.postMessage({
-            type: 'ready'
-        });
-    },
-    unmounted() {
-        window.removeEventListener('message', this.message);
     },
     methods: {
-        message(event: MessageEvent) {
-            console.log('message', event.data);
-
-            switch (event.data.type) {
-                case 'project':
-                    this.project = event.data.project;
-                    break;
+        handleNameChange(event: Event) {
+            if (!this.state.project || !event.target) {
+                return;
             }
+
+            this.state.project.name = (event.target as HTMLInputElement).value;
         }
     }
-}
+});
 
 </script>
 
 <template>
-    <code>{{ project }}</code>
+    <h1>Configuration</h1>
+
+    <div v-if="state.project">
+        <vscode-text-field placeholder="Project name" :value="state.project.name" @input="handleNameChange">Project name</vscode-text-field>
+    </div>
+    <div v-else>
+        <p>No project configuration available.</p>
+    </div>
+
+    <!-- <div>
+        <code>{{ state.project }}</code>
+    </div> -->
 </template>
 
 <style scoped>

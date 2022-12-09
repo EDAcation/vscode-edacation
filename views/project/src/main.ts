@@ -2,7 +2,7 @@ import {createApp} from 'vue';
 
 import App from './App.vue';
 import type {State} from './state';
-import {DEFAULT_STATE} from './state';
+import {setState, DEFAULT_STATE} from './state';
 import {vscode} from './vscode';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // TODO: get state in app
+    setState(state);
 
     createApp(App).mount('#app');
 });

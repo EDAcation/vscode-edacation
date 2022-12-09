@@ -47,8 +47,14 @@ export class DigitalJSEditor extends BaseEditor {
         }
     }
 
-    protected update(document: vscode.TextDocument, webview: vscode.Webview) {
-        vscode.commands.executeCommand('edacation-projects.focus');
+    protected onSave(_document: vscode.TextDocument, _webview: vscode.Webview): void {
+        
+    }
+
+    protected update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean) {
+        if (!isDocumentChange) {
+            vscode.commands.executeCommand('edacation-projects.focus');
+        }
 
         webview.postMessage({
             type: 'document',

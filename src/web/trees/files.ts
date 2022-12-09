@@ -69,7 +69,6 @@ export class OutputFilesProvider extends FilesProvider {
     }
 
     getFiles(project: Project) {
-        console.log(project.getOutputFiles());
         return project.getOutputFiles();
     }
 }

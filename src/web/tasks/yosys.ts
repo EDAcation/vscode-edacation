@@ -165,7 +165,6 @@ class YosysSynthTaskTerminal extends WorkerTaskTerminal {
 
         // Open LUT file in DigitalJS editor
         const lutFile = outputFiles.find((file) => file.path.endsWith('luts.digitaljs.json'));
-        console.log(outputFiles, lutFile);
         if (lutFile) {
             vscode.commands.executeCommand('vscode.open', lutFile.uri);
         }

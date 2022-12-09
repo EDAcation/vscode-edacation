@@ -32,15 +32,20 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
         // Add text document listener
         disposables.push(vscode.workspace.onDidChangeTextDocument((event) => {
             if (event.document.uri.toString() === document.uri.toString()) {
-                this.update(document, webviewPanel.webview);
+                this.update(document, webviewPanel.webview, true);
+            }
+        }));
+        disposables.push(vscode.workspace.onDidSaveTextDocument((event) => {
+            if (event.uri.toString() === document.uri.toString()) {
+                this.onSave(document, webviewPanel.webview);
             }
         }));
 
         // Create file system watcher
         const watcher = vscode.workspace.createFileSystemWatcher(document.uri.fsPath);
-        watcher.onDidCreate(() => this.update(document, webviewPanel.webview));
-        watcher.onDidChange(() => this.update(document, webviewPanel.webview));
-        watcher.onDidDelete(() => this.update(document, webviewPanel.webview));
+        watcher.onDidCreate(() => this.update(document, webviewPanel.webview, true));
+        watcher.onDidChange(() => this.update(document, webviewPanel.webview, true));
+        watcher.onDidDelete(() => this.update(document, webviewPanel.webview, true));
         disposables.push(watcher);
 
         // Add dispose listener
@@ -51,7 +56,7 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
         });
 
         // Update document
-        this.update(document, webviewPanel.webview);
+        this.update(document, webviewPanel.webview, false);
     }
 
     protected getHtmlForWebview(webview: vscode.Webview, document: vscode.TextDocument): string {
@@ -102,5 +107,7 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
 
     protected abstract onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: any): void;
 
-    protected abstract update(document: vscode.TextDocument, webview: vscode.Webview): void;
+    protected abstract onSave(document: vscode.TextDocument, webview: vscode.Webview): void;
+
+    protected abstract update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean): void;
 }

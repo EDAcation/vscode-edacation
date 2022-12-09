@@ -152,7 +152,7 @@ export class Project {
 
     static async store(project: Project): Promise<vscode.Uri> {
         const data = Project.serialize(project);
-        await vscode.workspace.fs.writeFile(project.uri, encodeJSON(data));
+        await vscode.workspace.fs.writeFile(project.uri, encodeJSON(data, true));
         return project.uri;
     }
 }
