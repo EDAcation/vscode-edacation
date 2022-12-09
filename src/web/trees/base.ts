@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+
 import {Projects} from '../projects';
 
 export abstract class BaseTreeDataProvider<T> implements vscode.TreeDataProvider<T> {
