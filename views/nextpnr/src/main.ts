@@ -30,6 +30,7 @@ class View {
 
         addEventListener('message', this.handleMessage.bind(this));
         addEventListener('messageerror', this.handleMessageError.bind(this));
+        addEventListener('resize', this.handleResize.bind(this));
 
         if (this.state.document) {
             this.renderDocument();
@@ -72,6 +73,10 @@ class View {
         }
     }
 
+    handleResize() {
+        this.renderDocument();
+    }
+
     renderDocument() {
         try {
             if (!this.state.document) {
@@ -83,13 +88,18 @@ class View {
 
             // Clear
             this.root.replaceChildren();
+            
+            // Obtain available space
+            const rect = document.body.getBoundingClientRect();
 
             // Render viewer
             const elementViewer = document.createElement('div');
             // @ts-expect-error: nextpnr-viewer config typing is fixed in next release
             const viewer = nextpnrViewer(elementViewer, {
-                width: window.innerWidth,
-                height: window.innerHeight
+                // NOTE: subtract default VS Code padding
+                width: rect.width - 40,
+                // NOTE: subtract height for viewer controls
+                height: rect.height - 32
             });
             this.root.appendChild(elementViewer);
 

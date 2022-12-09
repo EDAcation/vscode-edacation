@@ -33,6 +33,7 @@ class View {
 
         addEventListener('message', this.handleMessage.bind(this));
         addEventListener('messageerror', this.handleMessageError.bind(this));
+        addEventListener('resize', this.handleResize.bind(this));
 
         if (this.state.document) {
             this.renderDocument();
@@ -73,6 +74,10 @@ class View {
         } else {
             this.renderError(new Error('Unknown error.'));
         }
+    }
+
+    handleResize() {
+        this.renderDocument();
     }
 
     renderDocument() {
