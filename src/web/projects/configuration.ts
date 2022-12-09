@@ -23,7 +23,7 @@ export const DEFAULT_CONFIGURATION: ProjectConfiguration = {
     nextpnr: {}
 };
 
-const test = {
+export const test = {
     vendors: [
         {
             name: 'Lattice',
