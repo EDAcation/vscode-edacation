@@ -21,19 +21,55 @@ export class YosysRTLTaskProvider extends WorkerTaskProvider {
     }
 }
 
-class YosysRTLTaskTerminal extends WorkerTaskTerminal {
+abstract class YosysTaskTerminal extends WorkerTaskTerminal {
 
-    protected getWorkerName() {
+    private lastLogMessage?: string;
+
+    protected getWorkerName(): string {
         return 'yosys';
     }
 
-    protected getWorkerFileName() {
+    protected getWorkerFileName(): string {
         return 'yosys.js';
+    }
+
+    protected getInputCommand(_project: Project): string {
+        return 'yosys';
     }
 
     protected getInputArgs(_project: Project): string[] {
         return ['design.ys'];
     }
+
+    protected getInputFilesFromOutput(_project: Project): ProjectFile[] {
+        return [];
+    }
+
+    protected println(line?: string) {
+        // Ignore duplicate lines, but allow repeated prints
+        if (this.lastLogMessage === line) {
+            this.lastLogMessage = undefined;
+            return;
+        } else {
+            this.lastLogMessage = line;
+        }
+
+        super.println(line);
+    }
+
+    protected async handleStart(project: Project) {
+        this.println(`Synthesizing EDA project "${project.getName()}" using Yosys...`);
+        this.println();
+    }
+
+    protected async handleEnd(project: Project, _outputFiles: WorkerOutputFile[]) {
+        this.println();
+        this.println(`Finished synthesizing EDA project "${project.getName()}" using Yosys.`);
+        this.println();
+    }
+}
+
+class YosysRTLTaskTerminal extends YosysTaskTerminal {
 
     protected getInputFiles(project: Project): MessageFile[] {
         const verilogFiles = project.getInputFiles().filter((file) => FILE_EXTENSIONS_VERILOG.includes(path.extname(file.path).substring(1)));
@@ -47,12 +83,8 @@ class YosysRTLTaskTerminal extends WorkerTaskTerminal {
                 'show;',
                 'write_json rtl.digitaljs.json',
                 ''
-            ].join('\n'))
+            ].join('\r\n'))
         }];
-    }
-
-    protected getInputFilesFromOutput(_project: Project): ProjectFile[] {
-        return [];
     }
 
     protected getOutputFiles(_project: Project): string[] {
@@ -61,15 +93,8 @@ class YosysRTLTaskTerminal extends WorkerTaskTerminal {
         ];
     }
 
-    protected async handleStart(project: Project) {
-        this.println(`Processing EDA project "${project.getName()}" using Yosys...`);
-        this.println();
-    }
-
     protected async handleEnd(project: Project, outputFiles: WorkerOutputFile[]) {
-        this.println();
-        this.println(`Finished processing EDA project "${project.getName()}" using Yosys.`);
-        this.println();
+        super.handleEnd(project, outputFiles);
 
         // Open RTL file in DigitalJS editor
         const rtlFile = outputFiles.find((file) => file.path.endsWith('rtl.digitaljs.json'));
@@ -94,21 +119,7 @@ export class YosysSynthTaskProvider extends WorkerTaskProvider {
     }
 }
 
-class YosysSynthTaskTerminal extends WorkerTaskTerminal {
-
-    private lastLogMessage?: string;
-
-    protected getWorkerName() {
-        return 'yosys';
-    }
-
-    protected getWorkerFileName() {
-        return 'yosys.js';
-    }
-
-    protected getInputArgs(_project: Project): string[] {
-        return ['design.ys'];
-    }
+class YosysSynthTaskTerminal extends YosysTaskTerminal {
 
     protected getInputFiles(project: Project): MessageFile[] {
         const verilogFiles = project.getInputFiles().filter((file) => FILE_EXTENSIONS_VERILOG.includes(path.extname(file.path).substring(1)));
@@ -125,12 +136,8 @@ class YosysSynthTaskTerminal extends WorkerTaskTerminal {
                 'write_json luts.digitaljs.json',
                 'synth_ecp5 -json ecp5.json;',
                 ''
-            ].join('\n'))
+            ].join('\r\n'))
         }];
-    }
-
-    protected getInputFilesFromOutput(_project: Project): ProjectFile[] {
-        return [];
     }
 
     protected getOutputFiles(_project: Project): string[] {
@@ -141,27 +148,8 @@ class YosysSynthTaskTerminal extends WorkerTaskTerminal {
         ];
     }
 
-    protected println(line?: string): void {
-        // Ignore duplicate lines, but allow repeated prints
-        if (this.lastLogMessage === line) {
-            this.lastLogMessage = undefined;
-            return;
-        } else {
-            this.lastLogMessage = line;
-        }
-
-        super.println(line);
-    }
-
-    protected async handleStart(project: Project) {
-        this.println(`Synthesizing EDA project "${project.getName()}" using Yosys...`);
-        this.println();
-    }
-
     protected async handleEnd(project: Project, outputFiles: WorkerOutputFile[]) {
-        this.println();
-        this.println(`Finished synthesizing EDA project "${project.getName()}" using Yosys.`);
-        this.println();
+        super.handleEnd(project, outputFiles);
 
         // Open LUT file in DigitalJS editor
         const lutFile = outputFiles.find((file) => file.path.endsWith('luts.digitaljs.json'));

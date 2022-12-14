@@ -5,6 +5,7 @@ export interface MessageFile {
 
 export interface WorkerMessageInput {
     type: 'input';
+    command: string;
     args: string[];
     inputFiles: MessageFile[];
     outputFiles: string[];

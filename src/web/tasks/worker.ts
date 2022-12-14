@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import {ExtensionMessage, MessageFile, WorkerMessage} from '../messages';
 
 import {Project, ProjectFile, Projects} from '../projects';
-import {encodeText} from '../util';
+import {decodeText, encodeText} from '../util';
 import {BaseTaskProvider} from './base';
 
 const PROJECT_PATTERN = '**/*.edaproject';
@@ -125,6 +125,8 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
 
     protected abstract getWorkerFileName(): string;
 
+    protected abstract getInputCommand(project: Project): string;
+
     protected abstract getInputArgs(project: Project): string[];
 
     protected abstract getInputFiles(project: Project): MessageFile[];
@@ -208,12 +210,27 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
                 });
             }
 
+            const command = this.getInputCommand(project);
+            const args = this.getInputArgs(project);
+            const inputFiles = this.getInputFiles(project);
+            const outputFiles = this.getOutputFiles(project);
+
+            for (const inputFile of inputFiles) {
+                this.println(`${inputFile.path}:`);
+                this.println(decodeText(inputFile.data));
+                this.println();
+            }
+
+            this.println(`${command} ${args.join(' ')}`);
+            this.println();
+
             // Send input to worker
             this.send(worker, {
                 type: 'input',
-                args: this.getInputArgs(project),
-                inputFiles: files.concat(this.getInputFiles(project)),
-                outputFiles: this.getOutputFiles(project)
+                command,
+                args,
+                inputFiles: files.concat(inputFiles),
+                outputFiles
             }, files.map(({data}) => data.buffer));
         } catch (err) {
             await this.error(err, project);

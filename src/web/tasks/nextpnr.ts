@@ -22,15 +22,20 @@ export class NextpnrTaskProvider extends WorkerTaskProvider {
 
 class NextpnrTaskTerminal extends WorkerTaskTerminal {
 
-    protected getWorkerName() {
+    protected getWorkerName(): string {
         return NextpnrTaskProvider.getType();
     }
 
-    protected getWorkerFileName() {
+    protected getWorkerFileName(): string {
         return 'nextpnr.js';
     }
 
-    private getInputFile(project: Project) {
+    protected getInputCommand(_project: Project): string {
+        // TODO: choose based on architecture
+        return 'nextpnr-ecp5';
+    }
+
+    private getInputFile(project: Project): ProjectFile | undefined {
         const jsonFiles = project.getOutputFiles()
             .filter((file) => path.extname(file.path) === '.json' && !file.path.endsWith('.digitaljs.json') && !file.path.endsWith('.nextpnr.json'));
 
@@ -77,6 +82,7 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal {
     protected async handleStart(project: Project) {
         this.println(`Placing and routing EDA project "${project.getName()}" using nextpnr...`);
         this.println('NOTE: nextpnr startup may take a while. This will be improved in future versions of this extension.');
+        this.println();
     }
 
     protected async handleEnd(project: Project, outputFiles: ProjectFile[]) {
