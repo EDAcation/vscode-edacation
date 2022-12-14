@@ -79,20 +79,22 @@ export class NewProjectCommand extends BaseCommand {
                 canSelectMany: false,
                 defaultUri: projectWorkspace
             });
-    
+
             if (!folderUris || folderUris.length === 0) {
                 return;
             }
-    
+
             projectLocation = folderUris[0];
         }
 
         // Determine project URI
         const projectUri = vscode.Uri.joinPath(projectLocation, projectName.endsWith('.edaproject') ? projectName : `${projectName}.edaproject`);
 
+        console.log(projectWorkspace.path, projectUri.path);
+        console.log(vscode.workspace.asRelativePath(projectWorkspace, true), vscode.workspace.asRelativePath(projectUri, true));
+
         // Check if folder is within workspace folder
         if (!projectUri.path.startsWith(projectWorkspace.path)) {
-            console.log(projectWorkspace.path, projectUri.path);
             vscode.window.showErrorMessage('Selected project location must be within the selected workspace folder.');
             return;
         }
@@ -156,9 +158,11 @@ export class OpenProjectCommand extends BaseCommand {
 
         const projectUri = fileUris[0];
 
+        console.log(projectWorkspace.path, projectUri.path);
+        console.log(vscode.workspace.asRelativePath(projectWorkspace, true), vscode.workspace.asRelativePath(projectUri, true));
+
         // Check if folder is within workspace folder
         if (!projectUri.path.startsWith(projectWorkspace.path)) {
-            console.log(projectWorkspace.path, projectUri.path);
             vscode.window.showErrorMessage('Selected project location must be within the selected workspace folder.');
             return;
         }
