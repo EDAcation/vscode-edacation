@@ -134,6 +134,10 @@ class YosysSynthTaskTerminal extends YosysTaskTerminal {
                 'write_json rtl.digitaljs.json',
                 'synth -lut 4',
                 'write_json luts.digitaljs.json',
+                'design -reset',
+                ...verilogFiles.map((file) => `read_verilog ${file.path}`),
+                'proc;',
+                'opt;',
                 'synth_ecp5 -json ecp5.json;',
                 ''
             ].join('\r\n'))
