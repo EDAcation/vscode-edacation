@@ -24,6 +24,8 @@ class View {
     private readonly root: HTMLDivElement;
     private state: State;
 
+    private viewer?: ReturnType<typeof nextpnrViewer>;
+
     constructor(root: HTMLDivElement, state: State) {
         this.root = root;
         this.state = state;
@@ -73,8 +75,18 @@ class View {
         }
     }
 
+    private getSize(): [number, number] {
+        // Obtain available space
+        const rect = document.body.getBoundingClientRect();
+
+        // NOTE: subtract default VS Code padding
+        return [rect.width - 40, rect.height];
+    }
+
     handleResize() {
-        this.renderDocument();
+        if (this.viewer) {
+            this.viewer.resize(...this.getSize());
+        }
     }
 
     renderDocument() {
@@ -86,25 +98,24 @@ class View {
             // Parse nextpnr document from JSON string
             const json = JSON.parse(this.state.document);
 
-            // Clear
-            this.root.replaceChildren();
-            
-            // Obtain available space
-            const rect = document.body.getBoundingClientRect();
+            if (!this.viewer) {
+                // Clear root
+                this.root.replaceChildren();
 
-            // Render viewer
-            const elementViewer = document.createElement('div');
-            // @ts-expect-error: nextpnr-viewer config typing is fixed in next release
-            const viewer = nextpnrViewer(elementViewer, {
-                // NOTE: subtract default VS Code padding
-                width: rect.width - 40,
-                // NOTE: subtract height for viewer controls
-                height: rect.height - 32
-            });
-            this.root.appendChild(elementViewer);
+                // Obtain available space
+                const [width, height] = this.getSize();
+
+                // Render viewer
+                const elementViewer = document.createElement('div');
+                this.root.appendChild(elementViewer);
+                this.viewer = nextpnrViewer(elementViewer, {
+                    width,
+                    height
+                });
+            }
 
             // Render nextpnr document
-            viewer.showJson(json);
+            this.viewer.showJson(json);
         } catch (err) {
             this.handleError(err);
         }
@@ -117,6 +128,7 @@ class View {
         const elementCode = document.createElement('code');
         elementCode.textContent = typeof error === 'string' ? error : error.stack || error.message;
 
+        this.viewer = undefined;
         this.root.replaceChildren();
         this.root.appendChild(elementHeader);
         this.root.appendChild(elementCode);
