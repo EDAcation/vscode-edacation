@@ -76,6 +76,8 @@ export class Projects {
             }
 
             this.projects.push(project);
+        } else {
+            project = this.get(uri);
         }
 
         await this.store(false);

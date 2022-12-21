@@ -1,3 +1,4 @@
+import path from 'path';
 import * as vscode from 'vscode';
 
 export const getWebviewUri = (webview: vscode.Webview, context: vscode.ExtensionContext, path: string[]): vscode.Uri => {
@@ -52,4 +53,23 @@ export const FILE_EXTENSIONS_VHDL = ['vhd'];
 export const FILE_FILTERS_HDL = {
     /* eslint-disable-next-line @typescript-eslint/naming-convention */
     'HDL (*.v, *.vh, *.sv, *.svh, *.vhd)': [...FILE_EXTENSIONS_VERILOG, ...FILE_EXTENSIONS_VHDL],
+};
+
+export const asWorkspaceRelativeFolderPath = (folderUri: vscode.Uri) =>
+    path.dirname(vscode.workspace.asRelativePath(vscode.Uri.joinPath(folderUri, '__root__'), true));
+
+export const getWorkspaceRelativePath = (folderUri: vscode.Uri, fileUri: vscode.Uri): [string, string] | [undefined, undefined] => {
+    const workspaceRelativeFolder = asWorkspaceRelativeFolderPath(folderUri);
+    const workspaceRelativePath = vscode.workspace.asRelativePath(fileUri, true);
+
+    console.log(workspaceRelativeFolder, workspaceRelativePath);
+
+    if (workspaceRelativePath !== workspaceRelativeFolder && !workspaceRelativePath.startsWith(`${workspaceRelativeFolder}/`)) {
+        return [undefined, undefined];
+    }
+
+    const folderRelativePath = workspaceRelativePath === workspaceRelativeFolder ? '.' :
+        workspaceRelativePath.replace(new RegExp(`$${workspaceRelativeFolder}/`), '');
+
+    return [workspaceRelativePath, folderRelativePath];
 };

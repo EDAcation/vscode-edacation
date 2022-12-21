@@ -1,7 +1,7 @@
 import path from 'path';
 import * as vscode from 'vscode';
 
-import {decodeJSON, encodeJSON} from '../util';
+import {asWorkspaceRelativeFolderPath, decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util';
 import {DEFAULT_CONFIGURATION, ProjectConfiguration} from './configuration';
 import {Projects} from './projects';
 
@@ -15,18 +15,27 @@ export class Project {
     private readonly projects: Projects;
     private uri: vscode.Uri;
     private root: vscode.Uri;
+    private relativeRoot: string;
     private name: string;
     private inputFiles: ProjectFile[];
     private outputFiles: ProjectFile[];
     private configuration: ProjectConfiguration;
 
-    constructor(projects: Projects, uri: vscode.Uri, name?: string, inputFiles: string[] = [], outputFiles: string[] = [], configuration: ProjectConfiguration = DEFAULT_CONFIGURATION) {
+    constructor(
+        projects: Projects,
+        uri: vscode.Uri,
+        name?: string,
+        inputFiles: string[] = [],
+        outputFiles: string[] = [],
+        configuration: ProjectConfiguration = DEFAULT_CONFIGURATION
+    ) {
         this.projects = projects;
 
         this.uri = uri;
         this.root = this.uri.with({
             path: path.dirname(this.uri.path)
         });
+        this.relativeRoot = asWorkspaceRelativeFolderPath(this.root);
         this.name = name ? name : path.basename(this.uri.path, '.edaproject');
         this.inputFiles = inputFiles.map((file) => ({path: file, uri: vscode.Uri.joinPath(this.getRoot(), file)}));
         this.outputFiles = outputFiles.map((file) => ({path: file, uri: vscode.Uri.joinPath(this.getRoot(), file)}));
@@ -45,6 +54,22 @@ export class Project {
         return this.root;
     }
 
+    getRelativeRoot() {
+        return this.relativeRoot;
+    }
+
+    // getRelativeToRoot(uri: vscode.Uri): [string, string] | [undefined, undefined] {
+    //     const relativePath = vscode.workspace.asRelativePath(uri, true);
+
+    //     if (!relativePath.startsWith(`${this.getRelativeRoot()}/`)) {
+    //         return [undefined, undefined];
+    //     }
+
+    //     const projectRelativePath = relativePath.replace(new RegExp(`$${this.getRelativeRoot()}/`), '');
+
+    //     return [relativePath, projectRelativePath];
+    // }
+
     getName() {
         return this.name;
     }
@@ -59,18 +84,17 @@ export class Project {
 
     async addInputFiles(fileUris: vscode.Uri[]) {
         for (const fileUri of fileUris) {
-            console.log(this.getRoot().path, fileUri.path);
-            console.log(vscode.workspace.asRelativePath(this.getRoot(), true), vscode.workspace.asRelativePath(fileUri, true));
-
-            if (!fileUri.path.startsWith(this.getRoot().path)) {
-                await vscode.window.showErrorMessage(`File "${fileUri.path}" must be in the a subfolder of the EDA project root.`);
+            const [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
+            if (!workspaceRelativePath) {
+                vscode.window.showErrorMessage(`File must be in the a subfolder of the EDA project root.`, {
+                    detail: `File "${fileUri.path}" is not in folder "${this.getRoot().path}".`,
+                    modal: true
+                });
                 continue;
             }
 
-            const relativeFileUri = fileUri.path.replace(this.getRoot().path, '.');
-
-            if (!this.hasInputFile(relativeFileUri)) {
-                this.inputFiles.push({path: relativeFileUri, uri: fileUri});
+            if (!this.hasInputFile(folderRelativePath)) {
+                this.inputFiles.push({path: folderRelativePath, uri: fileUri});
             }
         }
 
@@ -101,15 +125,17 @@ export class Project {
 
     async addOutputFiles(fileUris: vscode.Uri[]) {
         for (const fileUri of fileUris) {
-            if (!fileUri.path.startsWith(this.getRoot().path)) {
-                await vscode.window.showErrorMessage(`File "${fileUri.path}" must be in the a subfolder of the EDA project root.`);
+            const [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
+            if (!workspaceRelativePath) {
+                vscode.window.showErrorMessage(`File must be in the a subfolder of the EDA project root.`, {
+                    detail: `File "${fileUri.path}" is not in folder "${this.getRoot().path}".`,
+                    modal: true
+                });
                 continue;
             }
 
-            const relativeFileUri = fileUri.path.replace(this.getRoot().path, '.');
-
-            if (!this.hasOutputFile(relativeFileUri)) {
-                this.outputFiles.push({path: relativeFileUri, uri: fileUri});
+            if (!this.hasOutputFile(folderRelativePath)) {
+                this.outputFiles.push({path: folderRelativePath, uri: fileUri});
             }
         }
 
