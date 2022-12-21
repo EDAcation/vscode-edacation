@@ -58,18 +58,6 @@ export class Project {
         return this.relativeRoot;
     }
 
-    // getRelativeToRoot(uri: vscode.Uri): [string, string] | [undefined, undefined] {
-    //     const relativePath = vscode.workspace.asRelativePath(uri, true);
-
-    //     if (!relativePath.startsWith(`${this.getRelativeRoot()}/`)) {
-    //         return [undefined, undefined];
-    //     }
-
-    //     const projectRelativePath = relativePath.replace(new RegExp(`$${this.getRelativeRoot()}/`), '');
-
-    //     return [relativePath, projectRelativePath];
-    // }
-
     getName() {
         return this.name;
     }

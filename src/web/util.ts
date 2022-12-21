@@ -69,7 +69,7 @@ export const getWorkspaceRelativePath = (folderUri: vscode.Uri, fileUri: vscode.
     }
 
     const folderRelativePath = workspaceRelativePath === workspaceRelativeFolder ? '.' :
-        workspaceRelativePath.replace(new RegExp(`$${workspaceRelativeFolder}/`), '');
+        workspaceRelativePath.replace(new RegExp(`^${workspaceRelativeFolder}/`), './');
 
     return [workspaceRelativePath, folderRelativePath];
 };
