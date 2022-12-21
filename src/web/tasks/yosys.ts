@@ -74,13 +74,18 @@ class YosysRTLTaskTerminal extends YosysTaskTerminal {
     protected getInputFiles(project: Project): MessageFile[] {
         const verilogFiles = project.getInputFiles().filter((file) => FILE_EXTENSIONS_VERILOG.includes(path.extname(file.path).substring(1)));
 
+        // Yosys commands taken from yosys2digitaljs (https://github.com/tilk/yosys2digitaljs/blob/master/src/index.ts#L1225)
+
         return [{
             path: 'design.ys',
             data: encodeText([
                 ...verilogFiles.map((file) => `read_verilog ${file.path}`),
+                'hierarchy -auto-top',
                 'proc;',
                 'opt;',
-                'show;',
+                'memory -nomap;',
+                'wreduce -memx;',
+                'opt -full;',
                 'write_json rtl.digitaljs.json',
                 ''
             ].join('\r\n'))
