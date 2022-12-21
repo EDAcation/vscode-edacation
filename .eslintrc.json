@@ -13,6 +13,7 @@
         "@typescript-eslint/semi": "warn",
         "curly": "warn",
         "eqeqeq": "warn",
+        "max-len": ["warn", 160],
         "no-throw-literal": "warn",
         "semi": "off"
     },
