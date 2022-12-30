@@ -73,3 +73,5 @@ export const getWorkspaceRelativePath = (folderUri: vscode.Uri, fileUri: vscode.
 
     return [workspaceRelativePath, folderRelativePath];
 };
+
+export const keysForEnum = <M extends Record<string, unknown>>(map: M): [keyof M, ...(keyof M)[]] => Object.keys(map) as unknown as [keyof M, ...(keyof M)[]];

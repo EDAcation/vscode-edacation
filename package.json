@@ -7,10 +7,10 @@
   "license": "MIT",
   "version": "0.1.9",
   "contributors": [
-      "Daniel Huisman <daniel@huisman.me> (https://huismansoftware.nl)",
-      "Daan Middelkoop <daantje676@gmail.com>",
-      "Bram Wesselink <wesselinkbram@gmail.com>",
-      "Hendrik Folmer <h.h.folmer@utwente.nl>"
+    "Daniel Huisman <daniel@huisman.me> (https://huismansoftware.nl)",
+    "Daan Middelkoop <daantje676@gmail.com>",
+    "Bram Wesselink <wesselinkbram@gmail.com>",
+    "Hendrik Folmer <h.h.folmer@utwente.nl>"
   ],
   "engines": {
     "vscode": "^1.73.0"
@@ -287,5 +287,6 @@
     "webpack-cli": "^5.0.0"
   },
   "dependencies": {
+    "zod": "^3.20.2"
   }
 }
