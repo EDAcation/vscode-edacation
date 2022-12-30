@@ -1,43 +1,42 @@
-type Target = 'ice40' | 'ecp5';
+import {Architecture} from './devices';
 
 export interface ProjectConfiguration {
-    target?: Target;
-    package?: string;
+    targets: ProjectTarget[];
 
-    yosys?: {
-        useDefaultArguments?: boolean;
-        arguments?: string[];
-    };
+    yosys?: YosysConfiguration;
+    nextpnr?: NextpnrConfiguration;
+}
+export interface ProjectTarget {
+    architecture: Architecture;
+    package: string;
 
-    nextpnr?: {
-        useDefaultArguments?: boolean;
-        arguments?: string[];
-    };
+    yosys?: YosysTargetConfiguration;
+    nextpnr?: NextpnrTargetConfiguration;
+}
+
+export interface YosysConfiguration {
+    useGeneratedCommands?: boolean;
+    commands?: string[];
+}
+
+export interface YosysTargetConfiguration extends YosysConfiguration {
+    useDefaultCommands?: boolean;
+}
+
+export interface NextpnrConfiguration {
+    useGeneratedArguments?: boolean;
+    useDefaultArguments?: boolean;
+    arguments?: string[];
+}
+export interface NextpnrTargetConfiguration extends NextpnrConfiguration {
+    useDefaultArguments?: boolean;
 }
 
 export const DEFAULT_CONFIGURATION: ProjectConfiguration = {
-    target: 'ecp5',
-
-    yosys: {},
-
-    nextpnr: {}
-};
-
-export const test = {
-    vendors: [
+    targets: [
         {
-            name: 'Lattice',
-            families: [
-                {
-                    name: 'ecp5',
-                    devices: [
-                        {
-                            name: 'LAE5UM 25F',
-                            packages: ['cabga381', 'csfbga285']
-                        }
-                    ]
-                }
-            ]
+            architecture: 'ecp5',
+            package: ''
         }
     ]
 };
