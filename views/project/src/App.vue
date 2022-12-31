@@ -1,5 +1,14 @@
 <script lang="ts">
-import {provideVSCodeDesignSystem, vsCodeButton, vsCodeTextField} from '@vscode/webview-ui-toolkit';
+import {
+    provideVSCodeDesignSystem,
+    vsCodeButton,
+    vsCodeCheckbox,
+    vsCodePanels,
+    vsCodePanelTab,
+    vsCodePanelView,
+    vsCodeTextArea,
+    vsCodeTextField
+} from '@vscode/webview-ui-toolkit';
 
 import EDAProject from './components/EDAProject.vue';
 import {state} from './state';
@@ -7,7 +16,12 @@ import {vscode} from './vscode';
 
 provideVSCodeDesignSystem().register(
     vsCodeButton(),
-    vsCodeTextField()
+    vsCodeCheckbox(),
+    vsCodePanels(),
+    vsCodePanelTab(),
+    vsCodePanelView(),
+    vsCodeTextArea(),
+    vsCodeTextField(),
 );
 
 export default {

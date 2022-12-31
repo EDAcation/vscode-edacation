@@ -163,7 +163,8 @@ export class Project {
         return {
             name: project.name,
             inputFiles: project.inputFiles.map((file) => file.path),
-            outputFiles: project.outputFiles.map((file) => file.path)
+            outputFiles: project.outputFiles.map((file) => file.path),
+            configuration: project.configuration
         };
     }
 

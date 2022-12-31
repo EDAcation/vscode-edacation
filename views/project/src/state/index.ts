@@ -1,14 +1,10 @@
-import {reactive, watch, type WatchStopHandle} from "vue";
-import { vscode } from "./vscode";
+import {reactive, watch, type WatchStopHandle} from 'vue';
+
+import {vscode} from '../vscode';
+import type {Project} from './project';
 
 export interface State {
     project?: Project;
-}
-
-export interface Project {
-    name: string;
-    inputFiles: string[];
-    outputFiles: string[];
 }
 
 export const DEFAULT_STATE = {
@@ -37,4 +33,24 @@ export const setState = (newState: State) => {
             document: newDocument
         })
     });
+};
+
+export const initializeState = () => {
+    let state = vscode.getState() as State;
+
+    if (!state) {
+        // Use initial data from VS Code extension
+        // @ts-ignore
+        state = window.initialData;
+
+        if (state) {
+            // Store initial state
+            vscode.setState(state);
+        } else {
+            // Default state
+            state = DEFAULT_STATE;
+        }
+    }
+
+    setState(state);
 };

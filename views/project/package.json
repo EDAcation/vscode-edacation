@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@vscode/webview-ui-toolkit": "^1.2.0",
-    "vue": "^3.2.41"
+    "vue": "^3.2.41",
+    "zod": "^3.20.2"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.2.0",
