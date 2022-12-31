@@ -1,9 +1,9 @@
-import path from 'path';
 import * as vscode from 'vscode';
 
 import {MessageFile} from '../messages';
 import {Project, ProjectFile} from '../projects';
-import {encodeText, FILE_EXTENSIONS_VERILOG} from '../util';
+import {generateYosysRTLCommands, generateYosysSynthCommands} from '../projects/yosys';
+import {encodeText} from '../util';
 import {WorkerOutputFile, WorkerTaskDefinition, WorkerTaskProvider, WorkerTaskTerminal} from './worker';
 
 export class YosysRTLTaskProvider extends WorkerTaskProvider {
@@ -72,23 +72,11 @@ abstract class YosysTaskTerminal extends WorkerTaskTerminal {
 class YosysRTLTaskTerminal extends YosysTaskTerminal {
 
     protected getInputFiles(project: Project): MessageFile[] {
-        const verilogFiles = project.getInputFiles().filter((file) => FILE_EXTENSIONS_VERILOG.includes(path.extname(file.path).substring(1)));
-
-        // Yosys commands taken from yosys2digitaljs (https://github.com/tilk/yosys2digitaljs/blob/master/src/index.ts#L1225)
+        const commandsGenerated = generateYosysRTLCommands(project.getInputFiles().map((file) => file.path));
 
         return [{
             path: 'design.ys',
-            data: encodeText([
-                ...verilogFiles.map((file) => `read_verilog ${file.path}`),
-                'hierarchy -auto-top',
-                'proc;',
-                'opt;',
-                'memory -nomap;',
-                'wreduce -memx;',
-                'opt -full;',
-                'write_json rtl.digitaljs.json',
-                ''
-            ].join('\r\n'))
+            data: encodeText(commandsGenerated.join('\r\n'))
         }];
     }
 
@@ -127,25 +115,11 @@ export class YosysSynthTaskProvider extends WorkerTaskProvider {
 class YosysSynthTaskTerminal extends YosysTaskTerminal {
 
     protected getInputFiles(project: Project): MessageFile[] {
-        const verilogFiles = project.getInputFiles().filter((file) => FILE_EXTENSIONS_VERILOG.includes(path.extname(file.path).substring(1)));
+        const commandsGenerated = generateYosysSynthCommands(project.getInputFiles().map((file) => file.path));
 
         return [{
             path: 'design.ys',
-            data: encodeText([
-                ...verilogFiles.map((file) => `read_verilog ${file.path}`),
-                'proc;',
-                'opt;',
-                'show;',
-                'write_json rtl.digitaljs.json',
-                'synth -lut 4',
-                'write_json luts.digitaljs.json',
-                'design -reset',
-                ...verilogFiles.map((file) => `read_verilog ${file.path}`),
-                'proc;',
-                'opt;',
-                'synth_ecp5 -json ecp5.json;',
-                ''
-            ].join('\r\n'))
+            data: encodeText(commandsGenerated.join('\r\n'))
         }];
     }
 

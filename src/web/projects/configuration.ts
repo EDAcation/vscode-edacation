@@ -7,7 +7,7 @@ import {VENDORS} from './devices';
 export const DEFAULT_CONFIGURATION: ProjectConfiguration = {
     targets: [
         {
-            id: 'ecp5',
+            name: 'ECP5 - LFE5U-12 - caBGA381',
 
             vendor: 'lattice',
             family: 'ecp5',
@@ -21,31 +21,28 @@ const schemaYosys = z.object({
     useGeneratedCommands: z.boolean().optional().default(true),
     commands: z.array(z.string()).optional().default([]),
 });
+const schemaYosysTarget = schemaYosys.extend({
+    useDefaultCommands: z.boolean().optional().default(true)
+})
 
 const schemaNextpnr = z.object({
     useGeneratedArguments: z.boolean().optional().default(true),
     arguments: z.array(z.string()).optional().default([]),
 });
+const schemaNextpnrTarget = schemaNextpnr.extend({
+    useDefaultArguments: z.boolean().optional().default(true)
+});
 
 const schemaTarget = z.object({
-    id: z.string().trim().min(1),
-    name: z.string().optional(),
+    name: z.string(),
 
     vendor: z.enum(keysForEnum(VENDORS)),
     family: z.string(),
     device: z.string(),
     package: z.string(),
 
-    yosys: schemaYosys
-        .extend({
-            useDefaultCommands: z.boolean().optional().default(true)
-        })
-        .optional(),
-    nextpnr: schemaNextpnr
-        .extend({
-            useDefaultArguments: z.boolean().optional().default(true)
-        })
-        .optional()
+    yosys: schemaYosysTarget.optional(),
+    nextpnr: schemaNextpnrTarget.optional()
 });
 
 const schemaProjectConfiguration = z.object({
@@ -56,3 +53,7 @@ const schemaProjectConfiguration = z.object({
 });
 
 export type ProjectConfiguration = z.infer<typeof schemaProjectConfiguration>;
+export type YosysConfiguration = z.infer<typeof schemaYosys>;
+export type YosysTargetConfiguration = z.infer<typeof schemaYosysTarget>;
+export type NextpnrConfiguration = z.infer<typeof schemaNextpnr>;
+export type NextpnrTargetConfiguration = z.infer<typeof schemaNextpnrTarget>;
