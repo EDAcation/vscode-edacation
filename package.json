@@ -259,15 +259,18 @@
     ]
   },
   "scripts": {
-    "postinstall": "find . -type d -regextype posix-egrep -regex \"\\./(views/\\w+|workers)$\" -exec sh -c 'echo {}; cd {}; npm install' \\; && echo './'",
-    "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/index.js",
-    "pretest": "npm run compile-web",
-    "vscode:prepublish": "npm run package-web",
-    "compile-web": "webpack",
+    "postinstall": "npm run install-views && npm run install-workers && echo && echo ./",
+    "install-views": "find views -mindepth 1 -maxdepth 1 -type d -exec sh -c 'echo ./{}; cd {}; npm install;' \\;",
+    "install-workers": "echo ./workers && cd workers && npm install",
+    "build-views": "find views -mindepth 1 -maxdepth 1 -type d -exec sh -c 'echo ./{}; cd {}; npm run build; echo;' \\;",
+    "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. .",
     "watch-web": "webpack --watch",
-    "package-web": "webpack --mode production --devtool hidden-source-map",
+    "compile-web": "npm run build-views && webpack",
+    "package-web": "npm run build-views && webpack --mode production --devtool hidden-source-map",
+    "vscode:prepublish": "npm run package-web",
     "lint": "eslint ./src ./workers/src --ext ts",
-    "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
+    "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/index.js",
+    "pretest": "npm run compile-web"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.1",
