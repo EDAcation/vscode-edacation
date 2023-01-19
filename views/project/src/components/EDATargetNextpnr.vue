@@ -2,8 +2,8 @@
 import {defineComponent} from 'vue';
 
 import {state} from '../state';
-import type {TargetConfiguration, NextpnrConfiguration} from '../state/configuration';
-import EDATargetFiles from './EDATargetFiles.vue';
+import type {TargetConfiguration, NextpnrConfiguration, NextpnrTargetConfiguration} from '../state/configuration';
+import EDATargetFiles from './EDATargetValueList.vue';
 
 export default defineComponent({
     components: {
@@ -21,21 +21,11 @@ export default defineComponent({
             }
             return state.project!.configuration.targets[this.targetIndex];
         },
-        nextpnr(): NextpnrConfiguration | undefined {
+        nextpnr(): NextpnrConfiguration | NextpnrTargetConfiguration {
             const nextpnr = this.target ? this.target.nextpnr : state.project!.configuration.nextpnr;
-            if (nextpnr) {
-                return nextpnr;
-            }
-            return {
-                useGeneratedArguments: true,
-                arguments: []
-            };
+            console.log('nextpnr target', this.target, this.targetIndex, nextpnr, nextpnr ?? {});
+            return nextpnr ?? {};
         },
-    },
-    data() {
-        return {
-            state
-        }
     },
     methods: {
     }
@@ -45,31 +35,36 @@ export default defineComponent({
 <template>
     <template v-if="nextpnr">
         <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-            <div>
-                <h3>nextpnr arguments</h3>
-                <p>Arguments are passed to the nextpnr worker for excecution.</p>
-                <div>
-                    <vscode-checkbox :value="nextpnr.useGeneratedArguments">Use generated arguments</vscode-checkbox>
-                </div>
-                <div v-if="target">
-                    <vscode-checkbox>Use default arguments (from "All targets")</vscode-checkbox>
-                </div>
-                <div>
-                    <vscode-text-area rows="10" style="width: 100%; margin-top: 1rem;">Arguments</vscode-text-area>
-                </div>
-            </div>
-            <div>
-                <h3>Combined nextpnr arguments</h3>
-                <code>TODO</code>
-            </div>
+            <EDATargetFiles
+                :targetIndex="targetIndex"
+                workerId="nextpnr"
+                workerName="nextpnr"
+                configId="commands"
+                configName="commands"
+                configDescription="Commands are passed to the nextpnr worker for excecution."
+            />
 
             <vscode-divider style="grid-column: span 2;" />
 
-            <EDATargetFiles :targetIndex="targetIndex" workerId="nextpnr" workerName="nextpnr" type="input" />
+            <EDATargetFiles
+                :targetIndex="targetIndex"
+                workerId="nextpnr"
+                workerName="nextpnr"
+                configId="inputFiles"
+                configName="input files"
+                configDescription="Input files are sent from the workspace folder to the nextpnr worker."
+            />
 
             <vscode-divider style="grid-column: span 2;" />
 
-            <EDATargetFiles :targetIndex="targetIndex" workerId="nextpnr" workerName="nextpnr" type="output" />
+            <EDATargetFiles
+                :targetIndex="targetIndex"
+                workerId="nextpnr"
+                workerName="nextpnr"
+                configId="outputFiles"
+                configName="output files"
+                configDescription="Output files are sent from the workspace folder to the nextpnr worker."
+            />
         </div>
     </template>
 </template>

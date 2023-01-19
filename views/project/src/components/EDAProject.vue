@@ -8,25 +8,31 @@ export default defineComponent({
     components: {
         EDATarget
     },
+    computed: {
+        targetIndex(): number | undefined {
+            console.log('target index', state.selectedTargetIndex, state.selectedTargetIndex === 'all' ? undefined : parseInt(state.selectedTargetIndex));
+            return state.selectedTargetIndex === 'all' ? undefined : parseInt(state.selectedTargetIndex);
+        }
+    },
     data() {
         return {
-            state,
-            selectedTargetIndex: '0'
+            state
         }
     },
     methods: {
         handleNameChange(event: Event) {
-            if (!this.state.project || !event.target) {
+            if (!state.project || !event.target) {
                 return;
             }
 
-            this.state.project.name = (event.target as HTMLInputElement).value;
+            state.project.name = (event.target as HTMLInputElement).value;
         },
         handleTargetChange(event: Event) {
             if (!event.target) {
                 return;
             }
-            this.selectedTargetIndex = (event.target as HTMLSelectElement).value;
+
+            state.selectedTargetIndex = (event.target as HTMLSelectElement).value;
         }
     }
 });
@@ -40,7 +46,7 @@ export default defineComponent({
 
         <h1>Targets</h1>
         <p>Select target to configure</p>
-        <vscode-dropdown :value="selectedTargetIndex" @input="handleTargetChange" style="width: 20rem;">
+        <vscode-dropdown :value="state.selectedTargetIndex ?? 'all'" @input="handleTargetChange" style="width: 20rem;">
             <vscode-option value="all">All targets</vscode-option>
             <vscode-option v-for="(target, index) in state.project.configuration.targets" :key="index" :value="index">
                 {{ target.name }}
@@ -53,7 +59,7 @@ export default defineComponent({
 
         <vscode-divider style="margin-top: 1rem;" />
 
-        <EDATarget :targetIndex="selectedTargetIndex === 'all' ? undefined : parseInt(selectedTargetIndex)" />
+        <EDATarget :targetIndex="targetIndex" />
     </template>
     <template v-else>
         <p>No project configuration available.</p>

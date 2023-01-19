@@ -15,21 +15,41 @@ export const DEFAULT_CONFIGURATION: ProjectConfiguration = {
     ]
 };
 
-const schemaYosys = z.object({
-    useGeneratedCommands: z.boolean().optional().default(true),
-    commands: z.array(z.string()).optional().default([]),
+const schemaValueList = z.object({
+    useGenerated: z.boolean().optional().default(true),
+    values:  z.array(z.string()).optional().default([])
 });
-const schemaYosysTarget = schemaYosys.extend({
-    useDefaultCommands: z.boolean().optional().default(true)
-})
+const schemaValueListTarget = schemaValueList.extend({
+    useDefault: z.boolean().optional().default(true)
+});
+
+const schemaWorker = z.object({
+    inputFiles: schemaValueList.optional(),
+    outputFiles: schemaValueList.optional()
+});
+const schemaWorkerTarget = z.object({
+    inputFiles: schemaValueListTarget.optional(),
+    outputFiles: schemaValueListTarget.optional()
+});
+
+const schemaYosys = z.object({
+    commands: schemaValueList.optional()
+});
+const schemaYosysTarget = z.object({
+    commands: schemaValueListTarget.optional()
+});
 
 const schemaNextpnr = z.object({
-    useGeneratedArguments: z.boolean().optional().default(true),
-    arguments: z.array(z.string()).optional().default([]),
+    arguments: schemaValueList.optional()
 });
-const schemaNextpnrTarget = schemaNextpnr.extend({
-    useDefaultArguments: z.boolean().optional().default(true)
+const schemaNextpnrTarget = z.object({
+    arguments: schemaValueListTarget.optional()
 });
+
+const schemaCombinedYosys = schemaWorker.merge(schemaYosys);
+const schemaCombinedYosysTarget = schemaWorkerTarget.merge(schemaYosysTarget);
+const schemaCombinedNextpnr = schemaWorker.merge(schemaNextpnr);
+const schemaCombinedNextpnrTarget = schemaWorkerTarget.merge(schemaNextpnrTarget);
 
 const schemaTarget = z.object({
     name: z.string(),
@@ -39,19 +59,24 @@ const schemaTarget = z.object({
     device: z.string(),
     package: z.string(),
 
-    yosys: schemaYosysTarget.optional(),
-    nextpnr: schemaNextpnrTarget.optional()
+    yosys: schemaCombinedYosysTarget.optional(),
+    nextpnr: schemaCombinedNextpnrTarget.optional()
 });
 
-const schemaProjectConfiguration = z.object({
+export const schemaProjectConfiguration = z.object({
     targets: z.array(schemaTarget),
 
-    yosys: schemaYosys.optional(),
-    nextpnr: schemaNextpnr.optional()
+    yosys: schemaCombinedYosys.optional(),
+    nextpnr: schemaCombinedNextpnr.optional()
 });
 
 export type ProjectConfiguration = z.infer<typeof schemaProjectConfiguration>;
 export type TargetConfiguration = ArrayElement<ProjectConfiguration['targets']>;
+export type ValueListConfiguration = z.infer<typeof schemaValueList>;
+export type ValueListConfigurationTarget = z.infer<typeof schemaValueListTarget>;
+export type WorkerId = 'yosys' | 'nextpnr';
+export type WorkerConfiguration = z.infer<typeof schemaWorker>;
+export type WorkerTargetConfiguration = z.infer<typeof schemaWorkerTarget>;
 export type YosysConfiguration = z.infer<typeof schemaYosys>;
 export type YosysTargetConfiguration = z.infer<typeof schemaYosysTarget>;
 export type NextpnrConfiguration = z.infer<typeof schemaNextpnr>;

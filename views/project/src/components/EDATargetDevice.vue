@@ -76,14 +76,9 @@ export default defineComponent({
             }, {} as Record<string, string>);
         }
     },
-    data() {
-        return {
-            state
-        }
-    },
     methods: {
         handleTargetChange(event: Event, key: 'vendor' | 'family' | 'device' | 'package') {
-            if (!this.state.project || !this.target) {
+            if (!this.target) {
                 return;
             }
 

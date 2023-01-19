@@ -5,11 +5,15 @@ import type {Project} from './project';
 
 export interface State {
     project?: Project;
+    selectedTargetIndex: string;
+    selectedTargetTabId: string;
 }
 
 export const DEFAULT_STATE = {
-    project: undefined
-}
+    project: undefined,
+    selectedTargetIndex: 'all',
+    selectedTargetTabId: 'tab-device'
+};
 
 export let state = reactive<State>(DEFAULT_STATE);
 let unwatch: WatchStopHandle | undefined;
@@ -22,16 +26,16 @@ export const setState = (newState: State) => {
     state = reactive(newState);
 
     unwatch = watch(state, (newState) => {
-        const newDocument = `${JSON.stringify(newState.project, null, 4)}\n`;
-
         // TODO: debounce?
 
         vscode.setState(newState);
 
+        const newDocument = `${JSON.stringify(newState.project, null, 4)}\n`;
+
         vscode.postMessage({
             type: 'change',
             document: newDocument
-        })
+        });
     });
 };
 

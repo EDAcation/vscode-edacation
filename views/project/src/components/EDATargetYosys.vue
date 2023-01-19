@@ -2,8 +2,8 @@
 import {defineComponent} from 'vue';
 
 import {state} from '../state';
-import type {TargetConfiguration, YosysConfiguration} from '../state/configuration';
-import EDATargetFiles from './EDATargetFiles.vue';
+import type {TargetConfiguration, YosysConfiguration, YosysTargetConfiguration} from '../state/configuration';
+import EDATargetFiles from './EDATargetValueList.vue';
 
 export default defineComponent({
     components: {
@@ -21,21 +21,11 @@ export default defineComponent({
             }
             return state.project!.configuration.targets[this.targetIndex];
         },
-        yosys(): YosysConfiguration {
+        yosys(): YosysConfiguration | YosysTargetConfiguration {
             const yosys = this.target ? this.target.yosys : state.project!.configuration.yosys;
-            if (yosys) {
-                return yosys;
-            }
-            return {
-                useGeneratedCommands: true,
-                commands: []
-            };
+            console.log('yosys target', this.target, this.targetIndex, yosys, yosys ?? {});
+            return yosys ?? {};
         },
-    },
-    data() {
-        return {
-            state
-        }
     },
     methods: {
     }
@@ -45,31 +35,36 @@ export default defineComponent({
 <template>
     <template v-if="yosys">
         <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-            <div>
-                <h3>Yosys commands</h3>
-                <p>Commands are passed to the Yosys worker for excecution.</p>
-                <div>
-                    <vscode-checkbox :checked="yosys.useGeneratedCommands">Use generated commands</vscode-checkbox>
-                </div>
-                <div v-if="target">
-                    <vscode-checkbox>Use default commands (from "All targets")</vscode-checkbox>
-                </div>
-                <div>
-                    <vscode-text-area rows="10" style="width: 100%; margin-top: 1rem;">Commands</vscode-text-area>
-                </div>
-            </div>
-            <div>
-                <h3>Combined Yosys commands</h3>
-                <code>TODO</code>
-            </div>
+            <EDATargetFiles
+                :targetIndex="targetIndex"
+                workerId="yosys"
+                workerName="Yosys"
+                configId="commands"
+                configName="commands"
+                configDescription="Commands are passed to the Yosys worker for excecution."
+            />
 
             <vscode-divider style="grid-column: span 2;" />
 
-            <EDATargetFiles :targetIndex="targetIndex" workerId="yosys" workerName="Yosys" type="input" />
+            <EDATargetFiles
+                :targetIndex="targetIndex"
+                workerId="yosys"
+                workerName="Yosys"
+                configId="inputFiles"
+                configName="input files"
+                configDescription="Input files are sent from the workspace folder to the Yosys worker."
+            />
 
             <vscode-divider style="grid-column: span 2;" />
 
-            <EDATargetFiles :targetIndex="targetIndex" workerId="yosys" workerName="Yosys" type="output" />
+            <EDATargetFiles
+                :targetIndex="targetIndex"
+                workerId="yosys"
+                workerName="Yosys"
+                configId="outputFiles"
+                configName="output files"
+                configDescription="Output files are sent from the workspace folder to the Yosys worker."
+            />
         </div>
     </template>
 </template>

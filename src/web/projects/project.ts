@@ -2,7 +2,7 @@ import path from 'path';
 import * as vscode from 'vscode';
 
 import {asWorkspaceRelativeFolderPath, decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util';
-import {DEFAULT_CONFIGURATION, ProjectConfiguration} from './configuration';
+import {DEFAULT_CONFIGURATION, ProjectConfiguration, schemaProjectConfiguration} from './configuration';
 import {Projects} from './projects';
 
 export interface ProjectFile {
@@ -39,7 +39,13 @@ export class Project {
         this.name = name ? name : path.basename(this.uri.path, '.edaproject');
         this.inputFiles = inputFiles.map((file) => ({path: file, uri: vscode.Uri.joinPath(this.getRoot(), file)}));
         this.outputFiles = outputFiles.map((file) => ({path: file, uri: vscode.Uri.joinPath(this.getRoot(), file)}));
-        this.configuration = configuration;
+
+        const config = schemaProjectConfiguration.safeParse(configuration);
+        if (config.success) {
+            this.configuration = config.data;
+        } else {
+            this.configuration = DEFAULT_CONFIGURATION;
+        }
     }
 
     getUri() {
