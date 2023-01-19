@@ -49,8 +49,13 @@ export class NewProjectCommand extends BaseCommand {
         projectWorkspace = workspaceSelection.uri;
 
         // Ask for project location
-        type FolderItem = vscode.QuickPickItem & {key: 'root' | 'browse'};
+        const projectFolder = vscode.Uri.joinPath(projectWorkspace, projectName);
+        type FolderItem = vscode.QuickPickItem & {key: 'folder' | 'root' | 'browse'};
         const folderItems = [{
+            key: 'folder',
+            label: `$(folder) New Folder: "${projectName}"`,
+            description: projectFolder.fsPath
+        }, {
             key: 'root',
             label: '$(folder) Workspace Folder Root',
             description: projectWorkspace.fsPath
@@ -68,7 +73,9 @@ export class NewProjectCommand extends BaseCommand {
             return;
         }
 
-        if (folderSelection.key === 'root') {
+        if (folderSelection.key === 'folder') {
+            projectLocation = projectFolder;
+        } else if (folderSelection.key === 'root') {
             projectLocation = projectWorkspace;
         } else {
             // Ask for project location

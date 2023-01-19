@@ -27,7 +27,6 @@ export const generateYosysSynthCommands = (inputFiles: string[]): string[] => {
         ...verilogFiles.map((file) => `read_verilog ${file}`),
         'proc;',
         'opt;',
-        'show;',
         'write_json rtl.digitaljs.json',
         'synth -lut 4',
         'write_json luts.digitaljs.json',
