@@ -40,6 +40,7 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal {
             .filter((file) => path.extname(file.path) === '.json' && !file.path.endsWith('.digitaljs.json') && !file.path.endsWith('.nextpnr.json'));
 
         // TODO: select JSON file based on architecture
+        // TODO: exit with error if JSON file does not exist
 
         return jsonFiles.length === 0 ? undefined : jsonFiles[0];
     }
