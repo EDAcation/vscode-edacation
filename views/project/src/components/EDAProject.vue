@@ -10,7 +10,8 @@ export default defineComponent({
     },
     data() {
         return {
-            state
+            state,
+            selectedTargetIndex: '0'
         }
     },
     methods: {
@@ -20,6 +21,12 @@ export default defineComponent({
             }
 
             this.state.project.name = (event.target as HTMLInputElement).value;
+        },
+        handleTargetChange(event: Event) {
+            if (!event.target) {
+                return;
+            }
+            this.selectedTargetIndex = (event.target as HTMLSelectElement).value;
         }
     }
 });
@@ -33,9 +40,9 @@ export default defineComponent({
 
         <h1>Targets</h1>
         <p>Select target to configure</p>
-        <vscode-dropdown style="width: 20rem;">
-            <vscode-option>All targets</vscode-option>
-            <vscode-option v-for="(target, index) in state.project.configuration.targets" :key="index">
+        <vscode-dropdown :value="selectedTargetIndex" @input="handleTargetChange" style="width: 20rem;">
+            <vscode-option value="all">All targets</vscode-option>
+            <vscode-option v-for="(target, index) in state.project.configuration.targets" :key="index" :value="index">
                 {{ target.name }}
             </vscode-option>
         </vscode-dropdown>
@@ -44,12 +51,9 @@ export default defineComponent({
 
         <p v-if="state.project.configuration.targets.length === 0"><b>Error:</b> At least one target is required.</p>
 
-        <!-- <h2>Default target</h2>
-        <p>This configuration applies to all targets, unless a target opts out of using it.</p> -->
-
         <vscode-divider style="margin-top: 1rem;" />
 
-        <EDATarget :targetIndex="0" />
+        <EDATarget :targetIndex="selectedTargetIndex === 'all' ? undefined : parseInt(selectedTargetIndex)" />
     </template>
     <template v-else>
         <p>No project configuration available.</p>

@@ -5,6 +5,8 @@ export interface Vendor {
     families: Record<string, Family>;
 }
 
+export type VendorId = keyof typeof VENDORS;
+
 export interface Family {
     name: string;
     architecture: Architecture;

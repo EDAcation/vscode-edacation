@@ -1,8 +1,6 @@
 import {z} from 'zod';
 
-import {keysForEnum} from '../util';
-import {VENDORS} from './devices';
-
+import type {ArrayElement} from '../util';
 
 export const DEFAULT_CONFIGURATION: ProjectConfiguration = {
     targets: [
@@ -36,7 +34,7 @@ const schemaNextpnrTarget = schemaNextpnr.extend({
 const schemaTarget = z.object({
     name: z.string(),
 
-    vendor: z.enum(keysForEnum(VENDORS)),
+    vendor: z.string(),
     family: z.string(),
     device: z.string(),
     package: z.string(),
@@ -53,6 +51,7 @@ const schemaProjectConfiguration = z.object({
 });
 
 export type ProjectConfiguration = z.infer<typeof schemaProjectConfiguration>;
+export type TargetConfiguration = ArrayElement<ProjectConfiguration['targets']>;
 export type YosysConfiguration = z.infer<typeof schemaYosys>;
 export type YosysTargetConfiguration = z.infer<typeof schemaYosysTarget>;
 export type NextpnrConfiguration = z.infer<typeof schemaNextpnr>;
