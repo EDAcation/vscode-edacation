@@ -7,7 +7,7 @@
   "license": "MIT",
   "version": "0.1.9",
   "contributors": [
-    "Daniel Huisman <daniel@huisman.me> (https://huismansoftware.nl)",
+    "Danielle Huisman <danielle@huisman.me> (https://github.com/DanielleHuisman)",
     "Daan Middelkoop <daantje676@gmail.com>",
     "Bram Wesselink <wesselinkbram@gmail.com>",
     "Hendrik Folmer <h.h.folmer@utwente.nl>"
@@ -274,6 +274,7 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.1",
+    "@types/path-browserify": "^1.0.0",
     "@types/vscode": "^1.73.1",
     "@types/webpack-env": "^1.18.0",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
@@ -282,7 +283,6 @@
     "assert": "^2.0.0",
     "eslint": "^8.28.0",
     "mocha": "^10.1.0",
-    "path-browserify": "^1.0.1",
     "process": "^0.11.10",
     "ts-loader": "^9.4.2",
     "typescript": "^4.9.3",
@@ -290,6 +290,7 @@
     "webpack-cli": "^5.0.0"
   },
   "dependencies": {
+    "path-browserify": "^1.0.1",
     "zod": "^3.20.2"
   }
 }

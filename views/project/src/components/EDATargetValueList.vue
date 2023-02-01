@@ -1,11 +1,16 @@
 <script lang="ts">
-import {firstUpperCase} from '@/util';
-import {defineComponent} from 'vue';
+import {defineComponent, type PropType} from 'vue';
 
-import {state} from '../state';
-import type {TargetConfiguration, ValueListConfiguration, ValueListConfigurationTarget, WorkerId, WorkerConfiguration, WorkerTargetConfiguration} from '../state/configuration';
-
-// TODO: use data state: globalState again
+import {state as globalState} from '../state';
+import type {
+    TargetConfiguration,
+    ValueListConfiguration,
+    ValueListConfigurationTarget,
+    WorkerId,
+    WorkerConfiguration,
+    WorkerTargetConfiguration
+} from '../state/configuration';
+import {firstUpperCase} from '../util';
 
 export default defineComponent({
     props: {
@@ -31,6 +36,10 @@ export default defineComponent({
         configDescription: {
             type: String,
             required: true
+        },
+        generated: {
+            type: Array as PropType<string[]>,
+            required: true
         }
     },
     computed: {
@@ -38,14 +47,22 @@ export default defineComponent({
             if (this.targetIndex === undefined) {
                 return undefined;
             }
-            return state.project!.configuration.targets[this.targetIndex];
+            return this.state.project!.configuration.targets[this.targetIndex];
+        },
+        defaultWorker(): WorkerConfiguration | undefined {
+            return this.state.project!.configuration[this.workerId as WorkerId];
         },
         worker(): WorkerConfiguration | WorkerTargetConfiguration | undefined {
-            const workers = this.target ? this.target : state.project!.configuration;
-            return workers[this.workerId as WorkerId];
+            return this.target ? this.target[this.workerId as WorkerId] : this.defaultWorker;
         },
         configNameTitle(): string {
             return firstUpperCase(this.configName);
+        },
+        defaultConfig(): ValueListConfiguration | undefined {
+            if (!this.defaultWorker) {
+                return undefined;
+            }
+            return (this.defaultWorker as Record<string, ValueListConfiguration>)[this.configId];
         },
         config(): ValueListConfiguration | ValueListConfigurationTarget | undefined {
             if (!this.worker) {
@@ -53,13 +70,25 @@ export default defineComponent({
             }
             return (this.worker as Record<string, ValueListConfiguration | ValueListConfigurationTarget>)[this.configId];
         },
-        combined() {
-            return 'TODO';
+        combined(): string[] {
+            if (!this.config) {
+                return [];
+            }
+            return [
+                ...(this.target && this.config.useGenerated? this.generated : []),
+                ...(this.target && ('useDefault' in this.config ? this.config.useDefault : true) ? this.defaultConfig?.values ?? [] : []),
+                ...this.config.values
+            ];
         }
+    },
+    data() {
+        return {
+            state: globalState
+        };
     },
     methods: {
         ensureConfig() {
-            if (!state.project) {
+            if (!this.state.project) {
                 return false;
             }
 
@@ -70,7 +99,7 @@ export default defineComponent({
                     if (this.target) {
                         this.target[this.workerId as WorkerId] = {};
                     } else {
-                        state.project.configuration[this.workerId as WorkerId] = {};
+                        this.state.project.configuration[this.workerId as WorkerId] = {};
                     }
                 }
 
@@ -122,20 +151,22 @@ export default defineComponent({
                     Use default {{ configName }} (from "All targets")
                 </vscode-checkbox>
             </div>
-            <div>
+            <div v-if="target">
                 <vscode-checkbox :checked="config?.useGenerated ?? true" @change="handleUseGeneratedChange">
                     Use generated {{ configName }}
                 </vscode-checkbox>
             </div>
             <div>
-                <vscode-text-area rows="10" :value="(config?.values ?? []).join('\n')" @change="handleValuesChange" style="width: 100%; margin-top: 1rem;">
+                <vscode-text-area rows="10" :value="(config?.values ?? []).join('\n')" @input="handleValuesChange" style="width: 100%; margin-top: 1rem;">
                     {{ configNameTitle }}
                 </vscode-text-area>
             </div>
         </div>
         <div>
             <h3>Combined {{ workerName }} {{ configName }}</h3>
-            <code>{{ combined }}</code>
+            <code v-for="(line, index) in combined" :key="index" style="display: block;">
+                {{ line.trim().length === 0 ? '&nbsp;' : line }}
+            </code>
         </div>
     </template>
 </template>

@@ -1,7 +1,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 
-import {state} from '../state';
+import {state as globalState} from '../state';
 import EDATarget from './EDATarget.vue';
 
 export default defineComponent({
@@ -10,29 +10,29 @@ export default defineComponent({
     },
     computed: {
         targetIndex(): number | undefined {
-            console.log('target index', state.selectedTargetIndex, state.selectedTargetIndex === 'all' ? undefined : parseInt(state.selectedTargetIndex));
-            return state.selectedTargetIndex === 'all' ? undefined : parseInt(state.selectedTargetIndex);
+            console.log('target index', this.state.selectedTargetIndex, this.state.selectedTargetIndex === 'all' ? undefined : parseInt(this.state.selectedTargetIndex));
+            return this.state.selectedTargetIndex === 'all' ? undefined : parseInt(this.state.selectedTargetIndex);
         }
     },
     data() {
         return {
-            state
+            state: globalState
         }
     },
     methods: {
         handleNameChange(event: Event) {
-            if (!state.project || !event.target) {
+            if (!this.state.project || !event.target) {
                 return;
             }
 
-            state.project.name = (event.target as HTMLInputElement).value;
+            this.state.project.name = (event.target as HTMLInputElement).value;
         },
         handleTargetChange(event: Event) {
             if (!event.target) {
                 return;
             }
 
-            state.selectedTargetIndex = (event.target as HTMLSelectElement).value;
+            this.state.selectedTargetIndex = (event.target as HTMLSelectElement).value;
         }
     }
 });

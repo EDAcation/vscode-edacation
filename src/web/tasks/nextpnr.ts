@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 
 import {MessageFile} from '../messages';
 import {Project, ProjectFile} from '../projects';
+import {generateNextpnrArguments} from '../projects/nextpnr';
 import {WorkerTaskDefinition, WorkerTaskProvider, WorkerTaskTerminal} from './worker';
 
 export class NextpnrTaskProvider extends WorkerTaskProvider {
@@ -48,19 +49,7 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal {
     protected getInputArgs(project: Project): string[] {
         const inputFile = this.getInputFile(project);
 
-        // ice40 args:
-        // '--lp384',
-        // '--package', 'qn32',
-
-        return [
-            // ECP5
-            '--25k',
-            '--package', 'CABGA381',
-            '--json', inputFile ? inputFile.path : 'missing.json',
-            '--write', 'routed.nextpnr.json',
-            '--placed-svg', 'placed.svg',
-            '--routed-svg', 'routed.svg'
-        ];
+        return generateNextpnrArguments(inputFile ? inputFile.path : 'missing.json');
     }
 
     protected getInputFiles(_project: Project): MessageFile[] {

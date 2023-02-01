@@ -1,6 +1,7 @@
 {
   "name": "project",
   "version": "0.0.0",
+  "private": true,
   "scripts": {
     "dev": "vite",
     "build": "run-p type-check build-only",
@@ -11,12 +12,14 @@
   },
   "dependencies": {
     "@vscode/webview-ui-toolkit": "^1.2.0",
+    "path-browserify": "^1.0.1",
     "vue": "^3.2.41",
     "zod": "^3.20.2"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.2.0",
     "@types/node": "^18.11.12",
+    "@types/path-browserify": "^1.0.0",
     "@types/vscode-webview": "^1.57.0",
     "@vitejs/plugin-vue": "^3.2.0",
     "@vue/eslint-config-typescript": "^11.0.2",

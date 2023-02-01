@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'path-browserify';
 
 import {FILE_EXTENSIONS_VERILOG} from '../util';
 

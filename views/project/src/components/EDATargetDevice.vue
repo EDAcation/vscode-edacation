@@ -1,7 +1,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 
-import {state} from '../state';
+import {state as globalState} from '../state';
 import type {TargetConfiguration, YosysConfiguration, NextpnrConfiguration} from '../state/configuration';
 import {VENDORS, type Device, type Family, type Vendor, type VendorId} from '../state/devices';
 
@@ -16,17 +16,17 @@ export default defineComponent({
             if (this.targetIndex === undefined) {
                 return undefined;
             }
-            return state.project!.configuration.targets[this.targetIndex];
+            return this.state.project!.configuration.targets[this.targetIndex];
         },
         yosys(): YosysConfiguration | undefined {
             if (!this.target) {
-                return state.project!.configuration.yosys;
+                return this.state.project!.configuration.yosys;
             }
             return this.target.yosys;
         },
         nextpnr(): NextpnrConfiguration | undefined {
             if (!this.target) {
-                return state.project!.configuration.nextpnr;
+                return this.state.project!.configuration.nextpnr;
             }
             return this.target.nextpnr;
         },
@@ -75,6 +75,11 @@ export default defineComponent({
                 return prev;
             }, {} as Record<string, string>);
         }
+    },
+    data() {
+        return {
+            state: globalState
+        };
     },
     methods: {
         handleTargetChange(event: Event, key: 'vendor' | 'family' | 'device' | 'package') {

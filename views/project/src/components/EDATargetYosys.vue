@@ -1,8 +1,10 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 
-import {state} from '../state';
+import {state as globalState} from '../state';
 import type {TargetConfiguration, YosysConfiguration, YosysTargetConfiguration} from '../state/configuration';
+import {VENDORS, type Family, type VendorId} from '../state/devices';
+// import {generateYosysSynthCommands} from '../state/yosys';
 import EDATargetValueList from './EDATargetValueList.vue';
 
 export default defineComponent({
@@ -19,15 +21,48 @@ export default defineComponent({
             if (this.targetIndex === undefined) {
                 return undefined;
             }
-            return state.project!.configuration.targets[this.targetIndex];
+            return this.state.project!.configuration.targets[this.targetIndex];
         },
         yosys(): YosysConfiguration | YosysTargetConfiguration {
-            const yosys = this.target ? this.target.yosys : state.project!.configuration.yosys;
+            const yosys = this.target ? this.target.yosys : this.state.project!.configuration.yosys;
             console.log('yosys target', this.target, this.targetIndex, yosys, yosys ?? {});
             return yosys ?? {};
         },
+        generatedCommands(): string[] {
+            if (!this.target) {
+                return [];
+            }
+
+            // return generateYosysSynthCommands([]);
+            return [];
+        },
+        generatedInputFiles(): string[] {
+            if (!this.target) {
+                return [];
+            }
+
+            return [
+                'design.ys'
+            ];
+        },
+        generatedOutputFiles(): string[] {
+            if (!this.target) {
+                return [];
+            }
+
+            const architecture = (VENDORS[this.target.vendor as VendorId].families as Record<string, Family>)[this.target.family].architecture;
+
+            return [
+                `${architecture}.json`,
+                'luts.digitaljs.json',
+                'rtl.digitaljs.json'
+            ];
+        }
     },
-    methods: {
+    data() {
+        return {
+            state: globalState
+        }
     }
 });
 </script>
@@ -37,6 +72,7 @@ export default defineComponent({
         <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
             <EDATargetValueList
                 :targetIndex="targetIndex"
+                :generated="generatedCommands"
                 workerId="yosys"
                 workerName="Yosys"
                 configId="commands"
@@ -48,6 +84,7 @@ export default defineComponent({
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
+                :generated="generatedInputFiles"
                 workerId="yosys"
                 workerName="Yosys"
                 configId="inputFiles"
@@ -59,6 +96,7 @@ export default defineComponent({
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
+                :generated="generatedOutputFiles"
                 workerId="yosys"
                 workerName="Yosys"
                 configId="outputFiles"

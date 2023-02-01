@@ -1,7 +1,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 
-import {state} from '../state';
+import {state as globalState} from '../state';
 import type {TargetConfiguration} from '../state/configuration';
 import EDATargetDevice from './EDATargetDevice.vue';
 import EDATargetYosys from './EDATargetYosys.vue';
@@ -23,12 +23,12 @@ export default defineComponent({
             if (this.targetIndex === undefined) {
                 return undefined;
             }
-            return state.project!.configuration.targets[this.targetIndex];
+            return this.state.project!.configuration.targets[this.targetIndex];
         },
     },
     data() {
         return {
-            state
+            state: globalState
         }
     },
     methods: {
