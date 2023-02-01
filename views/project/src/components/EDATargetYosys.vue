@@ -3,11 +3,11 @@ import {defineComponent} from 'vue';
 
 import {state} from '../state';
 import type {TargetConfiguration, YosysConfiguration, YosysTargetConfiguration} from '../state/configuration';
-import EDATargetFiles from './EDATargetValueList.vue';
+import EDATargetValueList from './EDATargetValueList.vue';
 
 export default defineComponent({
     components: {
-        EDATargetFiles
+        EDATargetValueList
     },
     props: {
         targetIndex: {
@@ -35,7 +35,7 @@ export default defineComponent({
 <template>
     <template v-if="yosys">
         <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-            <EDATargetFiles
+            <EDATargetValueList
                 :targetIndex="targetIndex"
                 workerId="yosys"
                 workerName="Yosys"
@@ -46,7 +46,7 @@ export default defineComponent({
 
             <vscode-divider style="grid-column: span 2;" />
 
-            <EDATargetFiles
+            <EDATargetValueList
                 :targetIndex="targetIndex"
                 workerId="yosys"
                 workerName="Yosys"
@@ -57,7 +57,7 @@ export default defineComponent({
 
             <vscode-divider style="grid-column: span 2;" />
 
-            <EDATargetFiles
+            <EDATargetValueList
                 :targetIndex="targetIndex"
                 workerId="yosys"
                 workerName="Yosys"
