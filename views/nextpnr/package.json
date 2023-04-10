@@ -9,13 +9,13 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@types/vscode-webview": "^1.57.0",
-    "typescript": "^4.6.4",
-    "vite": "^3.2.3"
+    "@types/vscode-webview": "^1.57.1",
+    "typescript": "^4.9.5",
+    "vite": "^3.2.5"
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.32",
-    "@vscode/webview-ui-toolkit": "^1.2.0",
+    "@vscode/webview-ui-toolkit": "^1.2.2",
     "nextpnr-viewer": "^0.4.0"
   }
 }
