@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import {ExtensionMessage, MessageFile, WorkerMessage} from '../messages';
 
-import {Project, ProjectFile, Projects} from '../projects';
+import {Projects, Project} from '../projects';
 import {decodeText, encodeText} from '../util';
 import {BaseTaskProvider} from './base';
 
@@ -9,6 +9,7 @@ const PROJECT_PATTERN = '**/*.edaproject';
 
 export interface WorkerTaskDefinition extends vscode.TaskDefinition {
     project: string;
+    targetId?: string;
     uri?: vscode.Uri;
 }
 
@@ -52,7 +53,7 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
 
     protected abstract getTaskType(): string;
 
-    protected abstract createTaskTerminal(folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition): WorkerTaskTerminal;
+    protected abstract createTaskTerminal(folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition): WorkerTaskTerminal<unknown>;
 
     private async findTasks(): Promise<vscode.Task[]> {
         const tasks: vscode.Task[] = [];
@@ -91,7 +92,7 @@ export interface WorkerOutputFile {
     uri: vscode.Uri;
 }
 
-export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
+export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
 
     protected context: vscode.ExtensionContext;
     protected projects: Projects;
@@ -125,15 +126,17 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
 
     protected abstract getWorkerFileName(): string;
 
-    protected abstract getInputCommand(project: Project): string;
+    protected abstract getWorkerOptions(project: Project, targetId: string): WorkerOptions;
 
-    protected abstract getInputArgs(project: Project): string[];
+    protected abstract getInputCommand(workerOptions: WorkerOptions): string;
 
-    protected abstract getInputFiles(project: Project): MessageFile[];
+    protected abstract getInputArgs(workerOptions: WorkerOptions): string[];
 
-    protected abstract getInputFilesFromOutput(project: Project): ProjectFile[];
+    protected abstract getInputFiles(workerOptions: WorkerOptions): string[];
 
-    protected abstract getOutputFiles(project: Project): string[];
+    protected abstract getGeneratedInputFiles(workerOptions: WorkerOptions): MessageFile[];
+
+    protected abstract getOutputFiles(workerOptions: WorkerOptions): string[];
 
     protected abstract handleStart(project: Project): Promise<void>;
 
@@ -148,10 +151,10 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
         try {
             const uri = vscode.Uri.joinPath(project ? project.getRoot() : this.folder.uri, `${this.getWorkerName()}.log`);
             await vscode.workspace.fs.writeFile(uri, encodeText(this.logMessages.join('')));
-            
+
             if (project) {
                 // Add log to output files
-                await project.addOutputFiles([uri]);
+                await project.addOutputFileUris([uri]);
             }
         } catch (err) {
             console.error(err);
@@ -189,33 +192,26 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
             // Create worker
             const worker = this.createWorker(project);
 
+            const workerOptions = this.getWorkerOptions(project, this.definition.targetId ?? project.getConfiguration().targets[0].id);
+
+            const command = this.getInputCommand(workerOptions);
+            const args = this.getInputArgs(workerOptions);
+            const inputFiles = this.getInputFiles(workerOptions);
+            const generatedInputFiles = this.getGeneratedInputFiles(workerOptions);
+            const outputFiles = this.getOutputFiles(workerOptions);
+
             // Read input files
             const files: MessageFile[] = [];
-            for (const file of project.getInputFiles()) {
-                const data = await vscode.workspace.fs.readFile(file.uri);
+            for (const file of inputFiles) {
+                const data = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(project.getRoot(), file));
 
                 files.push({
-                    path: file.path,
+                    path: file,
                     data
                 });
             }
 
-            // Read previous output files
-            for (const file of this.getInputFilesFromOutput(project)) {
-                const data = await vscode.workspace.fs.readFile(file.uri);
-
-                files.push({
-                    path: file.path,
-                    data
-                });
-            }
-
-            const command = this.getInputCommand(project);
-            const args = this.getInputArgs(project);
-            const inputFiles = this.getInputFiles(project);
-            const outputFiles = this.getOutputFiles(project);
-
-            for (const inputFile of inputFiles) {
+            for (const inputFile of generatedInputFiles) {
                 this.println(`${inputFile.path}:`);
                 this.println(decodeText(inputFile.data));
                 this.println();
@@ -229,7 +225,7 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
                 type: 'input',
                 command,
                 args,
-                inputFiles: files.concat(inputFiles),
+                inputFiles: files.concat(generatedInputFiles),
                 outputFiles
             }, files.map(({data}) => data.buffer));
         } catch (err) {
@@ -269,7 +265,7 @@ export abstract class WorkerTaskTerminal implements vscode.Pseudoterminal {
                     }
 
                     // Add output files to project output
-                    await project.addOutputFiles(files.map((file) => file.uri));
+                    await project.addOutputFileUris(files.map((file) => file.uri));
 
                     await this.handleEnd(project, files);
 

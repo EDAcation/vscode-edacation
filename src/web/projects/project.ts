@@ -1,8 +1,8 @@
 import path from 'path';
 import * as vscode from 'vscode';
+import {DEFAULT_CONFIGURATION, Project as BaseProject, ProjectConfiguration} from 'edacation';
 
 import {asWorkspaceRelativeFolderPath, decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util';
-import {DEFAULT_CONFIGURATION, ProjectConfiguration, schemaProjectConfiguration} from './configuration';
 import {Projects} from './projects';
 
 export interface ProjectFile {
@@ -10,16 +10,14 @@ export interface ProjectFile {
     uri: vscode.Uri;
 }
 
-export class Project {
+export class Project extends BaseProject {
 
     private readonly projects: Projects;
     private uri: vscode.Uri;
     private root: vscode.Uri;
     private relativeRoot: string;
-    private name: string;
-    private inputFiles: ProjectFile[];
-    private outputFiles: ProjectFile[];
-    private configuration: ProjectConfiguration;
+    private inputFileUris: Map<string, vscode.Uri>;
+    private outputFileUris: Map<string, vscode.Uri>;
 
     constructor(
         projects: Projects,
@@ -27,8 +25,10 @@ export class Project {
         name?: string,
         inputFiles: string[] = [],
         outputFiles: string[] = [],
-        configuration: ProjectConfiguration = DEFAULT_CONFIGURATION
+        configuration: ProjectConfiguration = DEFAULT_CONFIGURATION,
     ) {
+        super( name ? name : path.basename(uri.path, '.edaproject'), inputFiles, outputFiles, configuration);
+
         this.projects = projects;
 
         this.uri = uri;
@@ -36,16 +36,9 @@ export class Project {
             path: path.dirname(this.uri.path)
         });
         this.relativeRoot = asWorkspaceRelativeFolderPath(this.root);
-        this.name = name ? name : path.basename(this.uri.path, '.edaproject');
-        this.inputFiles = inputFiles.map((file) => ({path: file, uri: vscode.Uri.joinPath(this.getRoot(), file)}));
-        this.outputFiles = outputFiles.map((file) => ({path: file, uri: vscode.Uri.joinPath(this.getRoot(), file)}));
 
-        const config = schemaProjectConfiguration.safeParse(configuration);
-        if (config.success) {
-            this.configuration = config.data;
-        } else {
-            this.configuration = DEFAULT_CONFIGURATION;
-        }
+        this.inputFileUris = new Map<string, vscode.Uri>(inputFiles.map((file) => ([file, vscode.Uri.joinPath(this.getRoot(), file)])));
+        this.outputFileUris = new Map<string, vscode.Uri>(outputFiles.map((file) => ([file, vscode.Uri.joinPath(this.getRoot(), file)])));
     }
 
     getUri() {
@@ -64,19 +57,24 @@ export class Project {
         return this.relativeRoot;
     }
 
-    getName() {
-        return this.name;
+    getInputFileUris() {
+        return Array.from(this.inputFileUris.entries(), ([key, value]) => ({path: key, uri: value}));
     }
 
-    getInputFiles() {
-        return this.inputFiles;
+    getInputFileUri(inputFile: string) {
+        return this.inputFileUris.get(inputFile);
     }
 
-    hasInputFile(filePath: string) {
-        return this.inputFiles.some((file) => file.path === filePath);
+    getOutputFileUris() {
+        return Array.from(this.outputFileUris.entries(), ([key, value]) => ({path: key, uri: value}));
     }
 
-    async addInputFiles(fileUris: vscode.Uri[]) {
+    getOutputFileUri(outputFile: string) {
+        return this.outputFileUris.get(outputFile);
+    }
+
+    async addInputFileUris(fileUris: vscode.Uri[]): Promise<void> {
+        const filePaths = [];
         for (const fileUri of fileUris) {
             const [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
             if (!workspaceRelativePath) {
@@ -88,36 +86,32 @@ export class Project {
             }
 
             if (!this.hasInputFile(folderRelativePath)) {
-                this.inputFiles.push({path: folderRelativePath, uri: fileUri});
+                filePaths.push(folderRelativePath);
+                this.inputFileUris.set(folderRelativePath, fileUri);
             }
         }
 
-        this.inputFiles.sort((a, b) => {
-            return a.path < b.path ? -1 : 1;
-        });
+        await super.addInputFiles(filePaths);
 
         this.projects.emitInputFileChange();
 
         await this.save();
     }
 
-    async removeInputFiles(fileUris: string[]) {
-        this.inputFiles = this.inputFiles.filter((file) => !fileUris.includes(file.path));
+    async removeInputFiles(filePaths: string[]): Promise<void> {
+        for (const filePath of filePaths) {
+            this.inputFileUris.delete(filePath);
+        }
+
+        await super.removeInputFiles(filePaths);
 
         this.projects.emitInputFileChange();
 
         await this.save();
     }
 
-    getOutputFiles() {
-        return this.outputFiles;
-    }
-
-    hasOutputFile(filePath: string) {
-        return this.outputFiles.some((file) => file.path === filePath);
-    }
-
-    async addOutputFiles(fileUris: vscode.Uri[]) {
+    async addOutputFileUris(fileUris: vscode.Uri[]): Promise<void> {
+        const filePaths = [];
         for (const fileUri of fileUris) {
             const [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
             if (!workspaceRelativePath) {
@@ -129,36 +123,28 @@ export class Project {
             }
 
             if (!this.hasOutputFile(folderRelativePath)) {
-                this.outputFiles.push({path: folderRelativePath, uri: fileUri});
+                filePaths.push(folderRelativePath);
+                this.outputFileUris.set(folderRelativePath, fileUri);
             }
         }
 
-        this.outputFiles.sort((a, b) => {
-            return a.path < b.path ? -1 : 1;
-        });
+        await super.addOutputFiles(filePaths);
 
         this.projects.emitOutputFileChange();
 
         await this.save();
     }
 
-    async removeOutputFiles(filePaths: string[]) {
-        this.outputFiles = this.outputFiles.filter((file) => !filePaths.includes(file.path));
+    async removeOutputFiles(filePaths: string[]): Promise<void> {
+        for (const filePath of filePaths) {
+            this.outputFileUris.delete(filePath);
+        }
+
+        await super.removeOutputFiles(filePaths);
 
         this.projects.emitOutputFileChange();
 
         await this.save();
-    }
-
-    getConfiguration() {
-        return this.configuration;
-    }
-
-    updateConfiguration(configuration: Partial<ProjectConfiguration>) {
-        this.configuration = {
-            ...this.configuration,
-            ...configuration
-        };
     }
 
     private async save() {
@@ -166,15 +152,10 @@ export class Project {
     }
 
     static serialize(project: Project): any {
-        return {
-            name: project.name,
-            inputFiles: project.inputFiles.map((file) => file.path),
-            outputFiles: project.outputFiles.map((file) => file.path),
-            configuration: project.configuration
-        };
+        return BaseProject.serialize(project);
     }
 
-    static deserialize(projects: Projects, uri: vscode.Uri, data: any): Project {
+    static deserialize(data: any, projects: Projects, uri: vscode.Uri): Project {
         const name: string = data.name;
         const inputFiles: string[] = data.inputFiles ?? [];
         const outputFiles: string[] = data.outputFiles ?? [];
@@ -185,7 +166,7 @@ export class Project {
 
     static async load(projects: Projects, uri: vscode.Uri): Promise<Project> {
         const data = decodeJSON(await vscode.workspace.fs.readFile(uri));
-        const project = Project.deserialize(projects, uri, data);
+        const project = Project.deserialize(data, projects, uri);
         return project;
     }
 

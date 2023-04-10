@@ -134,7 +134,7 @@ export class Projects {
     }
 
     async store(full: boolean = true) {
-        const projectUris = [];
+        const projectUris: vscode.Uri[] = [];
         for (const project of this.projects) {
             const projectUri = full ? await Project.store(project) : project.getUri();
             projectUris.push(projectUri);

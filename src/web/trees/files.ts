@@ -52,7 +52,7 @@ export class InputFilesProvider extends FilesProvider {
     }
 
     getFiles(project: Project) {
-        return project.getInputFiles();
+        return project.getInputFileUris();
     }
 }
 
@@ -69,6 +69,6 @@ export class OutputFilesProvider extends FilesProvider {
     }
 
     getFiles(project: Project) {
-        return project.getOutputFiles();
+        return project.getOutputFileUris();
     }
 }

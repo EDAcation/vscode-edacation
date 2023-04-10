@@ -23,7 +23,7 @@ export class AddInputFileCommand extends CurrentProjectCommand {
             return;
         }
 
-        await project.addInputFiles(fileUris);
+        await project.addInputFileUris(fileUris);
     }
 }
 
@@ -47,7 +47,7 @@ export class NewInputFileCommand extends CurrentProjectCommand {
         await vscode.workspace.fs.writeFile(fileUri, new Uint8Array());
 
         // Add file to project
-        await project.addInputFiles([fileUri]);
+        await project.addInputFileUris([fileUri]);
 
         // Open file
         await vscode.commands.executeCommand('vscode.open', fileUri);

@@ -1,10 +1,9 @@
-import path from 'path';
 import * as vscode from 'vscode';
 
-import {MessageFile} from '../messages';
 import {Project, ProjectFile} from '../projects';
-import {generateNextpnrArguments} from '../projects/nextpnr';
 import {WorkerTaskDefinition, WorkerTaskProvider, WorkerTaskTerminal} from './worker';
+import {NextpnrWorkerOptions, getNextpnrWorkerOptions} from 'edacation';
+import {MessageFile} from '../messages';
 
 export class NextpnrTaskProvider extends WorkerTaskProvider {
 
@@ -16,12 +15,12 @@ export class NextpnrTaskProvider extends WorkerTaskProvider {
         return NextpnrTaskProvider.getType();
     }
 
-    protected createTaskTerminal(folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition): WorkerTaskTerminal {
+    protected createTaskTerminal(folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition): WorkerTaskTerminal<NextpnrWorkerOptions> {
         return new NextpnrTaskTerminal(this.context, this.projects, folder, definition);
     }
 }
 
-class NextpnrTaskTerminal extends WorkerTaskTerminal {
+class NextpnrTaskTerminal extends WorkerTaskTerminal<NextpnrWorkerOptions> {
 
     protected getWorkerName(): string {
         return NextpnrTaskProvider.getType();
@@ -31,42 +30,28 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal {
         return 'nextpnr.js';
     }
 
-    protected getInputCommand(_project: Project): string {
-        // TODO: choose based on architecture
-        return 'nextpnr-ecp5';
+    protected getWorkerOptions(project: Project, targetId: string): NextpnrWorkerOptions {
+        return getNextpnrWorkerOptions(project, targetId);
     }
 
-    private getInputFile(project: Project): ProjectFile | undefined {
-        const jsonFiles = project.getOutputFiles()
-            .filter((file) => path.extname(file.path) === '.json' && !file.path.endsWith('.digitaljs.json') && !file.path.endsWith('.nextpnr.json'));
-
-        // TODO: select JSON file based on architecture
-        // TODO: exit with error if JSON file does not exist
-
-        return jsonFiles.length === 0 ? undefined : jsonFiles[0];
+    protected getInputCommand(workerOptions: NextpnrWorkerOptions): string {
+        return workerOptions.tool;
     }
 
-    protected getInputArgs(project: Project): string[] {
-        const inputFile = this.getInputFile(project);
-
-        return generateNextpnrArguments(inputFile ? inputFile.path : 'missing.json');
+    protected getInputArgs(workerOptions: NextpnrWorkerOptions): string[] {
+        return workerOptions.arguments;
     }
 
-    protected getInputFiles(_project: Project): MessageFile[] {
+    protected getInputFiles(workerOptions: NextpnrWorkerOptions): string[] {
+        return workerOptions.inputFiles;
+    }
+
+    protected getGeneratedInputFiles(_workerOptions: NextpnrWorkerOptions): MessageFile[] {
         return [];
     }
 
-    protected getInputFilesFromOutput(project: Project): ProjectFile[] {
-        const inputFile = this.getInputFile(project);
-        return inputFile ? [inputFile] : [];
-    }
-
-    protected getOutputFiles(_project: Project): string[] {
-        return [
-            'routed.nextpnr.json',
-            'placed.svg',
-            'routed.svg'
-        ];
+    protected getOutputFiles(workerOptions: NextpnrWorkerOptions): string[] {
+        return workerOptions.outputFiles;
     }
 
     protected async handleStart(project: Project) {

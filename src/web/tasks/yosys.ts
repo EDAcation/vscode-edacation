@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 
 import {MessageFile} from '../messages';
-import {Project, ProjectFile} from '../projects';
-import {generateYosysRTLCommands, generateYosysSynthCommands} from '../projects/yosys';
 import {encodeText} from '../util';
 import {WorkerOutputFile, WorkerTaskDefinition, WorkerTaskProvider, WorkerTaskTerminal} from './worker';
+import {YosysWorkerOptions, getYosysWorkerOptions} from 'edacation';
+import {Project} from '../projects';
 
 export class YosysRTLTaskProvider extends WorkerTaskProvider {
 
@@ -16,12 +16,12 @@ export class YosysRTLTaskProvider extends WorkerTaskProvider {
         return YosysRTLTaskProvider.getType();
     }
 
-    protected createTaskTerminal(folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition): WorkerTaskTerminal {
+    protected createTaskTerminal(folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition): WorkerTaskTerminal<YosysWorkerOptions> {
         return new YosysRTLTaskTerminal(this.context, this.projects, folder, definition);
     }
 }
 
-abstract class YosysTaskTerminal extends WorkerTaskTerminal {
+abstract class YosysTaskTerminal extends WorkerTaskTerminal<YosysWorkerOptions> {
 
     private lastLogMessage?: string;
 
@@ -33,16 +33,31 @@ abstract class YosysTaskTerminal extends WorkerTaskTerminal {
         return 'yosys.js';
     }
 
-    protected getInputCommand(_project: Project): string {
-        return 'yosys';
+    protected getWorkerOptions(project: Project, targetId: string): YosysWorkerOptions {
+        return getYosysWorkerOptions(project, targetId);
     }
 
-    protected getInputArgs(_project: Project): string[] {
+    protected getInputCommand(workerOptions: YosysWorkerOptions): string {
+        return workerOptions.tool;
+    }
+
+    protected getInputArgs(_workerOptions: YosysWorkerOptions): string[] {
         return ['design.ys'];
     }
 
-    protected getInputFilesFromOutput(_project: Project): ProjectFile[] {
-        return [];
+    protected getInputFiles(workerOptions: YosysWorkerOptions): string[] {
+        return workerOptions.inputFiles;
+    }
+
+    protected getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
+        return [{
+            path: 'design.ys',
+            data: encodeText(workerOptions.commands.join('\r\n'))
+        }];
+    }
+
+    protected getOutputFiles(workerOptions: YosysWorkerOptions): string[] {
+        return workerOptions.outputFiles;
     }
 
     protected println(line?: string) {
@@ -71,20 +86,20 @@ abstract class YosysTaskTerminal extends WorkerTaskTerminal {
 
 class YosysRTLTaskTerminal extends YosysTaskTerminal {
 
-    protected getInputFiles(project: Project): MessageFile[] {
-        const commandsGenerated = generateYosysRTLCommands(project.getInputFiles().map((file) => file.path));
+    // protected getGeneratedInputFiles(_workerOptions: YosysWorkerOptions): MessageFile[] {
+    //     const commandsGenerated = generateYosysRTLCommands(project.getInputFiles().map((file) => file.path));
 
-        return [{
-            path: 'design.ys',
-            data: encodeText(commandsGenerated.join('\r\n'))
-        }];
-    }
+    //     return [{
+    //         path: 'design.ys',
+    //         data: encodeText(commandsGenerated.join('\r\n'))
+    //     }];
+    // }
 
-    protected getOutputFiles(_project: Project): string[] {
-        return [
-            'rtl.digitaljs.json'
-        ];
-    }
+    // protected getOutputFiles(_workerOptions: YosysWorkerOptions): string[] {
+    //     return [
+    //         'rtl.digitaljs.json'
+    //     ];
+    // }
 
     protected async handleEnd(project: Project, outputFiles: WorkerOutputFile[]) {
         super.handleEnd(project, outputFiles);
@@ -107,29 +122,12 @@ export class YosysSynthTaskProvider extends WorkerTaskProvider {
         return YosysSynthTaskProvider.getType();
     }
 
-    protected createTaskTerminal(folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition): WorkerTaskTerminal {
+    protected createTaskTerminal(folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition): WorkerTaskTerminal<YosysWorkerOptions> {
         return new YosysSynthTaskTerminal(this.context, this.projects, folder, definition);
     }
 }
 
 class YosysSynthTaskTerminal extends YosysTaskTerminal {
-
-    protected getInputFiles(project: Project): MessageFile[] {
-        const commandsGenerated = generateYosysSynthCommands(project.getInputFiles().map((file) => file.path));
-
-        return [{
-            path: 'design.ys',
-            data: encodeText(commandsGenerated.join('\r\n'))
-        }];
-    }
-
-    protected getOutputFiles(_project: Project): string[] {
-        return [
-            'ecp5.json',
-            'luts.digitaljs.json',
-            'rtl.digitaljs.json'
-        ];
-    }
 
     protected async handleEnd(project: Project, outputFiles: WorkerOutputFile[]) {
         super.handleEnd(project, outputFiles);
