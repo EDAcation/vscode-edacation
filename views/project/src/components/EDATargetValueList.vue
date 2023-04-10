@@ -1,7 +1,4 @@
 <script lang="ts">
-import {defineComponent, type PropType} from 'vue';
-
-import {state as globalState} from '../state';
 import type {
     TargetConfiguration,
     ValueListConfiguration,
@@ -9,7 +6,10 @@ import type {
     WorkerId,
     WorkerConfiguration,
     WorkerTargetConfiguration
-} from '../state/configuration';
+} from 'edacation';
+import {defineComponent, type PropType} from 'vue';
+
+import {state as globalState} from '../state';
 import {firstUpperCase} from '../util';
 
 export default defineComponent({
@@ -50,7 +50,10 @@ export default defineComponent({
             return this.state.project!.configuration.targets[this.targetIndex];
         },
         defaultWorker(): WorkerConfiguration | undefined {
-            return this.state.project!.configuration[this.workerId as WorkerId];
+            if (!this.state.project!.configuration.defaults) {
+                return undefined;
+            }
+            return this.state.project!.configuration.defaults[this.workerId as WorkerId];
         },
         worker(): WorkerConfiguration | WorkerTargetConfiguration | undefined {
             return this.target ? this.target[this.workerId as WorkerId] : this.defaultWorker;
@@ -75,7 +78,7 @@ export default defineComponent({
                 return [];
             }
             return [
-                ...(this.target && this.config.useGenerated? this.generated : []),
+                ...(this.target && this.config.useGenerated ? this.generated : []),
                 ...(this.target && ('useDefault' in this.config ? this.config.useDefault : true) ? this.defaultConfig?.values ?? [] : []),
                 ...this.config.values
             ];
@@ -99,7 +102,10 @@ export default defineComponent({
                     if (this.target) {
                         this.target[this.workerId as WorkerId] = {};
                     } else {
-                        this.state.project.configuration[this.workerId as WorkerId] = {};
+                        if (!this.state.project.configuration.defaults) {
+                            this.state.project.configuration.defaults = {};
+                        }
+                        this.state.project.configuration.defaults[this.workerId as WorkerId] = {};
                     }
                 }
 

@@ -1,9 +1,9 @@
 <script lang="ts">
+import {VENDORS} from 'edacation';
+import type {Device, Family, Vendor, VendorId, TargetConfiguration, YosysConfiguration, NextpnrConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
-import type {TargetConfiguration, YosysConfiguration, NextpnrConfiguration} from '../state/configuration';
-import {VENDORS, type Device, type Family, type Vendor, type VendorId} from '../state/devices';
 
 export default defineComponent({
     props: {
@@ -20,13 +20,13 @@ export default defineComponent({
         },
         yosys(): YosysConfiguration | undefined {
             if (!this.target) {
-                return this.state.project!.configuration.yosys;
+                return this.state.project!.configuration.defaults?.yosys;
             }
             return this.target.yosys;
         },
         nextpnr(): NextpnrConfiguration | undefined {
             if (!this.target) {
-                return this.state.project!.configuration.nextpnr;
+                return this.state.project!.configuration.defaults?.nextpnr;
             }
             return this.target.nextpnr;
         },

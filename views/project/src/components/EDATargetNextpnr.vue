@@ -1,16 +1,15 @@
 <script lang="ts">
+import {generateNextpnrWorkerOptions} from 'edacation';
+import type {TargetConfiguration, NextpnrConfiguration, NextpnrTargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
-import type {TargetConfiguration, NextpnrConfiguration, NextpnrTargetConfiguration} from '../state/configuration';
-import {VENDORS, type Family, type VendorId} from '../state/devices';
-import {generateNextpnrArguments} from '../state/nextpnr';
 import EDATargetValueList from './EDATargetValueList.vue';
 
 export default defineComponent({
     components: {
-    EDATargetValueList
-},
+        EDATargetValueList
+    },
     props: {
         targetIndex: {
             type: Number
@@ -24,40 +23,21 @@ export default defineComponent({
             return this.state.project!.configuration.targets[this.targetIndex];
         },
         nextpnr(): NextpnrConfiguration | NextpnrTargetConfiguration {
-            const nextpnr = this.target ? this.target.nextpnr : this.state.project!.configuration.nextpnr;
+            const nextpnr = this.target ? this.target.nextpnr : this.state.project!.configuration.defaults?.nextpnr;
             console.log('nextpnr target', this.target, this.targetIndex, nextpnr, nextpnr ?? {});
             return nextpnr ?? {};
         },
-        generatedArguments(): string[] {
+        generated(): ReturnType<typeof generateNextpnrWorkerOptions> {
             if (!this.target) {
-                return [];
+                return {
+                    inputFiles: [],
+                    outputFiles: [],
+                    tool: '',
+                    arguments: []
+                };
             }
 
-            const architecture = (VENDORS[this.target.vendor as VendorId].families as Record<string, Family>)[this.target.family].architecture;
-
-            return generateNextpnrArguments(`${architecture}.json`);
-        },
-        generatedInputFiles(): string[] {
-            if (!this.target) {
-                return [];
-            }
-
-            const architecture = (VENDORS[this.target.vendor as VendorId].families as Record<string, Family>)[this.target.family].architecture;
-
-            return [
-                `${architecture}.json`,
-            ];
-        },
-        generatedOutputFiles(): string[] {
-            if (!this.target) {
-                return [];
-            }
-
-            return [
-                'routed.nextpnr.json',
-                'routed.svg',
-                'placed.svg'
-            ];
+            return generateNextpnrWorkerOptions(this.state.project!.configuration, this.target.id);
         }
     },
     data() {
@@ -75,7 +55,7 @@ export default defineComponent({
         <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generatedArguments"
+                :generated="generated.arguments"
                 workerId="nextpnr"
                 workerName="nextpnr"
                 configId="arguments"
@@ -87,7 +67,7 @@ export default defineComponent({
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generatedInputFiles"
+                :generated="generated.inputFiles"
                 workerId="nextpnr"
                 workerName="nextpnr"
                 configId="inputFiles"
@@ -99,7 +79,7 @@ export default defineComponent({
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generatedOutputFiles"
+                :generated="generated.outputFiles"
                 workerId="nextpnr"
                 workerName="nextpnr"
                 configId="outputFiles"

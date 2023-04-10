@@ -1,1 +1,0 @@
-../../../../src/web/projects/configuration.ts

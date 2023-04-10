@@ -1,10 +1,10 @@
 import {reactive, watch, type WatchStopHandle} from 'vue';
+import type {ProjectState} from 'edacation';
 
 import {vscode} from '../vscode';
-import type {Project} from './project';
 
 export interface State {
-    project?: Project;
+    project?: ProjectState;
     selectedTargetIndex: string;
     selectedTargetTabId: string;
 }

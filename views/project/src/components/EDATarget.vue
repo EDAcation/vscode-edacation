@@ -1,8 +1,8 @@
 <script lang="ts">
+import type {TargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
-import type {TargetConfiguration} from '../state/configuration';
 import EDATargetDevice from './EDATargetDevice.vue';
 import EDATargetYosys from './EDATargetYosys.vue';
 import EDATargetNextpnr from './EDATargetNextpnr.vue';
