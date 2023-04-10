@@ -40,6 +40,9 @@ export default defineComponent({
         generated: {
             type: Array as PropType<string[]>,
             required: true
+        },
+        formatter: {
+            type: Function as PropType<(args: string[]) => string[]>
         }
     },
     computed: {
@@ -74,14 +77,12 @@ export default defineComponent({
             return (this.worker as Record<string, ValueListConfiguration | ValueListConfigurationTarget>)[this.configId];
         },
         combined(): string[] {
-            if (!this.config) {
-                return [];
-            }
-            return [
-                ...(this.target && this.config.useGenerated ? this.generated : []),
-                ...(this.target && ('useDefault' in this.config ? this.config.useDefault : true) ? this.defaultConfig?.values ?? [] : []),
-                ...this.config.values
+            const combined = [
+                ...(this.target && (!this.config || this.config.useGenerated) ? this.generated : []),
+                ...(this.target && (this.config && 'useDefault' in this.config ? this.config.useDefault : true) ? this.defaultConfig?.values ?? [] : []),
+                ...(this.config ? this.config.values : [])
             ];
+            return this.formatter ? this.formatter(combined) : combined;
         }
     },
     data() {
@@ -94,8 +95,6 @@ export default defineComponent({
             if (!this.state.project) {
                 return false;
             }
-
-            console.log(this.config, this.worker, this.target);
 
             if (!this.config) {
                 if (!this.worker) {
@@ -163,8 +162,14 @@ export default defineComponent({
                 </vscode-checkbox>
             </div>
             <div>
-                <vscode-text-area rows="10" :value="(config?.values ?? []).join('\n')" @input="handleValuesChange" style="width: 100%; margin-top: 1rem;">
-                    {{ configNameTitle }}
+                <vscode-text-area
+                    rows="10"
+                    :placeholder="configNameTitle"
+                    :value="(config?.values ?? []).join('\n')"
+                    @input="handleValuesChange"
+                    style="width: 100%; margin-top: 1rem;"
+                >
+                    {{ configNameTitle }} (one per line)
                 </vscode-text-area>
             </div>
         </div>

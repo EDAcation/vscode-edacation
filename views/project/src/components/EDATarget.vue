@@ -42,12 +42,22 @@ export default defineComponent({
         <h2 v-else>All targets</h2>
 
         <vscode-panels>
-            <vscode-panel-tab id="tab-device" v-if="target">Device</vscode-panel-tab>
+            <vscode-panel-tab id="tab-general" v-if="target">General</vscode-panel-tab>
+            <vscode-panel-tab id="tab-synthesis">Synthesis</vscode-panel-tab>
+            <vscode-panel-tab id="tab-pnr">Placement & Routing</vscode-panel-tab>
             <vscode-panel-tab id="tab-yosys">Yosys</vscode-panel-tab>
             <vscode-panel-tab id="tab-nextpnr">nextpnr</vscode-panel-tab>
 
-            <vscode-panel-view id="tab-device" v-if="target">
+            <vscode-panel-view id="tab-general" v-if="target">
                 <EDATargetDevice :targetIndex="targetIndex" />
+            </vscode-panel-view>
+
+            <vscode-panel-view id="view-synthesis">
+                <p>TODO: synthesis options</p>
+            </vscode-panel-view>
+
+            <vscode-panel-view id="view-pnr">
+                <p>TODO: placement and routing options</p>
             </vscode-panel-view>
 
             <vscode-panel-view id="view-yosys">

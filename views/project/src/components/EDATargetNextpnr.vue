@@ -44,8 +44,6 @@ export default defineComponent({
         return {
             state: globalState
         };
-    },
-    methods: {
     }
 });
 </script>
