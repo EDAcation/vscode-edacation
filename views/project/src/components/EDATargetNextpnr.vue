@@ -1,8 +1,7 @@
 <script lang="ts">
-import {generateNextpnrWorkerOptions} from 'edacation';
+import {generateNextpnrWorkerOptions, parseNextpnrArguments} from 'edacation';
 import type {TargetConfiguration, NextpnrConfiguration, NextpnrTargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
-import {parseArgs} from 'string-args-parser'
 
 import {state as globalState} from '../state';
 import EDATargetValueList from './EDATargetValueList.vue';
@@ -47,9 +46,7 @@ export default defineComponent({
         };
     },
     methods: {
-        formatArguments(args: string[]) {
-            return args.flatMap((arg) => parseArgs(arg))
-        }
+        parseNextpnrArguments
     }
 });
 </script>
@@ -60,7 +57,7 @@ export default defineComponent({
             <EDATargetValueList
                 :targetIndex="targetIndex"
                 :generated="generated.arguments"
-                :formatter="formatArguments"
+                :parse="parseNextpnrArguments"
                 workerId="nextpnr"
                 workerName="nextpnr"
                 configId="arguments"

@@ -1,9 +1,9 @@
 import {Nextpnr} from 'nextpnr';
-import wasmBinaryUrl from 'nextpnr/dist/nextpnr-ecp5.wasm';
+import wasmBinaryUrl from 'nextpnr/dist/nextpnr-ice40.wasm';
 
 import {WorkerTool} from './worker';
 
-export class WorkerNextpnr extends WorkerTool<Nextpnr> {
+export class WorkerNextpnrIce40 extends WorkerTool<Nextpnr> {
 
     async initialize(): Promise<Nextpnr> {
         // Fetch WebAssembly binary from data URL
@@ -11,6 +11,7 @@ export class WorkerNextpnr extends WorkerTool<Nextpnr> {
 
         // Initialize nextpnr
         const nextpnr = await Nextpnr.initialize({
+            // architecture: command.split('-')[1],
             wasmBinary,
             print: this.print.bind(this, 'stdout'),
             printErr: this.print.bind(this, 'stderr')
@@ -20,4 +21,4 @@ export class WorkerNextpnr extends WorkerTool<Nextpnr> {
     }
 }
 
-export const worker = new WorkerNextpnr();
+export const worker = new WorkerNextpnrIce40();

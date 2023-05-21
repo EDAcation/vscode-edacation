@@ -108,6 +108,8 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
                         console.log('file written');
                     }
 
+                    // TODO: create output directories
+
                     // Execute Emscripten tool
                     // @ts-ignore: TODO
                     tool.getModule().callMain(event.data.args);

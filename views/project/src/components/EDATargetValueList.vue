@@ -12,6 +12,8 @@ import {defineComponent, type PropType} from 'vue';
 import {state as globalState} from '../state';
 import {firstUpperCase} from '../util';
 
+const defaultParse = (values: string[]) => values;
+
 export default defineComponent({
     props: {
         targetIndex: {
@@ -45,8 +47,9 @@ export default defineComponent({
             type: Array as PropType<string[]>,
             required: true
         },
-        formatter: {
-            type: Function as PropType<(args: string[]) => string[]>
+        parse: {
+            type: Function as PropType<(values: string[]) => string[]>,
+            default: defaultParse
         }
     },
     computed: {
@@ -83,10 +86,10 @@ export default defineComponent({
         combined(): string[] {
             const combined = [
                 ...(this.target && (!this.config || this.config.useGenerated) ? this.generated : []),
-                ...(this.target && (this.config && 'useDefault' in this.config ? this.config.useDefault : true) ? this.defaultConfig?.values ?? [] : []),
-                ...(this.config ? this.config.values : [])
+                ...(this.target && (this.config && 'useDefault' in this.config ? this.config.useDefault : true) ? this.parse(this.defaultConfig?.values ?? []) : []),
+                ...(this.config ? this.parse(this.config.values) : [])
             ];
-            return this.formatter ? this.formatter(combined) : combined;
+            return combined;
         }
     },
     data() {

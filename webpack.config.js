@@ -67,7 +67,10 @@ const workerConfig = {
     target: 'webworker',
     entry: {
         'yosys': './src/yosys.ts',
-        'nextpnr': './src/nextpnr.ts',
+        /* eslint-disable @typescript-eslint/naming-convention */
+        'nextpnr-ecp5': './src/nextpnr-ecp5.ts',
+        'nextpnr-ice40': './src/nextpnr-ice40.ts',
+        /* eslint-enable @typescript-eslint/naming-convention */
     },
     output: {
         filename: '[name].js',

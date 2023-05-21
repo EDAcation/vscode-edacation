@@ -124,9 +124,9 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
 
     protected abstract getWorkerName(): string;
 
-    protected abstract getWorkerFileName(): string;
-
     protected abstract getWorkerOptions(project: Project, targetId: string): WorkerOptions;
+
+    protected abstract getWorkerFileName(workerOptions: WorkerOptions): string;
 
     protected abstract getInputCommand(workerOptions: WorkerOptions): string;
 
@@ -189,10 +189,10 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
         try {
             await this.handleStart(project);
 
-            // Create worker
-            const worker = this.createWorker(project);
-
             const workerOptions = this.getWorkerOptions(project, this.definition.targetId ?? project.getConfiguration().targets[0].id);
+
+            // Create worker
+            const worker = this.createWorker(project, workerOptions);
 
             const command = this.getInputCommand(workerOptions);
             const args = this.getInputArgs(workerOptions);
@@ -233,8 +233,8 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
         }
     }
 
-    private createWorker(project: Project): Worker {
-        const worker = new Worker(vscode.Uri.joinPath(this.context.extensionUri, 'workers', 'dist', this.getWorkerFileName()).toString(true));
+    private createWorker(project: Project, workerOptions: WorkerOptions): Worker {
+        const worker = new Worker(vscode.Uri.joinPath(this.context.extensionUri, 'workers', 'dist', this.getWorkerFileName(workerOptions)).toString(true));
 
         worker.addEventListener('message', this.handleMessage.bind(this, project));
         worker.addEventListener('messageerror',this.handleMessageError.bind(this, project));

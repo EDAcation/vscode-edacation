@@ -26,12 +26,12 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal<NextpnrWorkerOptions> {
         return NextpnrTaskProvider.getType();
     }
 
-    protected getWorkerFileName(): string {
-        return 'nextpnr.js';
-    }
-
     protected getWorkerOptions(project: Project, targetId: string): NextpnrWorkerOptions {
         return getNextpnrWorkerOptions(project, targetId);
+    }
+
+    protected getWorkerFileName(workerOptions: NextpnrWorkerOptions): string {
+        return `${workerOptions.tool}.js`;
     }
 
     protected getInputCommand(workerOptions: NextpnrWorkerOptions): string {
