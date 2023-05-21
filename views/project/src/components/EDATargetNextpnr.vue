@@ -2,6 +2,7 @@
 import {generateNextpnrWorkerOptions} from 'edacation';
 import type {TargetConfiguration, NextpnrConfiguration, NextpnrTargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
+import {parseArgs} from 'string-args-parser'
 
 import {state as globalState} from '../state';
 import EDATargetValueList from './EDATargetValueList.vue';
@@ -44,6 +45,11 @@ export default defineComponent({
         return {
             state: globalState
         };
+    },
+    methods: {
+        formatArguments(args: string[]) {
+            return args.flatMap((arg) => parseArgs(arg))
+        }
     }
 });
 </script>
@@ -54,6 +60,7 @@ export default defineComponent({
             <EDATargetValueList
                 :targetIndex="targetIndex"
                 :generated="generated.arguments"
+                :formatter="formatArguments"
                 workerId="nextpnr"
                 workerName="nextpnr"
                 configId="arguments"
@@ -70,6 +77,7 @@ export default defineComponent({
                 workerName="nextpnr"
                 configId="inputFiles"
                 configName="input files"
+                configNameOnePerLine
                 configDescription="Input files are sent from the workspace folder to the nextpnr worker."
             />
 
@@ -82,6 +90,7 @@ export default defineComponent({
                 workerName="nextpnr"
                 configId="outputFiles"
                 configName="output files"
+                configNameOnePerLine
                 configDescription="Output files are sent from the workspace folder to the nextpnr worker."
             />
         </div>

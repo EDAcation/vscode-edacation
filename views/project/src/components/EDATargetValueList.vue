@@ -33,6 +33,10 @@ export default defineComponent({
             type: String,
             required: true
         },
+        configNameOnePerLine: {
+            type: Boolean,
+            default: false
+        },
         configDescription: {
             type: String,
             required: true
@@ -153,7 +157,7 @@ export default defineComponent({
             <p>{{ configDescription }}</p>
             <div v-if="target">
                 <vscode-checkbox :checked="config && 'useDefault' in config ? config?.useDefault ?? true : true" @change="handleUseDefaultChange">
-                    Use default {{ configName }} (from "All targets")
+                    Use default {{ configName }} (from "Defaults for all targets")
                 </vscode-checkbox>
             </div>
             <div v-if="target">
@@ -169,7 +173,7 @@ export default defineComponent({
                     @input="handleValuesChange"
                     style="width: 100%; margin-top: 1rem;"
                 >
-                    {{ configNameTitle }} (one per line)
+                    {{ configNameTitle }}{{ configNameOnePerLine ? ' (one per line)' : '' }}
                 </vscode-text-area>
             </div>
         </div>

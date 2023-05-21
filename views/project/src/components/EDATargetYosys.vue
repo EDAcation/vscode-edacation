@@ -70,6 +70,7 @@ export default defineComponent({
                 workerName="Yosys"
                 configId="inputFiles"
                 configName="input files"
+                configNameOnePerLine
                 configDescription="Input files are sent from the workspace folder to the Yosys worker."
             />
 
@@ -82,6 +83,7 @@ export default defineComponent({
                 workerName="Yosys"
                 configId="outputFiles"
                 configName="output files"
+                configNameOnePerLine
                 configDescription="Output files are sent from the workspace folder to the Yosys worker."
             />
         </div>
