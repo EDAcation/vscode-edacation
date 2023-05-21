@@ -14,13 +14,13 @@
     "@types/jquery": "^3.5.16",
     "@types/vscode-webview": "^1.57.1",
     "typescript": "^4.9.5",
-    "vite": "^3.2.5"
+    "vite": "^3.2.6"
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.32",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "digitaljs": "github:tilk/digitaljs",
-    "jquery": "^3.6.4",
+    "jquery": "^3.7.0",
     "jquery-ui": "^1.13.2",
     "yosys2digitaljs": "github:tilk/yosys2digitaljs"
   },
