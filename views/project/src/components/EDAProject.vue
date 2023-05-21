@@ -78,7 +78,6 @@ export default defineComponent({
             </vscode-option>
         </vscode-dropdown>
 
-
         <vscode-button v-if="targetIndex !== undefined" style="margin-start: 1rem;" @click="handleTargetDelete">Delete target</vscode-button>
 
         <div>
