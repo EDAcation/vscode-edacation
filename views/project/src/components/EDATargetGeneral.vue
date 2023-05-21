@@ -82,12 +82,15 @@ export default defineComponent({
         };
     },
     methods: {
-        handleTextFieldChange(event: Event, key: 'name' | 'directory') {
+        handleTextFieldChange(event: Event, key: 'id' | 'name' | 'directory') {
             if (!this.target || !event.target) {
                 return;
             }
 
             this.target[key] = (event.target as HTMLInputElement).value;
+        },
+        handleIdChange(event: Event) {
+            return this.handleTextFieldChange(event, 'id');
         },
         handleNameChange(event: Event) {
             return this.handleTextFieldChange(event, 'name');
@@ -133,10 +136,14 @@ export default defineComponent({
 
 <template>
     <template v-if="target">
-        <div style="display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem;">
+        <div style="display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, 1fr); grid-template-columns: repeat(2, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+            <vscode-text-field placeholder="ID" :value="target.id" @input="handleIdChange">ID</vscode-text-field>
+
             <vscode-text-field placeholder="Name" :value="target.name" @input="handleNameChange">Name</vscode-text-field>
 
             <vscode-text-field placeholder="Output directory" :value="target.directory || ''" @input="handleDirectoryChange">Output directory</vscode-text-field>
+
+            <div></div>
 
             <div>
                 <label style="display: block; margin-bottom: 2px;">Vendor</label>

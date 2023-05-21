@@ -33,6 +33,31 @@ export default defineComponent({
             }
 
             this.state.selectedTargetIndex = (event.target as HTMLSelectElement).value;
+        },
+        handleTargetAdd() {
+            if (!this.state.project) {
+                return;
+            }
+
+            const index = this.state.project.configuration.targets.length + 1;
+            this.state.project.configuration.targets.push({
+                id: `target${index}`,
+                name: `Target ${index}`,
+                vendor: 'generic',
+                family: 'generic',
+                device: 'generic',
+                package: 'generic'
+            });
+            // TODO: This does not work, because does not yet exist, due to sync issues
+            // this.state.selectedTargetIndex = (index - 1).toString();
+        },
+        handleTargetDelete() {
+            if (!this.state.project || this.targetIndex === undefined) {
+                return;
+            }
+
+            this.state.project.configuration.targets.splice(this.targetIndex, 1);
+            this.state.selectedTargetIndex = 'all';
         }
     }
 });
@@ -53,7 +78,12 @@ export default defineComponent({
             </vscode-option>
         </vscode-dropdown>
 
-        <vscode-button style="margin-start: 1rem;">Add target</vscode-button>
+
+        <vscode-button v-if="targetIndex !== undefined" style="margin-start: 1rem;" @click="handleTargetDelete">Delete target</vscode-button>
+
+        <div>
+            <vscode-button style="margin-top: 1rem;" @click="handleTargetAdd">Add target</vscode-button>
+        </div>
 
         <p v-if="state.project.configuration.targets.length === 0"><b>Error:</b> At least one target is required.</p>
 
