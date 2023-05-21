@@ -3,13 +3,13 @@ import type {TargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
-import EDATargetDevice from './EDATargetDevice.vue';
+import EDATargetGeneral from './EDATargetGeneral.vue';
 import EDATargetYosys from './EDATargetYosys.vue';
 import EDATargetNextpnr from './EDATargetNextpnr.vue';
 
 export default defineComponent({
     components: {
-        EDATargetDevice,
+        EDATargetGeneral,
         EDATargetYosys,
         EDATargetNextpnr
     },
@@ -38,8 +38,11 @@ export default defineComponent({
 
 <template>
     <template v-if="state.project">
-        <h2 v-if="target">{{ target.name }}</h2>
-        <h2 v-else>All targets</h2>
+        <h2 v-if="target">
+            <span v-if="target.name">{{ target.name }}</span>
+            <span v-else>&ZeroWidthSpace;</span>
+        </h2>
+        <h2 v-else>Defaults for all targets</h2>
 
         <vscode-panels>
             <vscode-panel-tab id="tab-general" v-if="target">General</vscode-panel-tab>
@@ -49,7 +52,7 @@ export default defineComponent({
             <vscode-panel-tab id="tab-nextpnr">nextpnr</vscode-panel-tab>
 
             <vscode-panel-view id="tab-general" v-if="target">
-                <EDATargetDevice :targetIndex="targetIndex" />
+                <EDATargetGeneral :targetIndex="targetIndex" />
             </vscode-panel-view>
 
             <vscode-panel-view id="view-synthesis">

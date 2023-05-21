@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import {ProjectEditor} from '../editors';
 import {Project} from '../projects';
-import {NextpnrTaskProvider, YosysRTLTaskProvider, YosysSynthTaskProvider} from '../tasks';
+import {YosysTaskProvider, NextpnrTaskProvider, RTLTaskProvider} from '../tasks';
 import {CurrentProjectCommand} from './base';
 
 export class OpenProjectConfigurationCommand extends CurrentProjectCommand {
@@ -40,28 +40,28 @@ abstract class RunTaskCommand extends CurrentProjectCommand {
     }
 }
 
-export class RunYosysRTLCommand extends RunTaskCommand {
+export class RunRTLCommand extends RunTaskCommand {
 
     static getID() {
-        return 'edacation.runYosysRTL';
+        return 'edacation.runRTL';
     }
 
     getTaskFilter() {
         return {
-            type: YosysRTLTaskProvider.getType()
+            type: RTLTaskProvider.getType()
         };
     }
 }
 
-export class RunYosysSynthCommand extends RunTaskCommand {
+export class RunYosysCommand extends RunTaskCommand {
 
     static getID() {
-        return 'edacation.runYosysSynth';
+        return 'edacation.runYosys';
     }
 
     getTaskFilter() {
         return {
-            type: YosysSynthTaskProvider.getType()
+            type: YosysTaskProvider.getType()
         };
     }
 }

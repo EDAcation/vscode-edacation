@@ -47,7 +47,7 @@ export default defineComponent({
         <h1>Targets</h1>
         <p>Select target to configure</p>
         <vscode-dropdown :value="state.selectedTargetIndex ?? 'all'" @input="handleTargetChange" style="width: 20rem;">
-            <vscode-option value="all">All targets</vscode-option>
+            <vscode-option value="all">Defaults for all targets</vscode-option>
             <vscode-option v-for="(target, index) in state.project.configuration.targets" :key="index" :value="index">
                 {{ target.name }}
             </vscode-option>

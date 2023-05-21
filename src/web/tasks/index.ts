@@ -1,2 +1,3 @@
-export * from './yosys';
-export * from './nextpnr';
+export {NextpnrTaskProvider} from './nextpnr';
+export {RTLTaskProvider} from './rtl';
+export {YosysTaskProvider} from './yosys';
