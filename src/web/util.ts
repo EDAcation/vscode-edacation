@@ -1,6 +1,8 @@
 import path from 'path';
 import * as vscode from 'vscode';
 
+import {Buffer} from 'buffer';
+
 export const getWebviewUri = (webview: vscode.Webview, context: vscode.ExtensionContext, path: string[]): vscode.Uri => {
     const uri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, ...path));
     console.log(context.extensionUri.toString(), ...path, uri.toString());
@@ -77,3 +79,15 @@ export const getWorkspaceRelativePath = (folderUri: vscode.Uri, fileUri: vscode.
 export type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
 
 export const keysForEnum = <M extends Record<string, unknown>>(map: M): [keyof M, ...(keyof M)[]] => Object.keys(map) as unknown as [keyof M, ...(keyof M)[]];
+
+export const offerSaveFile = async (content: String, options: vscode.SaveDialogOptions): Promise<vscode.Uri | undefined> => {
+    let chosenUri = await vscode.window.showSaveDialog(options);
+    if (!chosenUri){
+        return;
+    }
+
+    let buf = Buffer.from(content, 'utf8');
+    await vscode.workspace.fs.writeFile(chosenUri, buf);
+
+    return chosenUri;
+};

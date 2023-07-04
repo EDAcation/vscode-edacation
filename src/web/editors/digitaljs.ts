@@ -1,9 +1,8 @@
 import * as vscode from 'vscode';
-import {getWebviewUri} from '../util';
+import {getWebviewUri, offerSaveFile} from '../util';
 
 import {BaseEditor} from './base';
 
-import { Buffer } from 'buffer';
 
 export class DigitalJSEditor extends BaseEditor {
 
@@ -52,16 +51,14 @@ export class DigitalJSEditor extends BaseEditor {
             let rootPath = vscode.workspace.workspaceFolders?.[0].uri || vscode.Uri.file('.');
             let path = vscode.Uri.joinPath(rootPath, message.data?.defaultPath || "");
 
-            vscode.window.showSaveDialog({
-                'defaultUri': path,
-                'filters': message.data?.saveFilters
-            }).then(fileUri => {
-                if (!fileUri){
+            offerSaveFile(message.data.fileContents, {
+                defaultUri: path,
+                filters: message.data?.filters
+            }).then(path => {
+                if (!path) {
                     return;
                 }
-
-                let buf = Buffer.from(message.data.fileContents, 'utf8');
-                return vscode.workspace.fs.writeFile(fileUri, buf);
+                this.showSaveNotification(path);
             });
         }
     }
@@ -79,5 +76,15 @@ export class DigitalJSEditor extends BaseEditor {
             type: 'document',
             document: document.getText()
         });
+    }
+
+    async showSaveNotification(path: vscode.Uri) {
+        let response = await vscode.window.showInformationMessage('Export success', 'Open file');
+        if (!response) {
+            return;
+        }
+
+        let doc = await vscode.workspace.openTextDocument(path);
+        await vscode.window.showTextDocument(doc);
     }
 }
