@@ -147,7 +147,7 @@ class View {
                 </vscode-button>
                 <vscode-button id="digitaljs-export">
                     Export to SVG
-                    <span slot="save" class="codicon codicon-save" />
+                    <span slot="start" class="codicon codicon-save" />
                 </vscode-button>
             `;
             this.root.appendChild(elementActions);
