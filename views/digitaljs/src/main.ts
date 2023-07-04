@@ -24,14 +24,14 @@ type Message = MessageDocument;
 
 function getSvg(svgElem: Element): String {
     // Filter conveniently labeled foreign objects from element
-    let foreignElems = svgElem.getElementsByTagName("foreignObject");
+    let foreignElems = svgElem.getElementsByTagName('foreignObject');
     for (let elem of Array.from(foreignElems)) {
         elem.remove();
     }
 
     // Set correct XML namespace
-    svgElem.removeAttribute("xmlns:xlink");
-    svgElem.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    svgElem.removeAttribute('xmlns:xlink');
+    svgElem.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 
     // Add XML header
     return '<?xml version="1.0" encoding="utf-8"?>\n' + svgElem.outerHTML;
@@ -97,20 +97,20 @@ class View {
 
     requestExport() {
         // Find our SVG root element
-        let svgElems = document.getElementsByTagName("svg");
+        let svgElems = document.getElementsByTagName('svg');
         if (!svgElems) {
-            throw new Error("Could not find SVG element to export");
+            throw new Error('Could not find SVG element to export');
         }
         // Deep clone so we don't affect the SVG in the DOM
         let svgElem = svgElems[0].cloneNode(true) as Element;
 
         // Send save request to main worker
         vscode.postMessage({
-            "type": "requestSave",
-            "data": {
-                "fileContents": getSvg(svgElem),
-                "defaultPath": "export.svg",
-                "saveFilters": {"svg": [".svg"]}
+            'type': 'requestSave',
+            'data': {
+                'fileContents': getSvg(svgElem),
+                'defaultPath': 'export.svg',
+                'saveFilters': {'svg': ['.svg']}
             }
         });
     }
