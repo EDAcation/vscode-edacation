@@ -22,6 +22,21 @@ interface MessageDocument {
 
 type Message = MessageDocument;
 
+function getSvg(svgElem: Element): String {
+    // Filter conveniently labeled foreign objects from element
+    let foreignElems = svgElem.getElementsByTagName("foreignObject");
+    for (let elem of Array.from(foreignElems)) {
+        elem.remove();
+    }
+
+    // Set correct XML namespace
+    svgElem.removeAttribute("xmlns:xlink");
+    svgElem.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+    // Add XML header
+    return '<?xml version="1.0" encoding="utf-8"?>\n' + svgElem.outerHTML;
+}
+
 class View {
 
     private readonly root: HTMLDivElement;
@@ -89,13 +104,7 @@ class View {
         // Deep clone so we don't affect the SVG in the DOM
         let svgElem = svgElems[0].cloneNode(true) as Element;
 
-        // Filter conveniently labeled foreign objects to make a valid SVG
-        let foreignElems = svgElem.getElementsByTagName("foreignObject");
-        for (let elem of Array.from(foreignElems)) {
-            elem.remove();
-        }
-
-        console.log(svgElem.outerHTML);
+        console.log(getSvg(svgElem));
     }
 
     renderDocument() {
