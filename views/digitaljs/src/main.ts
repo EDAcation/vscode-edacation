@@ -80,6 +80,24 @@ class View {
         this.renderDocument();
     }
 
+    requestExport() {
+        // Find our SVG root element
+        let svgElems = document.getElementsByTagName("svg");
+        if (!svgElems) {
+            throw new Error("Could not find SVG element to export");
+        }
+        // Deep clone so we don't affect the SVG in the DOM
+        let svgElem = svgElems[0].cloneNode(true) as Element;
+
+        // Filter conveniently labeled foreign objects to make a valid SVG
+        let foreignElems = svgElem.getElementsByTagName("foreignObject");
+        for (let elem of Array.from(foreignElems)) {
+            elem.remove();
+        }
+
+        console.log(svgElem.outerHTML);
+    }
+
     renderDocument() {
         try {
             if (!this.state.document) {
@@ -110,14 +128,20 @@ class View {
                     Stop
                     <span slot="start" class="codicon codicon-debug-stop" />
                 </vscode-button>
+                <vscode-button id="digitaljs-export">
+                    Export to SVG
+                    <span slot="save" class="codicon codicon-save" />
+                </vscode-button>
             `;
             this.root.appendChild(elementActions);
 
             const buttonStart = document.getElementById('digitaljs-start');
             const buttonStop = document.getElementById('digitaljs-stop');
+            const buttonExport = document.getElementById('digitaljs-export');
 
             buttonStart?.addEventListener('click', () => circuit.start());
             buttonStop?.addEventListener('click', () => circuit.stop());
+            buttonExport?.addEventListener('click', this.requestExport);
 
             circuit.on('changeRunning', () => {
                 if (circuit.running) {
