@@ -104,7 +104,15 @@ class View {
         // Deep clone so we don't affect the SVG in the DOM
         let svgElem = svgElems[0].cloneNode(true) as Element;
 
-        console.log(getSvg(svgElem));
+        // Send save request to main worker
+        vscode.postMessage({
+            "type": "requestSave",
+            "data": {
+                "fileContents": getSvg(svgElem),
+                "defaultPath": "export.svg",
+                "saveFilters": {"svg": [".svg"]}
+            }
+        });
     }
 
     renderDocument() {

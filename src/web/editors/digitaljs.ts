@@ -3,6 +3,8 @@ import {getWebviewUri} from '../util';
 
 import {BaseEditor} from './base';
 
+import { Buffer } from 'buffer';
+
 export class DigitalJSEditor extends BaseEditor {
 
     public static getViewType() {
@@ -43,6 +45,23 @@ export class DigitalJSEditor extends BaseEditor {
             webview.postMessage({
                 type: 'document',
                 document: document.getText()
+            });
+        }
+        else if (message.type === 'requestSave') {
+            // TODO: figure out better way to save relative to project root
+            let rootPath = vscode.workspace.workspaceFolders?.[0].uri || vscode.Uri.file('.');
+            let path = vscode.Uri.joinPath(rootPath, message.data?.defaultPath || "");
+
+            vscode.window.showSaveDialog({
+                'defaultUri': path,
+                'filters': message.data?.saveFilters
+            }).then(fileUri => {
+                if (!fileUri){
+                    return;
+                }
+
+                let buf = Buffer.from(message.data.fileContents, 'utf8');
+                return vscode.workspace.fs.writeFile(fileUri, buf);
             });
         }
     }
