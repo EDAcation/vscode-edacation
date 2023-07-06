@@ -4,7 +4,6 @@ import wasmBinaryUrl from 'nextpnr/dist/nextpnr-ecp5.wasm';
 import {WorkerTool} from './worker';
 
 export class WorkerNextpnr extends WorkerTool<Nextpnr> {
-
     async initialize(): Promise<Nextpnr> {
         // Fetch WebAssembly binary from data URL
         const wasmBinary = await this.fetchBinary(wasmBinaryUrl);

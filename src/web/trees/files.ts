@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 
-import {Project, ProjectFile, Projects} from '../projects';
-import {BaseTreeDataProvider} from './base';
+import type {Project, ProjectFile, Projects} from '../projects/index.js';
+
+import {BaseTreeDataProvider} from './base.js';
 
 abstract class FilesProvider extends BaseTreeDataProvider<ProjectFile> {
-
     getTreeItem(element: ProjectFile): vscode.TreeItem {
         const project = this.projects.getCurrent();
         if (!project) {
@@ -40,7 +40,6 @@ abstract class FilesProvider extends BaseTreeDataProvider<ProjectFile> {
 }
 
 export class InputFilesProvider extends FilesProvider {
-
     static getViewID() {
         return 'edacation-inputFiles';
     }
@@ -57,7 +56,6 @@ export class InputFilesProvider extends FilesProvider {
 }
 
 export class OutputFilesProvider extends FilesProvider {
-
     static getViewID() {
         return 'edacation-outputFiles';
     }

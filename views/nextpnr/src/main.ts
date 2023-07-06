@@ -20,7 +20,6 @@ interface MessageDocument {
 type Message = MessageDocument;
 
 class View {
-
     private readonly root: HTMLDivElement;
     private state: State;
 
@@ -142,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!state) {
         // Use initial data from VS Code extension
-        // @ts-ignore
+        // @ts-expect-error: initialData does not exist on window
         state = window.initialData;
 
         if (state) {

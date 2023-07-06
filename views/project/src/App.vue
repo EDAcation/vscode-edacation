@@ -6,9 +6,9 @@ import {
     vsCodeDivider,
     vsCodeDropdown,
     vsCodeOption,
-    vsCodePanels,
     vsCodePanelTab,
     vsCodePanelView,
+    vsCodePanels,
     vsCodeTextArea,
     vsCodeTextField
 } from '@vscode/webview-ui-toolkit';
@@ -27,7 +27,7 @@ provideVSCodeDesignSystem().register(
     vsCodePanelTab(),
     vsCodePanelView(),
     vsCodeTextArea(),
-    vsCodeTextField(),
+    vsCodeTextField()
 );
 
 export default {
@@ -60,7 +60,6 @@ export default {
         }
     }
 };
-
 </script>
 
 <template>
@@ -69,6 +68,4 @@ export default {
     </main>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

@@ -13,7 +13,7 @@ export default defineConfig({
             },
             plugins: [
                 inject({
-                    '$': 'jquery',
+                    $: 'jquery',
                     jQuery: 'jquery'
                 })
             ]
@@ -21,11 +21,11 @@ export default defineConfig({
     },
     define: {
         /* eslint-disable-next-line @typescript-eslint/naming-convention */
-        'process.env': {},
+        'process.env': {}
     },
     resolve: {
         alias: {
-            'tmp': './src/aliases/tmp.ts'
+            tmp: './src/aliases/tmp.ts'
         }
     }
 });

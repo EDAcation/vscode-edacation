@@ -4,6 +4,7 @@ import type {TargetConfiguration, YosysConfiguration, YosysTargetConfiguration} 
 import {defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
+
 import EDATargetValueList from './EDATargetValueList.vue';
 
 export default defineComponent({
@@ -37,20 +38,24 @@ export default defineComponent({
                 };
             }
 
-            return generateYosysWorkerOptions(this.state.project!.configuration, this.state.project!.inputFiles, this.target.id);
+            return generateYosysWorkerOptions(
+                this.state.project!.configuration,
+                this.state.project!.inputFiles,
+                this.target.id
+            );
         }
     },
     data() {
         return {
             state: globalState
-        }
+        };
     }
 });
 </script>
 
 <template>
     <template v-if="yosys">
-        <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+        <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem">
             <EDATargetValueList
                 :targetIndex="targetIndex"
                 :generated="generated.commands"
@@ -61,7 +66,7 @@ export default defineComponent({
                 configDescription="Commands are passed to the Yosys worker for excecution."
             />
 
-            <vscode-divider style="grid-column: span 2;" />
+            <vscode-divider style="grid-column: span 2" />
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
@@ -74,7 +79,7 @@ export default defineComponent({
                 configDescription="Input files are sent from the workspace folder to the Yosys worker."
             />
 
-            <vscode-divider style="grid-column: span 2;" />
+            <vscode-divider style="grid-column: span 2" />
 
             <EDATargetValueList
                 :targetIndex="targetIndex"

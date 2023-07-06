@@ -2,6 +2,7 @@
 import {defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
+
 import EDATarget from './EDATarget.vue';
 
 export default defineComponent({
@@ -10,14 +11,18 @@ export default defineComponent({
     },
     computed: {
         targetIndex(): number | undefined {
-            console.log('target index', this.state.selectedTargetIndex, this.state.selectedTargetIndex === 'all' ? undefined : parseInt(this.state.selectedTargetIndex));
+            console.log(
+                'target index',
+                this.state.selectedTargetIndex,
+                this.state.selectedTargetIndex === 'all' ? undefined : parseInt(this.state.selectedTargetIndex)
+            );
             return this.state.selectedTargetIndex === 'all' ? undefined : parseInt(this.state.selectedTargetIndex);
         }
     },
     data() {
         return {
             state: globalState
-        }
+        };
     },
     methods: {
         handleNameChange(event: Event) {
@@ -61,32 +66,35 @@ export default defineComponent({
         }
     }
 });
-
 </script>
 
 <template>
     <template v-if="state.project">
         <h1>Project</h1>
-        <vscode-text-field placeholder="Project name" :value="state.project.name" @input="handleNameChange">Project name</vscode-text-field>
+        <vscode-text-field placeholder="Project name" :value="state.project.name" @input="handleNameChange">
+            Project name
+        </vscode-text-field>
 
         <h1>Targets</h1>
         <p>Select target to configure</p>
-        <vscode-dropdown :value="state.selectedTargetIndex ?? 'all'" @input="handleTargetChange" style="width: 20rem;">
+        <vscode-dropdown :value="state.selectedTargetIndex ?? 'all'" @input="handleTargetChange" style="width: 20rem">
             <vscode-option value="all">Defaults for all targets</vscode-option>
             <vscode-option v-for="(target, index) in state.project.configuration.targets" :key="index" :value="index">
                 {{ target.name }}
             </vscode-option>
         </vscode-dropdown>
 
-        <vscode-button v-if="targetIndex !== undefined" style="margin-start: 1rem;" @click="handleTargetDelete">Delete target</vscode-button>
+        <vscode-button v-if="targetIndex !== undefined" style="margin-start: 1rem" @click="handleTargetDelete">
+            Delete target
+        </vscode-button>
 
         <div>
-            <vscode-button style="margin-top: 1rem;" @click="handleTargetAdd">Add target</vscode-button>
+            <vscode-button style="margin-top: 1rem" @click="handleTargetAdd">Add target</vscode-button>
         </div>
 
         <p v-if="state.project.configuration.targets.length === 0"><b>Error:</b> At least one target is required.</p>
 
-        <vscode-divider style="margin-top: 1rem;" />
+        <vscode-divider style="margin-top: 1rem" />
 
         <EDATarget :targetIndex="targetIndex" />
     </template>
@@ -95,6 +103,4 @@ export default defineComponent({
     </template>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

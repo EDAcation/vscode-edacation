@@ -3,11 +3,11 @@ import type {
     TargetConfiguration,
     ValueListConfiguration,
     ValueListConfigurationTarget,
-    WorkerId,
     WorkerConfiguration,
+    WorkerId,
     WorkerTargetConfiguration
 } from 'edacation';
-import {defineComponent, type PropType} from 'vue';
+import {type PropType, defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
 import {firstUpperCase} from '../util';
@@ -81,12 +81,16 @@ export default defineComponent({
             if (!this.worker) {
                 return undefined;
             }
-            return (this.worker as Record<string, ValueListConfiguration | ValueListConfigurationTarget>)[this.configId];
+            return (this.worker as Record<string, ValueListConfiguration | ValueListConfigurationTarget>)[
+                this.configId
+            ];
         },
         combined(): string[] {
             const combined = [
                 ...(this.target && (!this.config || this.config.useGenerated) ? this.generated : []),
-                ...(this.target && (this.config && 'useDefault' in this.config ? this.config.useDefault : true) ? this.parse(this.defaultConfig?.values ?? []) : []),
+                ...(this.target && (this.config && 'useDefault' in this.config ? this.config.useDefault : true)
+                    ? this.parse(this.defaultConfig?.values ?? [])
+                    : []),
                 ...(this.config ? this.parse(this.config.values) : [])
             ];
             return combined;
@@ -115,7 +119,9 @@ export default defineComponent({
                     }
                 }
 
-                (this.worker as Record<string, ValueListConfiguration | ValueListConfigurationTarget | undefined>)[this.configId] = {
+                (this.worker as Record<string, ValueListConfiguration | ValueListConfigurationTarget | undefined>)[
+                    this.configId
+                ] = {
                     useDefault: true,
                     useGenerated: true,
                     values: []
@@ -144,7 +150,9 @@ export default defineComponent({
                 return;
             }
 
-            (this.config as ValueListConfigurationTarget)[key] = ((event.target as HTMLTextAreaElement).value ?? '').split('\n');
+            (this.config as ValueListConfigurationTarget)[key] = (
+                (event.target as HTMLTextAreaElement).value ?? ''
+            ).split('\n');
         },
         handleValuesChange(event: Event) {
             return this.handleTextAreaChange(event, 'values');
@@ -159,7 +167,10 @@ export default defineComponent({
             <h3>{{ workerName }} {{ configName }}</h3>
             <p>{{ configDescription }}</p>
             <div v-if="target">
-                <vscode-checkbox :checked="config && 'useDefault' in config ? config?.useDefault ?? true : true" @change="handleUseDefaultChange">
+                <vscode-checkbox
+                    :checked="config && 'useDefault' in config ? config?.useDefault ?? true : true"
+                    @change="handleUseDefaultChange"
+                >
                     Use default {{ configName }} (from "Defaults for all targets")
                 </vscode-checkbox>
             </div>
@@ -174,7 +185,7 @@ export default defineComponent({
                     :placeholder="configNameTitle"
                     :value="(config?.values ?? []).join('\n')"
                     @input="handleValuesChange"
-                    style="width: 100%; margin-top: 1rem;"
+                    style="width: 100%; margin-top: 1rem"
                 >
                     {{ configNameTitle }}{{ configNameOnePerLine ? ' (one per line)' : '' }}
                 </vscode-text-area>
@@ -182,7 +193,7 @@ export default defineComponent({
         </div>
         <div>
             <h3>Combined {{ workerName }} {{ configName }}</h3>
-            <code v-for="(line, index) in combined" :key="index" style="display: block;">
+            <code v-for="(line, index) in combined" :key="index" style="display: block">
                 {{ line.trim().length === 0 ? '&nbsp;' : line }}
             </code>
         </div>

@@ -3,9 +3,10 @@ import type {TargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
+
 import EDATargetGeneral from './EDATargetGeneral.vue';
-import EDATargetYosys from './EDATargetYosys.vue';
 import EDATargetNextpnr from './EDATargetNextpnr.vue';
+import EDATargetYosys from './EDATargetYosys.vue';
 
 export default defineComponent({
     components: {
@@ -24,15 +25,14 @@ export default defineComponent({
                 return undefined;
             }
             return this.state.project!.configuration.targets[this.targetIndex];
-        },
+        }
     },
     data() {
         return {
             state: globalState
-        }
+        };
     },
-    methods: {
-    }
+    methods: {}
 });
 </script>
 
@@ -74,6 +74,4 @@ export default defineComponent({
     </template>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

@@ -1,6 +1,6 @@
 import path from 'path';
 
-import {ExtensionMessage, MessageFile, WorkerMessage} from './messages';
+import type {ExtensionMessage, MessageFile, WorkerMessage} from './messages';
 
 export const run = () => {
     console.log('run');
@@ -13,7 +13,6 @@ export interface EmscriptenWrapper {
 }
 
 export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
-
     private toolPromise: Promise<Tool>;
     private tool?: Tool;
 
@@ -111,7 +110,7 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
                     // TODO: create output directories
 
                     // Execute Emscripten tool
-                    // @ts-ignore: TODO
+                    // @ts-expect-error: TODO
                     tool.getModule().callMain(event.data.args);
 
                     // Read output files
@@ -124,10 +123,13 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
                     }
 
                     // Send output to extension
-                    this.send({
-                        type: 'output',
-                        files
-                    }, files.map((file) => file.data.buffer));
+                    this.send(
+                        {
+                            type: 'output',
+                            files
+                        },
+                        files.map((file) => file.data.buffer)
+                    );
 
                     break;
                 }

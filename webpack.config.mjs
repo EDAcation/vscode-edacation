@@ -1,24 +1,26 @@
-//@ts-check
 'use strict';
 
-//@ts-check
+import path from 'path';
+import {fileURLToPath} from 'url';
+import webpack from 'webpack';
+
+// @ts-check
+
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
 
-const path = require('path');
-const webpack = require('webpack');
+const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type WebpackConfig */
 const webExtensionConfig = {
     mode: 'none',
     target: 'webworker',
     entry: {
-        'extension': './src/web/extension.ts',
-        /* eslint-disable-next-line @typescript-eslint/naming-convention */
+        extension: './src/web/extension.ts',
         'test/suite/index': './src/web/test/suite/index.ts'
     },
     output: {
         filename: '[name].js',
-        path: path.join(__dirname, './dist/web'),
+        path: path.join(currentDirectory, './dist/web'),
         libraryTarget: 'commonjs',
         devtoolModuleFilenameTemplate: '../../[resource-path]'
     },
@@ -27,54 +29,56 @@ const webExtensionConfig = {
         extensions: ['.ts', '.js'],
         alias: {},
         fallback: {
-            assert: require.resolve('assert'),
-            path: require.resolve('path-browserify')
+            assert: 'assert',
+            path: 'path-browserify'
         }
     },
     module: {
-        rules: [{
-            test: /\.ts$/,
-            exclude: /node_modules/,
-            use: [{
-                loader: 'ts-loader'
-            }]
-        }]
+        rules: [
+            {
+                test: /\.ts$/,
+                exclude: /node_modules/,
+                use: [
+                    {
+                        loader: 'ts-loader'
+                    }
+                ]
+            }
+        ]
     },
     plugins: [
         new webpack.optimize.LimitChunkCountPlugin({
             maxChunks: 1
         }),
         new webpack.ProvidePlugin({
-            process: 'process/browser',
-        }),
+            process: 'process/browser'
+        })
     ],
     externals: {
-        'vscode': 'commonjs vscode', // ignored because it doesn't exist
+        vscode: 'commonjs vscode' // ignored because it doesn't exist
     },
     performance: {
         hints: false
     },
     devtool: 'nosources-source-map',
     infrastructureLogging: {
-        level: "log",
-    },
+        level: 'log'
+    }
 };
 
 /** @type WebpackConfig */
 const workerConfig = {
-    context: path.join(__dirname, 'workers'),
+    context: path.join(currentDirectory, 'workers'),
     mode: 'none',
     target: 'webworker',
     entry: {
-        'yosys': './src/yosys.ts',
-        /* eslint-disable @typescript-eslint/naming-convention */
+        yosys: './src/yosys.ts',
         'nextpnr-ecp5': './src/nextpnr-ecp5.ts',
-        'nextpnr-ice40': './src/nextpnr-ice40.ts',
-        /* eslint-enable @typescript-eslint/naming-convention */
+        'nextpnr-ice40': './src/nextpnr-ice40.ts'
     },
     output: {
         filename: '[name].js',
-        path: path.join(__dirname, 'workers', 'dist'),
+        path: path.join(currentDirectory, 'workers', 'dist'),
         library: {
             name: 'exportVar',
             type: 'var'
@@ -85,39 +89,43 @@ const workerConfig = {
         extensions: ['.ts', '.js'],
         alias: {
             fs: false,
-            /* eslint-disable-next-line @typescript-eslint/naming-convention */
             child_process: false
         },
         fallback: {
             crypto: false,
-            path: require.resolve('path-browserify')
+            path: 'path-browserify'
         }
     },
     module: {
-        rules: [{
-            test: /\.ts$/,
-            exclude: /node_modules/,
-            use: [{
-                loader: 'ts-loader'
-            }]
-        }, {
-            test: /\.wasm$/,
-            type: 'asset/inline'
-        }]
+        rules: [
+            {
+                test: /\.ts$/,
+                exclude: /node_modules/,
+                use: [
+                    {
+                        loader: 'ts-loader'
+                    }
+                ]
+            },
+            {
+                test: /\.wasm$/,
+                type: 'asset/inline'
+            }
+        ]
     },
     externals: {
-        'vscode': 'commonjs vscode', // ignored because it doesn't exist
+        vscode: 'commonjs vscode' // ignored because it doesn't exist
     },
     performance: {
         hints: false
     },
     devtool: 'nosources-source-map',
     infrastructureLogging: {
-        level: "log",
+        level: 'log'
     },
     optimization: {
         minimize: false
-    },
+    }
 };
 
-module.exports = [webExtensionConfig, workerConfig];
+export default [webExtensionConfig, workerConfig];

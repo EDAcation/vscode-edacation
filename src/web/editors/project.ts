@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 
-import {Project} from '../projects';
-import {BaseEditor} from './base';
+import {Project} from '../projects/index.js';
+
+import {BaseEditor} from './base.js';
 
 export class ProjectEditor extends BaseEditor {
-
     public static getViewType() {
         return 'edacation.project';
     }
@@ -16,12 +16,10 @@ export class ProjectEditor extends BaseEditor {
     }
 
     protected getScriptPaths() {
-        return [
-            ['views', 'project', 'dist', 'assets', 'index.js']
-        ];
+        return [['views', 'project', 'dist', 'assets', 'index.js']];
     }
 
-    protected getInitialData(document: vscode.TextDocument) {
+    protected getInitialData(document: vscode.TextDocument): Record<string, unknown> {
         const project = this.projects.get(document.uri);
 
         if (project) {
@@ -35,7 +33,11 @@ export class ProjectEditor extends BaseEditor {
         }
     }
 
-    protected onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: any): void {
+    protected onDidReceiveMessage(
+        document: vscode.TextDocument,
+        webview: vscode.Webview,
+        message: Record<string, unknown>
+    ): void {
         console.log(message);
 
         if (message.type === 'ready') {
@@ -55,7 +57,7 @@ export class ProjectEditor extends BaseEditor {
             }
 
             const edit = new vscode.WorkspaceEdit();
-            edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), message.document);
+            edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), message.document as string);
             vscode.workspace.applyEdit(edit);
         }
     }

@@ -1,9 +1,9 @@
-import 'jquery-ui/dist/jquery-ui.min.js';
 import '@vscode/codicons/dist/codicon.css';
 import {allComponents} from '@vscode/webview-ui-toolkit/dist/toolkit.js';
-import {yosys2digitaljs} from 'yosys2digitaljs';
-// @ts-ignore: TODO: add module declaration (digitaljs.d.ts)
+// @ts-expect-error: TODO: add module declaration (digitaljs.d.ts)
 import {Circuit} from 'digitaljs';
+import 'jquery-ui/dist/jquery-ui.min.js';
+import {yosys2digitaljs} from 'yosys2digitaljs';
 
 import './main.css';
 import {vscode} from './vscode';
@@ -42,7 +42,6 @@ function getSvg(svgElem: Element, width: Number, height: Number): String {
 }
 
 class View {
-
     private readonly root: HTMLDivElement;
     private state: State;
 
@@ -146,7 +145,7 @@ class View {
             // Render actions
             const elementActions = document.createElement('div');
             elementActions.style.marginBottom = '1rem';
-            elementActions.innerHTML = /*html*/`
+            elementActions.innerHTML = /*html*/ `
                 <vscode-button id="digitaljs-start">
                     Start
                     <span slot="start" class="codicon codicon-debug-start" />
@@ -209,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!state) {
         // Use initial data from VS Code extension
-        // @ts-ignore
+        // @ts-expect-error: initialData does not exist on window
         state = window.initialData;
 
         if (state) {

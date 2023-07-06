@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 
-import {Project, Projects} from '../projects';
-import {BaseTreeDataProvider} from './base';
+import type {Project, Projects} from '../projects/index.js';
+
+import {BaseTreeDataProvider} from './base.js';
 
 export class ProjectProvider extends BaseTreeDataProvider<Project> {
-
     constructor(context: vscode.ExtensionContext, projects: Projects) {
         super(context, projects);
 
@@ -23,7 +23,7 @@ export class ProjectProvider extends BaseTreeDataProvider<Project> {
             command: {
                 command: 'edacation.selectProject',
                 arguments: [element],
-                title: 'Select project',
+                title: 'Select project'
             }
         };
     }

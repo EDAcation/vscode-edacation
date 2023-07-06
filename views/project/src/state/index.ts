@@ -1,5 +1,5 @@
-import {reactive, watch, type WatchStopHandle} from 'vue';
 import type {ProjectState} from 'edacation';
+import {type WatchStopHandle, reactive, watch} from 'vue';
 
 import {vscode} from '../vscode';
 
@@ -44,7 +44,7 @@ export const initializeState = () => {
 
     if (!state) {
         // Use initial data from VS Code extension
-        // @ts-ignore
+        // @ts-expect-error: initialData does not exist on window
         state = window.initialData;
 
         if (state) {

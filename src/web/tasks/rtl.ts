@@ -1,14 +1,18 @@
+import {type YosysWorkerOptions, encodeText, generateYosysRTLCommands} from 'edacation';
 import * as vscode from 'vscode';
 
-import {WorkerOutputFile, WorkerTaskDefinition, WorkerTaskProvider, WorkerTaskTerminal} from './worker';
-import {YosysWorkerOptions, encodeText, generateYosysRTLCommands} from 'edacation';
-import {Project} from '../projects';
+import type {MessageFile} from '../messages.js';
+import type {Project} from '../projects/index.js';
 
-import {BaseYosysTaskTerminal} from './yosys';
-import {MessageFile} from '../messages';
+import {
+    type WorkerOutputFile,
+    type WorkerTaskDefinition,
+    WorkerTaskProvider,
+    type WorkerTaskTerminal
+} from './worker.js';
+import {BaseYosysTaskTerminal} from './yosys.js';
 
 export class RTLTaskProvider extends WorkerTaskProvider {
-
     static getType() {
         return 'rtl';
     }
@@ -17,26 +21,28 @@ export class RTLTaskProvider extends WorkerTaskProvider {
         return RTLTaskProvider.getType();
     }
 
-    protected createTaskTerminal(folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition): WorkerTaskTerminal<YosysWorkerOptions> {
+    protected createTaskTerminal(
+        folder: vscode.WorkspaceFolder,
+        definition: WorkerTaskDefinition
+    ): WorkerTaskTerminal<YosysWorkerOptions> {
         return new RTLTaskTerminal(this.context, this.projects, folder, definition);
     }
 }
 
 class RTLTaskTerminal extends BaseYosysTaskTerminal {
-
     protected getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
         const commandsGenerated = generateYosysRTLCommands(workerOptions.inputFiles);
 
-        return [{
-            path: 'design.ys',
-            data: encodeText(commandsGenerated.join('\r\n'))
-        }];
+        return [
+            {
+                path: 'design.ys',
+                data: encodeText(commandsGenerated.join('\r\n'))
+            }
+        ];
     }
 
     protected getOutputFiles(_workerOptions: YosysWorkerOptions): string[] {
-        return [
-            'rtl.digitaljs.json'
-        ];
+        return ['rtl.digitaljs.json'];
     }
 
     protected async handleEnd(project: Project, outputFiles: WorkerOutputFile[]) {
