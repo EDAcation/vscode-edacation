@@ -96,14 +96,14 @@ export type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType exten
 export const keysForEnum = <M extends Record<string, unknown>>(map: M): [keyof M, ...(keyof M)[]] =>
     Object.keys(map) as unknown as [keyof M, ...(keyof M)[]];
 
-export const offerSaveFile = async (content: String, options: vscode.SaveDialogOptions): Promise<vscode.Uri | undefined> => {
-  let chosenUri = await vscode.window.showSaveDialog(options);
-  if (!chosenUri){
-      return;
-  }
+export const offerSaveFile = async (content: string, options: vscode.SaveDialogOptions): Promise<vscode.Uri | undefined> => {
+    let chosenUri = await vscode.window.showSaveDialog(options);
+    if (!chosenUri){
+        return;
+    }
 
-  let buf = Buffer.from(content, 'utf8');
-  await vscode.workspace.fs.writeFile(chosenUri, buf);
+    const encoded = encodeText(content);
+    await vscode.workspace.fs.writeFile(chosenUri, encoded);
 
-  return chosenUri;
+    return chosenUri;
 };
