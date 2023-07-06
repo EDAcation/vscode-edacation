@@ -15,12 +15,12 @@ const webExtensionConfig = {
     mode: 'none',
     target: 'webworker',
     entry: {
-        extension: './src/web/extension.ts',
-        'test/suite/index': './src/web/test/suite/index.ts'
+        extension: './src/extension/index.ts',
+        'test/suite/index': './src/extension/test/suite/index.ts'
     },
     output: {
         filename: '[name].js',
-        path: path.join(currentDirectory, './dist/web'),
+        path: path.join(currentDirectory, './dist/extension'),
         libraryTarget: 'commonjs',
         devtoolModuleFilenameTemplate: '../../[resource-path]'
     },
@@ -71,17 +71,17 @@ const webExtensionConfig = {
 
 /** @type WebpackConfig */
 const workerConfig = {
-    context: path.join(currentDirectory, 'workers'),
+    // context: path.join(currentDirectory, 'workers'),
     mode: 'none',
     target: 'webworker',
     entry: {
-        yosys: './src/yosys.ts',
-        'nextpnr-ecp5': './src/nextpnr-ecp5.ts',
-        'nextpnr-ice40': './src/nextpnr-ice40.ts'
+        yosys: './src/workers/yosys.ts',
+        'nextpnr-ecp5': './src/workers/nextpnr-ecp5.ts',
+        'nextpnr-ice40': './src/workers/nextpnr-ice40.ts'
     },
     output: {
         filename: '[name].js',
-        path: path.join(currentDirectory, 'workers', 'dist'),
+        path: path.join(currentDirectory, 'dist', 'workers'),
         library: {
             name: 'exportVar',
             type: 'var'

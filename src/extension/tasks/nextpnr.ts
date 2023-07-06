@@ -1,7 +1,7 @@
 import {type NextpnrWorkerOptions, getNextpnrWorkerOptions} from 'edacation';
 import * as vscode from 'vscode';
 
-import type {MessageFile} from '../messages.js';
+import type {MessageFile} from '../../common/messages.js';
 import type {Project, ProjectFile} from '../projects/index.js';
 
 import {type WorkerTaskDefinition, WorkerTaskProvider, WorkerTaskTerminal} from './worker.js';

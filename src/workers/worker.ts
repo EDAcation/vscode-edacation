@@ -1,6 +1,6 @@
 import path from 'path';
 
-import type {ExtensionMessage, MessageFile, WorkerMessage} from './messages';
+import type {ExtensionMessage, MessageFile, WorkerMessage} from '../common/messages.js';
 
 export const run = () => {
     console.log('run');
