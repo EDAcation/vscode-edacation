@@ -22,7 +22,7 @@ interface MessageDocument {
 
 type Message = MessageDocument;
 
-function getSvg(svgElem: Element, width: Number, height: Number): String {
+const getSvg = (svgElem: Element, width: number, height: number): string => {
     // Filter conveniently labeled foreign objects from element
     let foreignElems = svgElem.getElementsByTagName('foreignObject');
     for (let elem of Array.from(foreignElems)) {
