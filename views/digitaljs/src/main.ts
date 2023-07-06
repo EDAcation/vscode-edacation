@@ -1,8 +1,8 @@
+import 'jquery-ui/dist/jquery-ui.min.js';
 import '@vscode/codicons/dist/codicon.css';
 import {allComponents} from '@vscode/webview-ui-toolkit/dist/toolkit.js';
 // @ts-expect-error: TODO: add module declaration (digitaljs.d.ts)
 import {Circuit} from 'digitaljs';
-import 'jquery-ui/dist/jquery-ui.min.js';
 import {yosys2digitaljs} from 'yosys2digitaljs';
 
 import './main.css';
