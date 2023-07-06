@@ -24,8 +24,8 @@ type Message = MessageDocument;
 
 const getSvg = (svgElem: Element, width: number, height: number): string => {
     // Filter conveniently labeled foreign objects from element
-    let foreignElems = svgElem.getElementsByTagName('foreignObject');
-    for (let elem of Array.from(foreignElems)) {
+    const foreignElems = svgElem.getElementsByTagName('foreignObject');
+    for (const elem of Array.from(foreignElems)) {
         elem.remove();
     }
 
@@ -39,7 +39,7 @@ const getSvg = (svgElem: Element, width: number, height: number): string => {
 
     // Add XML header
     return '<?xml version="1.0" encoding="utf-8"?>\n' + svgElem.outerHTML;
-}
+};
 
 class View {
     private readonly root: HTMLDivElement;
@@ -100,26 +100,26 @@ class View {
 
     requestExport() {
         // Find our SVG root element
-        let svgElems = document.getElementsByTagName('svg');
+        const svgElems = document.getElementsByTagName('svg');
         if (!svgElems) {
             throw new Error('Could not find SVG element to export');
         }
-        let svgElem = svgElems[0];
+        const svgElem = svgElems[0];
 
         // Extract viewable SVG data from elem
-        let svgData = getSvg(
-            svgElem.cloneNode(true) as Element,  // Deep clone so we don't affect the SVG in the DOM
+        const svgData = getSvg(
+            svgElem.cloneNode(true) as Element, // Deep clone so we don't affect the SVG in the DOM
             svgElem.clientWidth,
             svgElem.clientHeight
         );
 
         // Send save request to main worker
         vscode.postMessage({
-            'type': 'requestSave',
-            'data': {
-                'fileContents': svgData,
-                'defaultPath': 'export.svg',
-                'saveFilters': {'svg': ['.svg']}
+            type: 'requestSave',
+            data: {
+                fileContents: svgData,
+                defaultPath: 'export.svg',
+                saveFilters: {svg: ['.svg']}
             }
         });
     }
