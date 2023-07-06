@@ -27,6 +27,9 @@ const webExtensionConfig = {
     resolve: {
         mainFields: ['browser', 'module', 'main'],
         extensions: ['.ts', '.js'],
+        extensionAlias: {
+            '.js': ['.ts', '.js']
+        },
         alias: {},
         fallback: {
             assert: 'assert',
@@ -87,6 +90,9 @@ const workerConfig = {
     resolve: {
         mainFields: ['browser', 'module', 'main'],
         extensions: ['.ts', '.js'],
+        extensionAlias: {
+            '.js': ['.ts', '.js']
+        },
         alias: {
             fs: false,
             child_process: false
