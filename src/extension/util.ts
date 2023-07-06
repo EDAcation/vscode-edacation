@@ -116,8 +116,7 @@ export const findProjectRoot = (fileUri: vscode.Uri): vscode.Uri | undefined => 
 
     const workspaceUris = workspaces?.map((ws) => ws.uri.fsPath);
     if (!workspaceUris) {
-        // Try the first workspace, but will most likely be undefined
-        return workspaces?.[0].uri;
+        return;
     }
 
     let path = fileUri;
@@ -125,7 +124,7 @@ export const findProjectRoot = (fileUri: vscode.Uri): vscode.Uri | undefined => 
         const newPath = parentDir(path);
         if (newPath === path) {
             // Prevent possible infinite loop
-            return workspaces?.[0].uri;
+            return;
         }
         path = newPath;
     }
