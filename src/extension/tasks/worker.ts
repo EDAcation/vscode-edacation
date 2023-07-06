@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import type {ExtensionMessage, MessageFile, WorkerMessage} from '../messages.js';
+import type {ExtensionMessage, MessageFile, WorkerMessage} from '../../common/messages.js';
 import {Project, type Projects} from '../projects/index.js';
 import {decodeText, encodeText} from '../util.js';
 
@@ -277,8 +277,8 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
         const worker = new Worker(
             vscode.Uri.joinPath(
                 this.context.extensionUri,
-                'workers',
                 'dist',
+                'workers',
                 this.getWorkerFileName(workerOptions)
             ).toString(true)
         );

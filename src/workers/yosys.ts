@@ -1,7 +1,7 @@
 import {Yosys} from 'yosys';
 import wasmBinaryUrl from 'yosys/dist/yosys.wasm';
 
-import {WorkerTool} from './worker';
+import {WorkerTool} from './worker.js';
 
 export class WorkerYosys extends WorkerTool<Yosys> {
     async initialize(): Promise<Yosys> {
