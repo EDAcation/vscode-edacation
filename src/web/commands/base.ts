@@ -1,9 +1,8 @@
 import * as vscode from 'vscode';
 
-import {Project, Projects} from '../projects';
+import type {Project, Projects} from '../projects/index.js';
 
 export abstract class BaseCommand {
-
     protected readonly context: vscode.ExtensionContext;
     protected readonly projects: Projects;
 
@@ -20,7 +19,6 @@ export abstract class BaseCommand {
 }
 
 export abstract class CurrentProjectCommand extends BaseCommand {
-
     abstract executeForCurrentProject(project: Project, ...args: unknown[]): Promise<void>;
 
     async execute(...args: unknown[]) {

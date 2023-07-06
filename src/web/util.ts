@@ -1,7 +1,11 @@
 import path from 'path';
 import * as vscode from 'vscode';
 
-export const getWebviewUri = (webview: vscode.Webview, context: vscode.ExtensionContext, path: string[]): vscode.Uri => {
+export const getWebviewUri = (
+    webview: vscode.Webview,
+    context: vscode.ExtensionContext,
+    path: string[]
+): vscode.Uri => {
     const uri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, ...path));
     console.log(context.extensionUri.toString(), ...path, uri.toString());
     return uri;
@@ -42,7 +46,8 @@ const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
 export const encodeText = (input: string) => textEncoder.encode(input.endsWith('\n') ? input : `${input}\n`);
-export const encodeJSON = (input: unknown, pretty: boolean = false) => encodeText(JSON.stringify(input, undefined, pretty ? 4 : undefined));
+export const encodeJSON = (input: unknown, pretty = false) =>
+    encodeText(JSON.stringify(input, undefined, pretty ? 4 : undefined));
 
 export const decodeText = (input: BufferSource) => textDecoder.decode(input);
 export const decodeJSON = (input: BufferSource) => JSON.parse(decodeText(input));
@@ -52,28 +57,39 @@ export const FILE_EXTENSIONS_VHDL = ['vhd'];
 
 export const FILE_FILTERS_HDL = {
     /* eslint-disable-next-line @typescript-eslint/naming-convention */
-    'HDL (*.v, *.vh, *.sv, *.svh, *.vhd)': [...FILE_EXTENSIONS_VERILOG, ...FILE_EXTENSIONS_VHDL],
+    'HDL (*.v, *.vh, *.sv, *.svh, *.vhd)': [...FILE_EXTENSIONS_VERILOG, ...FILE_EXTENSIONS_VHDL]
 };
 
 export const asWorkspaceRelativeFolderPath = (folderUri: vscode.Uri) =>
     path.dirname(vscode.workspace.asRelativePath(vscode.Uri.joinPath(folderUri, '__root__'), true));
 
-export const getWorkspaceRelativePath = (folderUri: vscode.Uri, fileUri: vscode.Uri): [string, string] | [undefined, undefined] => {
+export const getWorkspaceRelativePath = (
+    folderUri: vscode.Uri,
+    fileUri: vscode.Uri
+): [string, string] | [undefined, undefined] => {
     const workspaceRelativeFolder = asWorkspaceRelativeFolderPath(folderUri);
     const workspaceRelativePath = vscode.workspace.asRelativePath(fileUri, true);
 
     console.log(workspaceRelativeFolder, workspaceRelativePath);
 
-    if (workspaceRelativePath !== workspaceRelativeFolder && !workspaceRelativePath.startsWith(`${workspaceRelativeFolder}/`)) {
+    if (
+        workspaceRelativePath !== workspaceRelativeFolder &&
+        !workspaceRelativePath.startsWith(`${workspaceRelativeFolder}/`)
+    ) {
         return [undefined, undefined];
     }
 
-    const folderRelativePath = workspaceRelativePath === workspaceRelativeFolder ? '.' :
-        workspaceRelativePath.replace(new RegExp(`^${workspaceRelativeFolder}/`), './');
+    const folderRelativePath =
+        workspaceRelativePath === workspaceRelativeFolder
+            ? '.'
+            : workspaceRelativePath.replace(new RegExp(`^${workspaceRelativeFolder}/`), './');
 
     return [workspaceRelativePath, folderRelativePath];
 };
 
-export type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
+export type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[]
+    ? ElementType
+    : never;
 
-export const keysForEnum = <M extends Record<string, unknown>>(map: M): [keyof M, ...(keyof M)[]] => Object.keys(map) as unknown as [keyof M, ...(keyof M)[]];
+export const keysForEnum = <M extends Record<string, unknown>>(map: M): [keyof M, ...(keyof M)[]] =>
+    Object.keys(map) as unknown as [keyof M, ...(keyof M)[]];

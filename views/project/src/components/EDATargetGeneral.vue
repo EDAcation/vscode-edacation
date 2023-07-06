@@ -1,6 +1,14 @@
 <script lang="ts">
 import {VENDORS} from 'edacation';
-import type {Device, Family, Vendor, VendorId, TargetConfiguration, YosysConfiguration, NextpnrConfiguration} from 'edacation';
+import type {
+    Device,
+    Family,
+    NextpnrConfiguration,
+    TargetConfiguration,
+    Vendor,
+    VendorId,
+    YosysConfiguration
+} from 'edacation';
 import {defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
@@ -136,43 +144,81 @@ export default defineComponent({
 
 <template>
     <template v-if="target">
-        <div style="display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, 1fr); grid-template-columns: repeat(2, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+        <div
+            style="
+                display: grid;
+                grid-auto-flow: column;
+                grid-template-rows: repeat(4, 1fr);
+                grid-template-columns: repeat(2, minmax(320px, 1fr));
+                gap: 1rem;
+                margin-bottom: 1rem;
+            "
+        >
             <vscode-text-field placeholder="ID" :value="target.id" @input="handleIdChange">ID</vscode-text-field>
 
-            <vscode-text-field placeholder="Name" :value="target.name" @input="handleNameChange">Name</vscode-text-field>
+            <vscode-text-field placeholder="Name" :value="target.name" @input="handleNameChange">
+                Name
+            </vscode-text-field>
 
-            <vscode-text-field placeholder="Output directory" :value="target.directory || ''" @input="handleDirectoryChange">Output directory</vscode-text-field>
+            <vscode-text-field
+                placeholder="Output directory"
+                :value="target.directory || ''"
+                @input="handleDirectoryChange"
+                >Output directory</vscode-text-field
+            >
 
             <div></div>
 
             <div>
-                <label style="display: block; margin-bottom: 2px;">Vendor</label>
-                <vscode-dropdown :value="target.vendor" @input="handleVendorChange" style="display: block; min-width: 20rem;">
-                    <vscode-option v-for="(vendor, vendorId) in vendors" :key="vendorId" :value="vendorId">{{ vendor.name }}</vscode-option>
+                <label style="display: block; margin-bottom: 2px">Vendor</label>
+                <vscode-dropdown
+                    :value="target.vendor"
+                    @input="handleVendorChange"
+                    style="display: block; min-width: 20rem"
+                >
+                    <vscode-option v-for="(vendor, vendorId) in vendors" :key="vendorId" :value="vendorId">
+                        {{ vendor.name }}
+                    </vscode-option>
                 </vscode-dropdown>
             </div>
             <div>
-                <label style="display: block; margin-bottom: 2px;">Family</label>
-                <vscode-dropdown :value="target.family" @input="handleFamilyChange" style="display: block; min-width: 20rem;">
-                    <vscode-option v-for="(family, familyId) in families" :key="familyId" :value="familyId">{{ family.name }}</vscode-option>
+                <label style="display: block; margin-bottom: 2px">Family</label>
+                <vscode-dropdown
+                    :value="target.family"
+                    @input="handleFamilyChange"
+                    style="display: block; min-width: 20rem"
+                >
+                    <vscode-option v-for="(family, familyId) in families" :key="familyId" :value="familyId">
+                        {{ family.name }}
+                    </vscode-option>
                 </vscode-dropdown>
             </div>
             <div>
-                <label style="display: block; margin-bottom: 2px;">Device</label>
-                <vscode-dropdown :value="target.device" @input="handleDeviceChange" style="display: block; min-width: 20rem;">
-                    <vscode-option v-for="(device, deviceId) in devices" :key="deviceId" :value="deviceId">{{ device.name }}</vscode-option>
+                <label style="display: block; margin-bottom: 2px">Device</label>
+                <vscode-dropdown
+                    :value="target.device"
+                    @input="handleDeviceChange"
+                    style="display: block; min-width: 20rem"
+                >
+                    <vscode-option v-for="(device, deviceId) in devices" :key="deviceId" :value="deviceId">
+                        {{ device.name }}
+                    </vscode-option>
                 </vscode-dropdown>
             </div>
             <div>
-                <label style="display: block; margin-bottom: 2px;">Package</label>
-                <vscode-dropdown :value="target.package" @input="handlePackageChange" style="display: block; min-width: 20rem;">
-                    <vscode-option v-for="(packageName, packageId) in packages" :key="packageId" :value="packageId">{{ packageName }}</vscode-option>
+                <label style="display: block; margin-bottom: 2px">Package</label>
+                <vscode-dropdown
+                    :value="target.package"
+                    @input="handlePackageChange"
+                    style="display: block; min-width: 20rem"
+                >
+                    <vscode-option v-for="(packageName, packageId) in packages" :key="packageId" :value="packageId">
+                        {{ packageName }}
+                    </vscode-option>
                 </vscode-dropdown>
             </div>
         </div>
     </template>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

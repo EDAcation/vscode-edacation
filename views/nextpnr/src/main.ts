@@ -20,7 +20,6 @@ interface MessageDocument {
 type Message = MessageDocument;
 
 class View {
-
     private readonly root: HTMLDivElement;
     private state: State;
 

@@ -1,12 +1,12 @@
+import {type NextpnrWorkerOptions, getNextpnrWorkerOptions} from 'edacation';
 import * as vscode from 'vscode';
 
-import {Project, ProjectFile} from '../projects';
-import {WorkerTaskDefinition, WorkerTaskProvider, WorkerTaskTerminal} from './worker';
-import {NextpnrWorkerOptions, getNextpnrWorkerOptions} from 'edacation';
-import {MessageFile} from '../messages';
+import type {MessageFile} from '../messages.js';
+import type {Project, ProjectFile} from '../projects/index.js';
+
+import {type WorkerTaskDefinition, WorkerTaskProvider, WorkerTaskTerminal} from './worker.js';
 
 export class NextpnrTaskProvider extends WorkerTaskProvider {
-
     static getType() {
         return 'nextpnr';
     }
@@ -15,13 +15,15 @@ export class NextpnrTaskProvider extends WorkerTaskProvider {
         return NextpnrTaskProvider.getType();
     }
 
-    protected createTaskTerminal(folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition): WorkerTaskTerminal<NextpnrWorkerOptions> {
+    protected createTaskTerminal(
+        folder: vscode.WorkspaceFolder,
+        definition: WorkerTaskDefinition
+    ): WorkerTaskTerminal<NextpnrWorkerOptions> {
         return new NextpnrTaskTerminal(this.context, this.projects, folder, definition);
     }
 }
 
 class NextpnrTaskTerminal extends WorkerTaskTerminal<NextpnrWorkerOptions> {
-
     protected getWorkerName(): string {
         return NextpnrTaskProvider.getType();
     }
@@ -56,7 +58,9 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal<NextpnrWorkerOptions> {
 
     protected async handleStart(project: Project) {
         this.println(`Placing and routing EDA project "${project.getName()}" using nextpnr...`);
-        this.println('NOTE: nextpnr startup may take a while. This will be improved in future versions of this extension.');
+        this.println(
+            'NOTE: nextpnr startup may take a while. This will be improved in future versions of this extension.'
+        );
         this.println();
     }
 

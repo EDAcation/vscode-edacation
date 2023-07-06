@@ -1,9 +1,8 @@
 import * as vscode from 'vscode';
 
-import {Project, ProjectFile} from './project';
+import {Project, type ProjectFile} from './project.js';
 
 export class Projects {
-
     protected readonly context: vscode.ExtensionContext;
 
     private projectEmitter = new vscode.EventEmitter<Project | Project[] | undefined>();
@@ -133,14 +132,17 @@ export class Projects {
         }
     }
 
-    async store(full: boolean = true) {
+    async store(full = true) {
         const projectUris: vscode.Uri[] = [];
         for (const project of this.projects) {
             const projectUri = full ? await Project.store(project) : project.getUri();
             projectUris.push(projectUri);
         }
 
-        await this.context.workspaceState.update('projects', projectUris.map((uri) => uri.toString()));
+        await this.context.workspaceState.update(
+            'projects',
+            projectUris.map((uri) => uri.toString())
+        );
 
         this.emitProjectChange();
     }
@@ -190,7 +192,11 @@ export class Projects {
         const task = event.execution.task;
 
         if (['yosys-rtl', 'yosys-synth', 'nextpnr'].includes(task.definition.type)) {
-            if (task.scope === undefined || task.scope === vscode.TaskScope.Global || task.scope === vscode.TaskScope.Workspace) {
+            if (
+                task.scope === undefined ||
+                task.scope === vscode.TaskScope.Global ||
+                task.scope === vscode.TaskScope.Workspace
+            ) {
                 return;
             }
 

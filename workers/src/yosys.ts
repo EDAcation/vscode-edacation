@@ -4,7 +4,6 @@ import wasmBinaryUrl from 'yosys/dist/yosys.wasm';
 import {WorkerTool} from './worker';
 
 export class WorkerYosys extends WorkerTool<Yosys> {
-
     async initialize(): Promise<Yosys> {
         // Fetch WebAssembly binary from data URL
         const wasmBinary = await this.fetchBinary(wasmBinaryUrl);

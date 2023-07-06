@@ -1,0 +1,17 @@
+repos:
+    - repo: https://github.com/pre-commit/mirrors-prettier
+      rev: v2.7.1
+      hooks:
+          - id: prettier
+            additional_dependencies:
+                - prettier@^2.8.8
+                - '@trivago/prettier-plugin-sort-imports@^4.1.1'
+                - '@vue/compiler-sfc@^3.3.4'
+    - repo: https://github.com/pre-commit/mirrors-eslint
+      rev: v8.39.0
+      hooks:
+          - id: eslint
+            additional_dependencies:
+                - eslint@^8.44.0
+                - '@typescript-eslint/eslint-plugin@^5.61.0'
+                - '@typescript-eslint/parser@^5.61.0'

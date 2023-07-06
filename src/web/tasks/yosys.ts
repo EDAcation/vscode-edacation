@@ -1,13 +1,13 @@
+import {type YosysWorkerOptions, getYosysWorkerOptions} from 'edacation';
 import * as vscode from 'vscode';
 
-import {MessageFile} from '../messages';
-import {encodeText} from '../util';
-import {WorkerOutputFile, WorkerTaskDefinition, WorkerTaskProvider, WorkerTaskTerminal} from './worker';
-import {YosysWorkerOptions, getYosysWorkerOptions} from 'edacation';
-import {Project} from '../projects';
+import type {MessageFile} from '../messages.js';
+import type {Project} from '../projects/index.js';
+import {encodeText} from '../util.js';
+
+import {type WorkerOutputFile, type WorkerTaskDefinition, WorkerTaskProvider, WorkerTaskTerminal} from './worker.js';
 
 export abstract class BaseYosysTaskTerminal extends WorkerTaskTerminal<YosysWorkerOptions> {
-
     private lastLogMessage?: string;
 
     protected getWorkerName(): string {
@@ -35,10 +35,12 @@ export abstract class BaseYosysTaskTerminal extends WorkerTaskTerminal<YosysWork
     }
 
     protected getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
-        return [{
-            path: 'design.ys',
-            data: encodeText(workerOptions.commands.join('\r\n'))
-        }];
+        return [
+            {
+                path: 'design.ys',
+                data: encodeText(workerOptions.commands.join('\r\n'))
+            }
+        ];
     }
 
     protected getOutputFiles(workerOptions: YosysWorkerOptions): string[] {
@@ -70,7 +72,6 @@ export abstract class BaseYosysTaskTerminal extends WorkerTaskTerminal<YosysWork
 }
 
 export class YosysTaskProvider extends WorkerTaskProvider {
-
     static getType() {
         return 'yosys';
     }
@@ -79,13 +80,15 @@ export class YosysTaskProvider extends WorkerTaskProvider {
         return YosysTaskProvider.getType();
     }
 
-    protected createTaskTerminal(folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition): WorkerTaskTerminal<YosysWorkerOptions> {
+    protected createTaskTerminal(
+        folder: vscode.WorkspaceFolder,
+        definition: WorkerTaskDefinition
+    ): WorkerTaskTerminal<YosysWorkerOptions> {
         return new YosysTaskTerminal(this.context, this.projects, folder, definition);
     }
 }
 
 class YosysTaskTerminal extends BaseYosysTaskTerminal {
-
     protected async handleEnd(project: Project, outputFiles: WorkerOutputFile[]) {
         super.handleEnd(project, outputFiles);
 

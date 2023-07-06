@@ -1,9 +1,10 @@
+import {Project as BaseProject, DEFAULT_CONFIGURATION, type ProjectConfiguration} from 'edacation';
 import path from 'path';
 import * as vscode from 'vscode';
-import {DEFAULT_CONFIGURATION, Project as BaseProject, ProjectConfiguration} from 'edacation';
 
-import {asWorkspaceRelativeFolderPath, decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util';
-import {Projects} from './projects';
+import {asWorkspaceRelativeFolderPath, decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util.js';
+
+import type {Projects} from './projects.js';
 
 export interface ProjectFile {
     path: string;
@@ -11,7 +12,6 @@ export interface ProjectFile {
 }
 
 export class Project extends BaseProject {
-
     private readonly projects: Projects;
     private uri: vscode.Uri;
     private root: vscode.Uri;
@@ -25,9 +25,9 @@ export class Project extends BaseProject {
         name?: string,
         inputFiles: string[] = [],
         outputFiles: string[] = [],
-        configuration: ProjectConfiguration = DEFAULT_CONFIGURATION,
+        configuration: ProjectConfiguration = DEFAULT_CONFIGURATION
     ) {
-        super( name ? name : path.basename(uri.path, '.edaproject'), inputFiles, outputFiles, configuration);
+        super(name ? name : path.basename(uri.path, '.edaproject'), inputFiles, outputFiles, configuration);
 
         this.projects = projects;
 
@@ -37,8 +37,12 @@ export class Project extends BaseProject {
         });
         this.relativeRoot = asWorkspaceRelativeFolderPath(this.root);
 
-        this.inputFileUris = new Map<string, vscode.Uri>(inputFiles.map((file) => ([file, vscode.Uri.joinPath(this.getRoot(), file)])));
-        this.outputFileUris = new Map<string, vscode.Uri>(outputFiles.map((file) => ([file, vscode.Uri.joinPath(this.getRoot(), file)])));
+        this.inputFileUris = new Map<string, vscode.Uri>(
+            inputFiles.map((file) => [file, vscode.Uri.joinPath(this.getRoot(), file)])
+        );
+        this.outputFileUris = new Map<string, vscode.Uri>(
+            outputFiles.map((file) => [file, vscode.Uri.joinPath(this.getRoot(), file)])
+        );
     }
 
     getUri() {
@@ -151,10 +155,12 @@ export class Project extends BaseProject {
         await Project.store(this);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static serialize(project: Project): any {
         return BaseProject.serialize(project);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static deserialize(data: any, projects: Projects, uri: vscode.Uri): Project {
         const name: string = data.name;
         const inputFiles: string[] = data.inputFiles ?? [];

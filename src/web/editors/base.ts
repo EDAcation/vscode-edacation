@@ -1,10 +1,9 @@
 import * as vscode from 'vscode';
 
-import {Projects} from '../projects';
-import {getWebviewUri} from '../util';
+import type {Projects} from '../projects/index.js';
+import {getWebviewUri} from '../util.js';
 
 export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
-
     protected readonly context: vscode.ExtensionContext;
     protected readonly projects: Projects;
 
@@ -17,7 +16,11 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
         throw new Error('Not implemented.');
     }
 
-    public resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken): void | Thenable<void> {
+    public resolveCustomTextEditor(
+        document: vscode.TextDocument,
+        webviewPanel: vscode.WebviewPanel,
+        _token: vscode.CancellationToken
+    ): void | Thenable<void> {
         const disposables: vscode.Disposable[] = [];
 
         // Render webview
@@ -30,16 +33,20 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
         webviewPanel.webview.onDidReceiveMessage(this.onDidReceiveMessage.bind(this, document, webviewPanel.webview));
 
         // Add text document listener
-        disposables.push(vscode.workspace.onDidChangeTextDocument((event) => {
-            if (event.document.uri.toString() === document.uri.toString()) {
-                this.update(document, webviewPanel.webview, true);
-            }
-        }));
-        disposables.push(vscode.workspace.onDidSaveTextDocument((event) => {
-            if (event.uri.toString() === document.uri.toString()) {
-                this.onSave(document, webviewPanel.webview);
-            }
-        }));
+        disposables.push(
+            vscode.workspace.onDidChangeTextDocument((event) => {
+                if (event.document.uri.toString() === document.uri.toString()) {
+                    this.update(document, webviewPanel.webview, true);
+                }
+            })
+        );
+        disposables.push(
+            vscode.workspace.onDidSaveTextDocument((event) => {
+                if (event.uri.toString() === document.uri.toString()) {
+                    this.onSave(document, webviewPanel.webview);
+                }
+            })
+        );
 
         // Create file system watcher
         const watcher = vscode.workspace.createFileSystemWatcher(document.uri.fsPath);
@@ -62,7 +69,7 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
     protected getHtmlForWebview(webview: vscode.Webview, document: vscode.TextDocument): string {
         const initialData = JSON.stringify(JSON.stringify(this.getInitialData(document)));
 
-        return /*html*/`
+        return /*html*/ `
             <!doctype html>
             <html lang="en">
                 <head>
@@ -77,13 +84,17 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
                     </div>
 
                     ${this.getHtmlScripts(webview)}
-                    ${initialData ? /*html*/`<script type="application/javascript">window.initialData = JSON.parse(${initialData});</script>` : ''}
+                    ${
+                        initialData
+                            ? /*html*/ `<script type="application/javascript">window.initialData = JSON.parse(${initialData});</script>`
+                            : ''
+                    }
                 </body>
             </html>
         `;
     }
 
-    protected getInitialData(_document: vscode.TextDocument): any | undefined {
+    protected getInitialData(_document: vscode.TextDocument): Record<string, unknown> | undefined {
         return undefined;
     }
 
@@ -91,21 +102,29 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
         const stylePaths = this.getStylePaths();
         const styleUris = stylePaths.map((stylePath) => getWebviewUri(webview, this.context, stylePath));
 
-        return styleUris.map((styleUri) => /*html*/`<link rel="stylesheet" type="text/css" href="${styleUri}">`).join('\n');
+        return styleUris
+            .map((styleUri) => /*html*/ `<link rel="stylesheet" type="text/css" href="${styleUri}">`)
+            .join('\n');
     }
 
     protected getHtmlScripts(webview: vscode.Webview): string {
         const scriptPaths = this.getScriptPaths();
         const scriptUris = scriptPaths.map((scriptPath) => getWebviewUri(webview, this.context, scriptPath));
 
-        return scriptUris.map((scriptUri) => /*html*/`<script type="module" src="${scriptUri}" defer></script>`).join('\n');
+        return scriptUris
+            .map((scriptUri) => /*html*/ `<script type="module" src="${scriptUri}" defer></script>`)
+            .join('\n');
     }
 
     protected abstract getStylePaths(): string[][];
 
     protected abstract getScriptPaths(): string[][];
 
-    protected abstract onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: any): void;
+    protected abstract onDidReceiveMessage(
+        document: vscode.TextDocument,
+        webview: vscode.Webview,
+        message: Record<string, unknown>
+    ): void;
 
     protected abstract onSave(document: vscode.TextDocument, webview: vscode.Webview): void;
 

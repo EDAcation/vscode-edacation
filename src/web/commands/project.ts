@@ -1,19 +1,17 @@
 import * as vscode from 'vscode';
 
-import {ProjectEditor} from '../editors/project';
-import {Project} from '../projects';
-import {ensureFileAbsent, getWorkspaceRelativePath} from '../util';
-import {BaseCommand} from './base';
+import {ProjectEditor} from '../editors/project.js';
+import type {Project} from '../projects/index.js';
+import {ensureFileAbsent, getWorkspaceRelativePath} from '../util.js';
+
+import {BaseCommand} from './base.js';
 
 export class NewProjectCommand extends BaseCommand {
-
     static getID() {
         return 'edacation.newProject';
     }
 
     async execute() {
-        let projectName: string;
-        let projectWorkspace: vscode.Uri;
         let projectLocation: vscode.Uri;
 
         // Ask for project name
@@ -24,19 +22,26 @@ export class NewProjectCommand extends BaseCommand {
         if (!name) {
             return;
         }
-        projectName = name;
+        const projectName = name;
 
         // Ask for project workspace
         type WorkspaceItem = vscode.QuickPickItem & {uri?: vscode.Uri};
-        const workspaceItems = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders
-            .map((folder) => ({
-                uri: folder.uri,
-                label: `$(folder) ${folder.name}`,
-                description: folder.uri.fsPath
-            }) as WorkspaceItem) : [{
-                label: `$(error) No workspace folders available`,
-                description: 'Please add a folder to the workspace before using EDA projects.'
-            }];
+        const workspaceItems =
+            vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0
+                ? vscode.workspace.workspaceFolders.map(
+                      (folder) =>
+                          ({
+                              uri: folder.uri,
+                              label: `$(folder) ${folder.name}`,
+                              description: folder.uri.fsPath
+                          } as WorkspaceItem)
+                  )
+                : [
+                      {
+                          label: `$(error) No workspace folders available`,
+                          description: 'Please add a folder to the workspace before using EDA projects.'
+                      }
+                  ];
 
         const workspaceSelection = await vscode.window.showQuickPick(workspaceItems, {
             title: 'Choose EDA Project Workspace',
@@ -46,24 +51,28 @@ export class NewProjectCommand extends BaseCommand {
             return;
         }
 
-        projectWorkspace = workspaceSelection.uri;
+        const projectWorkspace = workspaceSelection.uri;
 
         // Ask for project location
         const projectFolder = vscode.Uri.joinPath(projectWorkspace, projectName);
         type FolderItem = vscode.QuickPickItem & {key: 'folder' | 'root' | 'browse'};
-        const folderItems = [{
-            key: 'folder',
-            label: `$(folder) New Folder: "${projectName}"`,
-            description: projectFolder.fsPath
-        }, {
-            key: 'root',
-            label: '$(folder) Workspace Folder Root',
-            description: projectWorkspace.fsPath
-        }, {
-            key: 'browse',
-            label: '$(folder-opened) Browse...',
-            description: ''
-        }] as FolderItem[];
+        const folderItems = [
+            {
+                key: 'folder',
+                label: `$(folder) New Folder: "${projectName}"`,
+                description: projectFolder.fsPath
+            },
+            {
+                key: 'root',
+                label: '$(folder) Workspace Folder Root',
+                description: projectWorkspace.fsPath
+            },
+            {
+                key: 'browse',
+                label: '$(folder-opened) Browse...',
+                description: ''
+            }
+        ] as FolderItem[];
 
         const folderSelection = await vscode.window.showQuickPick(folderItems, {
             title: 'Choose EDA Project Location',
@@ -95,7 +104,10 @@ export class NewProjectCommand extends BaseCommand {
         }
 
         // Determine project URI
-        const projectUri = vscode.Uri.joinPath(projectLocation, projectName.endsWith('.edaproject') ? projectName : `${projectName}.edaproject`);
+        const projectUri = vscode.Uri.joinPath(
+            projectLocation,
+            projectName.endsWith('.edaproject') ? projectName : `${projectName}.edaproject`
+        );
 
         // Check if the project is within the workspace folder
         const [workspaceRelativePath] = getWorkspaceRelativePath(projectWorkspace, projectUri);
@@ -119,7 +131,6 @@ export class NewProjectCommand extends BaseCommand {
 }
 
 export class OpenProjectCommand extends BaseCommand {
-
     static getID() {
         return 'edacation.openProject';
     }
@@ -127,15 +138,22 @@ export class OpenProjectCommand extends BaseCommand {
     async execute() {
         // Ask for project workspace
         type WorkspaceItem = vscode.QuickPickItem & {uri?: vscode.Uri};
-        const workspaceItems = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders
-            .map((folder) => ({
-                uri: folder.uri,
-                label: `$(folder) ${folder.name}`,
-                description: folder.uri.fsPath
-            }) as WorkspaceItem) : [{
-                label: `$(error) No workspace folders available`,
-                description: 'Please add a folder to the workspace before using EDA projects.'
-            }];
+        const workspaceItems =
+            vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0
+                ? vscode.workspace.workspaceFolders.map(
+                      (folder) =>
+                          ({
+                              uri: folder.uri,
+                              label: `$(folder) ${folder.name}`,
+                              description: folder.uri.fsPath
+                          } as WorkspaceItem)
+                  )
+                : [
+                      {
+                          label: `$(error) No workspace folders available`,
+                          description: 'Please add a folder to the workspace before using EDA projects.'
+                      }
+                  ];
 
         const workspaceSelection = await vscode.window.showQuickPick(workspaceItems, {
             title: 'Choose EDA Project Workspace',
@@ -156,7 +174,7 @@ export class OpenProjectCommand extends BaseCommand {
             defaultUri: projectWorkspace,
             filters: {
                 /* eslint-disable-next-line @typescript-eslint/naming-convention */
-                'EDA Projects (*.edaproject)': ['edaproject'],
+                'EDA Projects (*.edaproject)': ['edaproject']
             }
         });
 
@@ -185,7 +203,6 @@ export class OpenProjectCommand extends BaseCommand {
 }
 
 export class CloseProject extends BaseCommand {
-
     static getID() {
         return 'edacation.closeProject';
     }
@@ -196,7 +213,6 @@ export class CloseProject extends BaseCommand {
 }
 
 export class SelectProject extends BaseCommand {
-
     static getID() {
         return 'edacation.selectProject';
     }

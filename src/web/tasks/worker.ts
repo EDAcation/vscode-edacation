@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
-import {ExtensionMessage, MessageFile, WorkerMessage} from '../messages';
 
-import {Projects, Project} from '../projects';
-import {decodeText, encodeText} from '../util';
-import {BaseTaskProvider} from './base';
+import type {ExtensionMessage, MessageFile, WorkerMessage} from '../messages.js';
+import {Project, type Projects} from '../projects/index.js';
+import {decodeText, encodeText} from '../util.js';
+
+import {BaseTaskProvider} from './base.js';
 
 const PROJECT_PATTERN = '**/*.edaproject';
 
@@ -14,7 +15,6 @@ export interface WorkerTaskDefinition extends vscode.TaskDefinition {
 }
 
 export abstract class WorkerTaskProvider extends BaseTaskProvider {
-
     private taskPromise?: Promise<vscode.Task[]> | undefined;
     private fileSystemWatcher: vscode.FileSystemWatcher;
 
@@ -22,9 +22,9 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
         super(context, projects);
 
         this.fileSystemWatcher = vscode.workspace.createFileSystemWatcher(PROJECT_PATTERN);
-        this.fileSystemWatcher.onDidChange(() => this.taskPromise = undefined);
-        this.fileSystemWatcher.onDidCreate(() => this.taskPromise = undefined);
-        this.fileSystemWatcher.onDidDelete(() => this.taskPromise = undefined);
+        this.fileSystemWatcher.onDidChange(() => (this.taskPromise = undefined));
+        this.fileSystemWatcher.onDidCreate(() => (this.taskPromise = undefined));
+        this.fileSystemWatcher.onDidDelete(() => (this.taskPromise = undefined));
     }
 
     provideTasks(): Promise<vscode.Task[]> {
@@ -40,11 +40,20 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
             throw new Error('Yosys task requires the path of an EDA project to be specified.');
         }
 
-        if (task.scope === undefined || task.scope === vscode.TaskScope.Global || task.scope === vscode.TaskScope.Workspace) {
+        if (
+            task.scope === undefined ||
+            task.scope === vscode.TaskScope.Global ||
+            task.scope === vscode.TaskScope.Workspace
+        ) {
             return undefined;
         }
 
-        return this.getTask(task.scope, task.definition.uri, task.definition.project, task.definition as WorkerTaskDefinition);
+        return this.getTask(
+            task.scope,
+            task.definition.uri,
+            task.definition.project,
+            task.definition as WorkerTaskDefinition
+        );
     }
 
     dispose() {
@@ -53,7 +62,10 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
 
     protected abstract getTaskType(): string;
 
-    protected abstract createTaskTerminal(folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition): WorkerTaskTerminal<unknown>;
+    protected abstract createTaskTerminal(
+        folder: vscode.WorkspaceFolder,
+        definition: WorkerTaskDefinition
+    ): WorkerTaskTerminal<unknown>;
 
     private async findTasks(): Promise<vscode.Task[]> {
         const tasks: vscode.Task[] = [];
@@ -72,7 +84,12 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
         return tasks;
     }
 
-    private getTask(folder: vscode.WorkspaceFolder, uri: vscode.Uri, project: string, additionalDefinition?: WorkerTaskDefinition): vscode.Task {
+    private getTask(
+        folder: vscode.WorkspaceFolder,
+        uri: vscode.Uri,
+        project: string,
+        additionalDefinition?: WorkerTaskDefinition
+    ): vscode.Task {
         const definition: WorkerTaskDefinition = {
             type: this.getTaskType(),
             project,
@@ -81,9 +98,13 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
             ...additionalDefinition
         };
 
-        return new vscode.Task(definition, vscode.TaskScope.Workspace, project, this.getTaskType(), new vscode.CustomExecution(async () =>
-            this.createTaskTerminal(folder, definition)
-        ));
+        return new vscode.Task(
+            definition,
+            vscode.TaskScope.Workspace,
+            project,
+            this.getTaskType(),
+            new vscode.CustomExecution(async () => this.createTaskTerminal(folder, definition))
+        );
     }
 }
 
@@ -93,7 +114,6 @@ export interface WorkerOutputFile {
 }
 
 export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
-
     protected context: vscode.ExtensionContext;
     protected projects: Projects;
     private folder: vscode.WorkspaceFolder;
@@ -107,7 +127,12 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
     onDidWrite = this.writeEmitter.event;
     onDidClose = this.closeEmitter.event;
 
-    constructor(context: vscode.ExtensionContext, projects: Projects, folder: vscode.WorkspaceFolder, definition: WorkerTaskDefinition) {
+    constructor(
+        context: vscode.ExtensionContext,
+        projects: Projects,
+        folder: vscode.WorkspaceFolder,
+        definition: WorkerTaskDefinition
+    ) {
         this.context = context;
         this.projects = projects;
         this.folder = folder;
@@ -120,7 +145,9 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
         this.execute();
     }
 
-    close() {}
+    close() {
+        // Do nothing
+    }
 
     protected abstract getWorkerName(): string;
 
@@ -142,14 +169,17 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
 
     protected abstract handleEnd(project: Project, outputFiles: WorkerOutputFile[]): Promise<void>;
 
-    protected println(line: string = '', _stream: 'stdout' | 'stderr' = 'stdout') {
+    protected println(line = '', _stream: 'stdout' | 'stderr' = 'stdout') {
         this.writeEmitter.fire(`${line}\r\n`);
         this.logMessages.push(`${line}\r\n`);
     }
 
     protected async exit(code: number, project?: Project) {
         try {
-            const uri = vscode.Uri.joinPath(project ? project.getRoot() : this.folder.uri, `${this.getWorkerName()}.log`);
+            const uri = vscode.Uri.joinPath(
+                project ? project.getRoot() : this.folder.uri,
+                `${this.getWorkerName()}.log`
+            );
             await vscode.workspace.fs.writeFile(uri, encodeText(this.logMessages.join('')));
 
             if (project) {
@@ -180,7 +210,10 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
         let project: Project;
         try {
             // Load EDA project
-            project = await Project.load(this.projects, this.definition.uri || vscode.Uri.joinPath(this.folder.uri, this.definition.project));
+            project = await Project.load(
+                this.projects,
+                this.definition.uri || vscode.Uri.joinPath(this.folder.uri, this.definition.project)
+            );
         } catch (err) {
             this.error(err);
             return;
@@ -189,7 +222,10 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
         try {
             await this.handleStart(project);
 
-            const workerOptions = this.getWorkerOptions(project, this.definition.targetId ?? project.getConfiguration().targets[0].id);
+            const workerOptions = this.getWorkerOptions(
+                project,
+                this.definition.targetId ?? project.getConfiguration().targets[0].id
+            );
 
             // Create worker
             const worker = this.createWorker(project, workerOptions);
@@ -221,23 +257,34 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
             this.println();
 
             // Send input to worker
-            this.send(worker, {
-                type: 'input',
-                command,
-                args,
-                inputFiles: files.concat(generatedInputFiles),
-                outputFiles
-            }, files.map(({data}) => data.buffer));
+            this.send(
+                worker,
+                {
+                    type: 'input',
+                    command,
+                    args,
+                    inputFiles: files.concat(generatedInputFiles),
+                    outputFiles
+                },
+                files.map(({data}) => data.buffer)
+            );
         } catch (err) {
             await this.error(err, project);
         }
     }
 
     private createWorker(project: Project, workerOptions: WorkerOptions): Worker {
-        const worker = new Worker(vscode.Uri.joinPath(this.context.extensionUri, 'workers', 'dist', this.getWorkerFileName(workerOptions)).toString(true));
+        const worker = new Worker(
+            vscode.Uri.joinPath(
+                this.context.extensionUri,
+                'workers',
+                'dist',
+                this.getWorkerFileName(workerOptions)
+            ).toString(true)
+        );
 
         worker.addEventListener('message', this.handleMessage.bind(this, project));
-        worker.addEventListener('messageerror',this.handleMessageError.bind(this, project));
+        worker.addEventListener('messageerror', this.handleMessageError.bind(this, project));
         worker.addEventListener('error', this.handleError.bind(this, project));
 
         return worker;

@@ -1,5 +1,5 @@
-import {reactive, watch, type WatchStopHandle} from 'vue';
 import type {ProjectState} from 'edacation';
+import {type WatchStopHandle, reactive, watch} from 'vue';
 
 import {vscode} from '../vscode';
 

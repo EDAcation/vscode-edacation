@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 
-import {ProjectEditor} from '../editors';
-import {Project} from '../projects';
-import {YosysTaskProvider, NextpnrTaskProvider, RTLTaskProvider} from '../tasks';
-import {CurrentProjectCommand} from './base';
+import {ProjectEditor} from '../editors/index.js';
+import type {Project} from '../projects/index.js';
+import {NextpnrTaskProvider, RTLTaskProvider, YosysTaskProvider} from '../tasks/index.js';
+
+import {CurrentProjectCommand} from './base.js';
 
 export class OpenProjectConfigurationCommand extends CurrentProjectCommand {
-
     static getID() {
         return 'edacation.openProjectConfiguration';
     }
@@ -18,13 +18,16 @@ export class OpenProjectConfigurationCommand extends CurrentProjectCommand {
 }
 
 abstract class RunTaskCommand extends CurrentProjectCommand {
-
     abstract getTaskFilter(): vscode.TaskFilter;
 
     async executeForCurrentProject(project: Project) {
         const tasks = await vscode.tasks.fetchTasks(this.getTaskFilter());
         const task = tasks.find((task) => {
-            if (task.scope === undefined || task.scope === vscode.TaskScope.Global || task.scope === vscode.TaskScope.Workspace) {
+            if (
+                task.scope === undefined ||
+                task.scope === vscode.TaskScope.Global ||
+                task.scope === vscode.TaskScope.Workspace
+            ) {
                 return false;
             }
 
@@ -41,7 +44,6 @@ abstract class RunTaskCommand extends CurrentProjectCommand {
 }
 
 export class RunRTLCommand extends RunTaskCommand {
-
     static getID() {
         return 'edacation.runRTL';
     }
@@ -54,7 +56,6 @@ export class RunRTLCommand extends RunTaskCommand {
 }
 
 export class RunYosysCommand extends RunTaskCommand {
-
     static getID() {
         return 'edacation.runYosys';
     }
@@ -67,7 +68,6 @@ export class RunYosysCommand extends RunTaskCommand {
 }
 
 export class RunNextpnrCommand extends RunTaskCommand {
-
     static getID() {
         return 'edacation.runNextpnr';
     }

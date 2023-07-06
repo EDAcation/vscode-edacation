@@ -1,24 +1,20 @@
 import * as vscode from 'vscode';
-import {getWebviewUri} from '../util';
 
-import {BaseEditor} from './base';
+import {getWebviewUri} from '../util.js';
+
+import {BaseEditor} from './base.js';
 
 export class NextpnrEditor extends BaseEditor {
-
     public static getViewType() {
         return 'edacation.nextpnr';
     }
 
     protected getStylePaths() {
-        return [
-            ['views', 'nextpnr', 'dist', 'assets', 'index.css']
-        ];
+        return [['views', 'nextpnr', 'dist', 'assets', 'index.css']];
     }
 
     protected getScriptPaths() {
-        return [
-            ['views', 'nextpnr', 'dist', 'assets', 'index.js']
-        ];
+        return [['views', 'nextpnr', 'dist', 'assets', 'index.js']];
     }
 
     protected getHtmlStyles(webview: vscode.Webview): string {
@@ -38,7 +34,11 @@ export class NextpnrEditor extends BaseEditor {
         `;
     }
 
-    protected onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: any): void {
+    protected onDidReceiveMessage(
+        document: vscode.TextDocument,
+        webview: vscode.Webview,
+        message: Record<string, unknown>
+    ): void {
         if (message.type === 'ready') {
             webview.postMessage({
                 type: 'document',
@@ -48,7 +48,7 @@ export class NextpnrEditor extends BaseEditor {
     }
 
     protected onSave(_document: vscode.TextDocument, _webview: vscode.Webview): void {
-        
+        // Do nothing
     }
 
     protected update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean) {

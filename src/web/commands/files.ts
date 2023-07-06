@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 
-import {Project, ProjectFile} from '../projects';
-import {FILE_FILTERS_HDL} from '../util';
-import {CurrentProjectCommand} from './base';
+import type {Project, ProjectFile} from '../projects/index.js';
+import {FILE_FILTERS_HDL} from '../util.js';
+
+import {CurrentProjectCommand} from './base.js';
 
 export class AddInputFileCommand extends CurrentProjectCommand {
-
     static getID() {
         return 'edacation.addInputFile';
     }
@@ -28,7 +28,6 @@ export class AddInputFileCommand extends CurrentProjectCommand {
 }
 
 export class NewInputFileCommand extends CurrentProjectCommand {
-
     static getID() {
         return 'edacation.newInputFile';
     }
@@ -55,7 +54,6 @@ export class NewInputFileCommand extends CurrentProjectCommand {
 }
 
 export class RemoveInputFileCommand extends CurrentProjectCommand {
-
     static getID() {
         return 'edacation.removeInputFile';
     }
@@ -66,7 +64,6 @@ export class RemoveInputFileCommand extends CurrentProjectCommand {
 }
 
 export class RemoveOutputFileCommand extends CurrentProjectCommand {
-
     static getID() {
         return 'edacation.removeOutputFile';
     }

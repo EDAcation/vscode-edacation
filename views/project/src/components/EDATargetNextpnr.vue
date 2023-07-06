@@ -1,9 +1,10 @@
 <script lang="ts">
 import {generateNextpnrWorkerOptions, parseNextpnrArguments} from 'edacation';
-import type {TargetConfiguration, NextpnrConfiguration, NextpnrTargetConfiguration} from 'edacation';
+import type {NextpnrConfiguration, NextpnrTargetConfiguration, TargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
+
 import EDATargetValueList from './EDATargetValueList.vue';
 
 export default defineComponent({
@@ -53,7 +54,7 @@ export default defineComponent({
 
 <template>
     <template v-if="nextpnr">
-        <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+        <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem">
             <EDATargetValueList
                 :targetIndex="targetIndex"
                 :generated="generated.arguments"
@@ -65,7 +66,7 @@ export default defineComponent({
                 configDescription="Arguments are passed to the nextpnr worker for excecution."
             />
 
-            <vscode-divider style="grid-column: span 2;" />
+            <vscode-divider style="grid-column: span 2" />
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
@@ -78,7 +79,7 @@ export default defineComponent({
                 configDescription="Input files are sent from the workspace folder to the nextpnr worker."
             />
 
-            <vscode-divider style="grid-column: span 2;" />
+            <vscode-divider style="grid-column: span 2" />
 
             <EDATargetValueList
                 :targetIndex="targetIndex"

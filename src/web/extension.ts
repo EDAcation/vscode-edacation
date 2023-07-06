@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 
-import * as commands from './commands';
-import * as editors from './editors';
-import {Projects} from './projects';
-import * as tasks from './tasks';
-import * as trees from './trees';
-import {BaseTreeDataProvider} from './trees/base';
+import * as commands from './commands/index.js';
+import * as editors from './editors/index.js';
+import {Projects} from './projects/index.js';
+import * as tasks from './tasks/index.js';
+import type {BaseTreeDataProvider} from './trees/base.js';
+import * as trees from './trees/index.js';
 
 let projects: Projects | undefined;
 
@@ -33,7 +33,9 @@ export const activate = async (context: vscode.ExtensionContext) => {
     // Register tree data providers
     for (const treeType of Object.values(trees)) {
         const tree = new treeType(context, projects);
-        context.subscriptions.push(vscode.window.registerTreeDataProvider(treeType.getViewID(), tree as BaseTreeDataProvider<unknown>));
+        context.subscriptions.push(
+            vscode.window.registerTreeDataProvider(treeType.getViewID(), tree as BaseTreeDataProvider<unknown>)
+        );
     }
 
     await projects.load();

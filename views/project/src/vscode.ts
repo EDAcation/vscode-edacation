@@ -1,7 +1,6 @@
 import type {WebviewApi} from 'vscode-webview';
 
 class VSCodeWrapper {
-
     private readonly api: WebviewApi<unknown> | undefined;
 
     constructor() {

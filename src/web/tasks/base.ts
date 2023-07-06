@@ -1,9 +1,8 @@
-import * as vscode from 'vscode';
+import type * as vscode from 'vscode';
 
-import {Projects} from '../projects';
+import type {Projects} from '../projects/index.js';
 
 export abstract class BaseTaskProvider<T extends vscode.Task = vscode.Task> implements vscode.TaskProvider<T> {
-
     protected readonly context: vscode.ExtensionContext;
     protected readonly projects: Projects;
 
