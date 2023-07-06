@@ -108,3 +108,26 @@ export const offerSaveFile = async (
 
     return chosenUri;
 };
+
+export const parentDir = (uri: vscode.Uri): vscode.Uri => vscode.Uri.file(path.dirname(uri.fsPath));
+
+export const findProjectRoot = (fileUri: vscode.Uri): vscode.Uri | undefined => {
+    const workspaces = vscode.workspace.workspaceFolders;
+
+    const workspaceUris = workspaces?.map((ws) => ws.uri.fsPath);
+    if (!workspaceUris) {
+        // Try the first workspace, but will most likely be undefined
+        return workspaces?.[0].uri;
+    }
+
+    let path = fileUri;
+    while (workspaceUris.indexOf(path.fsPath) === -1) {
+        const newPath = parentDir(path);
+        if (newPath === path) {
+            // Prevent possible infinite loop
+            return workspaces?.[0].uri;
+        }
+        path = newPath;
+    }
+    return path;
+};

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import {type ViewMessage} from '../types.js';
-import {getWebviewUri, offerSaveFile} from '../util.js';
+import * as util from '../util.js';
 
 import {BaseEditor} from './base.js';
 
@@ -21,7 +21,13 @@ export class DigitalJSEditor extends BaseEditor {
     protected getHtmlStyles(webview: vscode.Webview): string {
         const styles = super.getHtmlStyles(webview);
 
-        const fontUri = getWebviewUri(webview, this.context, ['views', 'digitaljs', 'dist', 'assets', 'codicon.ttf']);
+        const fontUri = util.getWebviewUri(webview, this.context, [
+            'views',
+            'digitaljs',
+            'dist',
+            'assets',
+            'codicon.ttf'
+        ]);
 
         return `
             ${styles}
@@ -42,11 +48,11 @@ export class DigitalJSEditor extends BaseEditor {
                 document: document.getText()
             });
         } else if (message.type === 'requestSave') {
-            // TODO: figure out better way to save relative to project root
-            const rootPath = vscode.workspace.workspaceFolders?.[0].uri || vscode.Uri.file('.');
-            const path = vscode.Uri.joinPath(rootPath, message.data?.defaultPath || '');
+            // Save to project root, or the parent dir of the current editor's file if we can't find it
+            const projectRoot = util.findProjectRoot(document.uri) || util.parentDir(document.uri);
+            const path = vscode.Uri.joinPath(projectRoot, message.data.defaultPath || '');
 
-            offerSaveFile(message.data.fileContents, {
+            util.offerSaveFile(message.data.fileContents, {
                 defaultUri: path,
                 filters: message.data?.filters
             }).then((path) => {
