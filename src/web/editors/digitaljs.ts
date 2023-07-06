@@ -44,16 +44,15 @@ export class DigitalJSEditor extends BaseEditor {
                 type: 'document',
                 document: document.getText()
             });
-        }
-        else if (message.type === 'requestSave') {
+        } else if (message.type === 'requestSave') {
             // TODO: figure out better way to save relative to project root
             let rootPath = vscode.workspace.workspaceFolders?.[0].uri || vscode.Uri.file('.');
-            let path = vscode.Uri.joinPath(rootPath, message.data?.defaultPath || "");
+            let path = vscode.Uri.joinPath(rootPath, message.data?.defaultPath || '');
 
             offerSaveFile(message.data.fileContents, {
                 defaultUri: path,
                 filters: message.data?.filters
-            }).then(path => {
+            }).then((path) => {
                 if (!path) {
                     return;
                 }
@@ -78,12 +77,12 @@ export class DigitalJSEditor extends BaseEditor {
     }
 
     async showSaveNotification(path: vscode.Uri) {
-        let response = await vscode.window.showInformationMessage('Export success', 'Open file');
+        const response = await vscode.window.showInformationMessage('Export success', 'Open file');
         if (!response) {
             return;
         }
 
-        let doc = await vscode.workspace.openTextDocument(path);
+        const doc = await vscode.workspace.openTextDocument(path);
         await vscode.window.showTextDocument(doc);
     }
 }

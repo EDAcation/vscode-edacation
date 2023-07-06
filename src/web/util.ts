@@ -1,8 +1,6 @@
 import path from 'path';
 import * as vscode from 'vscode';
 
-import {Buffer} from 'buffer';
-
 export const getWebviewUri = (
     webview: vscode.Webview,
     context: vscode.ExtensionContext,
@@ -96,9 +94,12 @@ export type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType exten
 export const keysForEnum = <M extends Record<string, unknown>>(map: M): [keyof M, ...(keyof M)[]] =>
     Object.keys(map) as unknown as [keyof M, ...(keyof M)[]];
 
-export const offerSaveFile = async (content: string, options: vscode.SaveDialogOptions): Promise<vscode.Uri | undefined> => {
-    let chosenUri = await vscode.window.showSaveDialog(options);
-    if (!chosenUri){
+export const offerSaveFile = async (
+    content: string,
+    options: vscode.SaveDialogOptions
+): Promise<vscode.Uri | undefined> => {
+    const chosenUri = await vscode.window.showSaveDialog(options);
+    if (!chosenUri) {
         return;
     }
 
