@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+import {type ViewMessage} from '../types.js';
 import {getWebviewUri, offerSaveFile} from '../util.js';
 
 import {BaseEditor} from './base.js';
@@ -34,11 +35,7 @@ export class DigitalJSEditor extends BaseEditor {
         `;
     }
 
-    protected onDidReceiveMessage(
-        document: vscode.TextDocument,
-        webview: vscode.Webview,
-        message: Record<string, unknown>
-    ): void {
+    protected onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: ViewMessage): void {
         if (message.type === 'ready') {
             webview.postMessage({
                 type: 'document',
@@ -47,13 +44,10 @@ export class DigitalJSEditor extends BaseEditor {
         } else if (message.type === 'requestSave') {
             // TODO: figure out better way to save relative to project root
             const rootPath = vscode.workspace.workspaceFolders?.[0].uri || vscode.Uri.file('.');
-            // @ts-expect-error: TODO: add type
             const path = vscode.Uri.joinPath(rootPath, message.data?.defaultPath || '');
 
-            // @ts-expect-error: TODO: add type
             offerSaveFile(message.data.fileContents, {
                 defaultUri: path,
-                // @ts-expect-error: TODO: add type
                 filters: message.data?.filters
             }).then((path) => {
                 if (!path) {

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import type {Projects} from '../projects/index.js';
+import {type ViewMessage} from '../types.js';
 import {getWebviewUri} from '../util.js';
 
 export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
@@ -123,7 +124,7 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
     protected abstract onDidReceiveMessage(
         document: vscode.TextDocument,
         webview: vscode.Webview,
-        message: Record<string, unknown>
+        message: ViewMessage
     ): void;
 
     protected abstract onSave(document: vscode.TextDocument, webview: vscode.Webview): void;

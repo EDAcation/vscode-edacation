@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+import {type ViewMessage} from '../types.js';
 import {getWebviewUri} from '../util.js';
 
 import {BaseEditor} from './base.js';
@@ -34,11 +35,7 @@ export class NextpnrEditor extends BaseEditor {
         `;
     }
 
-    protected onDidReceiveMessage(
-        document: vscode.TextDocument,
-        webview: vscode.Webview,
-        message: Record<string, unknown>
-    ): void {
+    protected onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: ViewMessage): void {
         if (message.type === 'ready') {
             webview.postMessage({
                 type: 'document',

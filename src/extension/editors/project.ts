@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import {Project} from '../projects/index.js';
+import {type ViewMessage} from '../types.js';
 
 import {BaseEditor} from './base.js';
 
@@ -33,11 +34,7 @@ export class ProjectEditor extends BaseEditor {
         }
     }
 
-    protected onDidReceiveMessage(
-        document: vscode.TextDocument,
-        webview: vscode.Webview,
-        message: Record<string, unknown>
-    ): void {
+    protected onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: ViewMessage): void {
         console.log(message);
 
         if (message.type === 'ready') {
