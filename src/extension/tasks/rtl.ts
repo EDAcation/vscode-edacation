@@ -4,15 +4,11 @@ import * as vscode from 'vscode';
 import type {MessageFile} from '../../common/messages.js';
 import type {Project} from '../projects/index.js';
 
-import {
-    type WorkerOutputFile,
-    type WorkerTaskDefinition,
-    WorkerTaskProvider,
-    type WorkerTaskTerminal
-} from './worker.js';
-import {BaseYosysTaskTerminal} from './yosys.js';
+import {type TaskOutputFile} from './task.js';
+import {type TaskDefinition, TaskProvider, TaskTerminal} from './terminal.js';
+import {BaseYosysTerminalTask} from './yosys.js';
 
-export class RTLTaskProvider extends WorkerTaskProvider {
+export class RTLTaskProvider extends TaskProvider {
     static getType() {
         return 'rtl';
     }
@@ -23,14 +19,16 @@ export class RTLTaskProvider extends WorkerTaskProvider {
 
     protected createTaskTerminal(
         folder: vscode.WorkspaceFolder,
-        definition: WorkerTaskDefinition
-    ): WorkerTaskTerminal<YosysWorkerOptions> {
-        return new RTLTaskTerminal(this.context, this.projects, folder, definition);
+        definition: TaskDefinition
+    ): TaskTerminal<YosysWorkerOptions> {
+        const task = new RTLTerminalTask();
+
+        return new TaskTerminal(this.context, this.projects, folder, definition, task);
     }
 }
 
-class RTLTaskTerminal extends BaseYosysTaskTerminal {
-    protected getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
+class RTLTerminalTask extends BaseYosysTerminalTask {
+    getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
         const commandsGenerated = generateYosysRTLCommands(workerOptions.inputFiles);
 
         return [
@@ -41,11 +39,11 @@ class RTLTaskTerminal extends BaseYosysTaskTerminal {
         ];
     }
 
-    protected getOutputFiles(_workerOptions: YosysWorkerOptions): string[] {
+    getOutputFiles(_workerOptions: YosysWorkerOptions): string[] {
         return ['rtl.digitaljs.json'];
     }
 
-    protected async handleEnd(project: Project, outputFiles: WorkerOutputFile[]) {
+    async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
         super.handleEnd(project, outputFiles);
 
         // Open RTL file in DigitalJS editor

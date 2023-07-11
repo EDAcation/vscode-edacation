@@ -4,9 +4,10 @@ import * as vscode from 'vscode';
 import type {MessageFile} from '../../common/messages.js';
 import type {Project, ProjectFile} from '../projects/index.js';
 
-import {type WorkerTaskDefinition, WorkerTaskProvider, WorkerTaskTerminal} from './worker.js';
+import {TerminalTask} from './task.js';
+import {type TaskDefinition, TaskProvider, TaskTerminal} from './terminal.js';
 
-export class NextpnrTaskProvider extends WorkerTaskProvider {
+export class NextpnrTaskProvider extends TaskProvider {
     static getType() {
         return 'nextpnr';
     }
@@ -17,46 +18,48 @@ export class NextpnrTaskProvider extends WorkerTaskProvider {
 
     protected createTaskTerminal(
         folder: vscode.WorkspaceFolder,
-        definition: WorkerTaskDefinition
-    ): WorkerTaskTerminal<NextpnrWorkerOptions> {
-        return new NextpnrTaskTerminal(this.context, this.projects, folder, definition);
+        definition: TaskDefinition
+    ): TaskTerminal<NextpnrWorkerOptions> {
+        const task = new NextpnrTerminalTask();
+
+        return new TaskTerminal(this.context, this.projects, folder, definition, task);
     }
 }
 
-class NextpnrTaskTerminal extends WorkerTaskTerminal<NextpnrWorkerOptions> {
-    protected getWorkerName(): string {
+class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
+    getName(): string {
         return NextpnrTaskProvider.getType();
     }
 
-    protected getWorkerOptions(project: Project, targetId: string): NextpnrWorkerOptions {
+    getWorkerOptions(project: Project, targetId: string): NextpnrWorkerOptions {
         return getNextpnrWorkerOptions(project, targetId);
     }
 
-    protected getWorkerFileName(workerOptions: NextpnrWorkerOptions): string {
+    getWorkerFileName(workerOptions: NextpnrWorkerOptions): string {
         return `${workerOptions.tool}.js`;
     }
 
-    protected getInputCommand(workerOptions: NextpnrWorkerOptions): string {
+    getInputCommand(workerOptions: NextpnrWorkerOptions): string {
         return workerOptions.tool;
     }
 
-    protected getInputArgs(workerOptions: NextpnrWorkerOptions): string[] {
+    getInputArgs(workerOptions: NextpnrWorkerOptions): string[] {
         return workerOptions.arguments;
     }
 
-    protected getInputFiles(workerOptions: NextpnrWorkerOptions): string[] {
+    getInputFiles(workerOptions: NextpnrWorkerOptions): string[] {
         return workerOptions.inputFiles;
     }
 
-    protected getGeneratedInputFiles(_workerOptions: NextpnrWorkerOptions): MessageFile[] {
+    getGeneratedInputFiles(_workerOptions: NextpnrWorkerOptions): MessageFile[] {
         return [];
     }
 
-    protected getOutputFiles(workerOptions: NextpnrWorkerOptions): string[] {
+    getOutputFiles(workerOptions: NextpnrWorkerOptions): string[] {
         return workerOptions.outputFiles;
     }
 
-    protected async handleStart(project: Project) {
+    async handleStart(project: Project) {
         this.println(`Placing and routing EDA project "${project.getName()}" using nextpnr...`);
         this.println(
             'NOTE: nextpnr startup may take a while. This will be improved in future versions of this extension.'
@@ -64,7 +67,7 @@ class NextpnrTaskTerminal extends WorkerTaskTerminal<NextpnrWorkerOptions> {
         this.println();
     }
 
-    protected async handleEnd(project: Project, outputFiles: ProjectFile[]) {
+    async handleEnd(project: Project, outputFiles: ProjectFile[]) {
         this.println();
         this.println(`Finished placing and routing EDA project "${project.getName()}" using nextpnr.`);
         this.println();

@@ -5,16 +5,17 @@ import {Project, type Projects} from '../projects/index.js';
 import {decodeText, encodeText} from '../util.js';
 
 import {BaseTaskProvider} from './base.js';
+import {type TaskOutputFile, type TerminalTask} from './task.js';
 
 const PROJECT_PATTERN = '**/*.edaproject';
 
-export interface WorkerTaskDefinition extends vscode.TaskDefinition {
+export interface TaskDefinition extends vscode.TaskDefinition {
     project: string;
     targetId?: string;
     uri?: vscode.Uri;
 }
 
-export abstract class WorkerTaskProvider extends BaseTaskProvider {
+export abstract class TaskProvider extends BaseTaskProvider {
     private taskPromise?: Promise<vscode.Task[]> | undefined;
     private fileSystemWatcher: vscode.FileSystemWatcher;
 
@@ -52,7 +53,7 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
             task.scope,
             task.definition.uri,
             task.definition.project,
-            task.definition as WorkerTaskDefinition
+            task.definition as TaskDefinition
         );
     }
 
@@ -64,8 +65,8 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
 
     protected abstract createTaskTerminal(
         folder: vscode.WorkspaceFolder,
-        definition: WorkerTaskDefinition
-    ): WorkerTaskTerminal<unknown>;
+        definition: TaskDefinition
+    ): TaskTerminal<unknown>;
 
     private async findTasks(): Promise<vscode.Task[]> {
         const tasks: vscode.Task[] = [];
@@ -88,9 +89,9 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
         folder: vscode.WorkspaceFolder,
         uri: vscode.Uri,
         project: string,
-        additionalDefinition?: WorkerTaskDefinition
+        additionalDefinition?: TaskDefinition
     ): vscode.Task {
-        const definition: WorkerTaskDefinition = {
+        const definition: TaskDefinition = {
             type: this.getTaskType(),
             project,
             uri,
@@ -108,16 +109,12 @@ export abstract class WorkerTaskProvider extends BaseTaskProvider {
     }
 }
 
-export interface WorkerOutputFile {
-    path: string;
-    uri: vscode.Uri;
-}
-
-export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
+export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
     protected context: vscode.ExtensionContext;
     protected projects: Projects;
     private folder: vscode.WorkspaceFolder;
-    private definition: WorkerTaskDefinition;
+    private definition: TaskDefinition;
+    private task: TerminalTask<WorkerOptions>;
 
     private logMessages: string[];
 
@@ -131,12 +128,14 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
         context: vscode.ExtensionContext,
         projects: Projects,
         folder: vscode.WorkspaceFolder,
-        definition: WorkerTaskDefinition
+        definition: TaskDefinition,
+        task: TerminalTask<WorkerOptions>
     ) {
         this.context = context;
         this.projects = projects;
         this.folder = folder;
         this.definition = definition;
+        this.task = task;
 
         this.logMessages = [];
     }
@@ -149,26 +148,6 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
         // Do nothing
     }
 
-    protected abstract getWorkerName(): string;
-
-    protected abstract getWorkerOptions(project: Project, targetId: string): WorkerOptions;
-
-    protected abstract getWorkerFileName(workerOptions: WorkerOptions): string;
-
-    protected abstract getInputCommand(workerOptions: WorkerOptions): string;
-
-    protected abstract getInputArgs(workerOptions: WorkerOptions): string[];
-
-    protected abstract getInputFiles(workerOptions: WorkerOptions): string[];
-
-    protected abstract getGeneratedInputFiles(workerOptions: WorkerOptions): MessageFile[];
-
-    protected abstract getOutputFiles(workerOptions: WorkerOptions): string[];
-
-    protected abstract handleStart(project: Project): Promise<void>;
-
-    protected abstract handleEnd(project: Project, outputFiles: WorkerOutputFile[]): Promise<void>;
-
     protected println(line = '', _stream: 'stdout' | 'stderr' = 'stdout') {
         this.writeEmitter.fire(`${line}\r\n`);
         this.logMessages.push(`${line}\r\n`);
@@ -176,9 +155,10 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
 
     protected async exit(code: number, project?: Project) {
         try {
+            // Write logs
             const uri = vscode.Uri.joinPath(
                 project ? project.getRoot() : this.folder.uri,
-                `${this.getWorkerName()}.log`
+                `${this.task.getName()}.log`
             );
             await vscode.workspace.fs.writeFile(uri, encodeText(this.logMessages.join('')));
 
@@ -220,21 +200,23 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
         }
 
         try {
-            await this.handleStart(project);
+            await this.task.handleStart(project);
 
-            const workerOptions = this.getWorkerOptions(
+            // TODO: abstract into TaskRunner
+            const workerOptions = this.task.getWorkerOptions(
                 project,
                 this.definition.targetId ?? project.getConfiguration().targets[0].id
             );
 
             // Create worker
+            // TODO: abstract into TaskRunner
             const worker = this.createWorker(project, workerOptions);
 
-            const command = this.getInputCommand(workerOptions);
-            const args = this.getInputArgs(workerOptions);
-            const inputFiles = this.getInputFiles(workerOptions);
-            const generatedInputFiles = this.getGeneratedInputFiles(workerOptions);
-            const outputFiles = this.getOutputFiles(workerOptions);
+            const command = this.task.getInputCommand(workerOptions);
+            const args = this.task.getInputArgs(workerOptions);
+            const inputFiles = this.task.getInputFiles(workerOptions);
+            const generatedInputFiles = this.task.getGeneratedInputFiles(workerOptions);
+            const outputFiles = this.task.getOutputFiles(workerOptions);
 
             // Read input files
             const files: MessageFile[] = [];
@@ -273,13 +255,14 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
         }
     }
 
+    // TODO: abstract into TaskRunner
     private createWorker(project: Project, workerOptions: WorkerOptions): Worker {
         const worker = new Worker(
             vscode.Uri.joinPath(
                 this.context.extensionUri,
                 'dist',
                 'workers',
-                this.getWorkerFileName(workerOptions)
+                this.task.getWorkerFileName(workerOptions)
             ).toString(true)
         );
 
@@ -300,7 +283,7 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
                 }
                 case 'output': {
                     // Write output files
-                    const files: WorkerOutputFile[] = [];
+                    const files: TaskOutputFile[] = [];
                     for (const file of event.data.files) {
                         const uri = vscode.Uri.joinPath(project.getRoot(), file.path);
                         files.push({
@@ -314,7 +297,7 @@ export abstract class WorkerTaskTerminal<WorkerOptions> implements vscode.Pseudo
                     // Add output files to project output
                     await project.addOutputFileUris(files.map((file) => file.uri));
 
-                    await this.handleEnd(project, files);
+                    await this.task.handleEnd(project, files);
 
                     await this.exit(0, project);
 
