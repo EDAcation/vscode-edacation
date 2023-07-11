@@ -5,8 +5,9 @@ import type {MessageFile} from '../../common/messages.js';
 import type {Project} from '../projects/index.js';
 import {encodeText} from '../util.js';
 
-import {type TaskOutputFile, TerminalTask} from './task.js';
-import {type TaskDefinition, TaskProvider, TaskTerminal} from './terminal.js';
+import {WebAssemblyTaskRunner} from './runner.js';
+import {type TaskDefinition, type TaskOutputFile, TerminalTask} from './task.js';
+import {TaskProvider, TaskTerminal} from './terminal.js';
 
 export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOptions> {
     private lastLogMessage?: string;
@@ -85,9 +86,10 @@ export class YosysTaskProvider extends TaskProvider {
         folder: vscode.WorkspaceFolder,
         definition: TaskDefinition
     ): TaskTerminal<YosysWorkerOptions> {
-        const task = new YosysTerminalTask();
+        const runner = new WebAssemblyTaskRunner(this.context);
+        const task = new YosysTerminalTask(runner);
 
-        return new TaskTerminal(this.context, this.projects, folder, definition, task);
+        return new TaskTerminal(this.projects, folder, definition, task);
     }
 }
 

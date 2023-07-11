@@ -4,8 +4,9 @@ import * as vscode from 'vscode';
 import type {MessageFile} from '../../common/messages.js';
 import type {Project, ProjectFile} from '../projects/index.js';
 
-import {TerminalTask} from './task.js';
-import {type TaskDefinition, TaskProvider, TaskTerminal} from './terminal.js';
+import {WebAssemblyTaskRunner} from './runner.js';
+import {type TaskDefinition, TerminalTask} from './task.js';
+import {TaskProvider, TaskTerminal} from './terminal.js';
 
 export class NextpnrTaskProvider extends TaskProvider {
     static getType() {
@@ -20,9 +21,10 @@ export class NextpnrTaskProvider extends TaskProvider {
         folder: vscode.WorkspaceFolder,
         definition: TaskDefinition
     ): TaskTerminal<NextpnrWorkerOptions> {
-        const task = new NextpnrTerminalTask();
+        const runner = new WebAssemblyTaskRunner(this.context);
+        const task = new NextpnrTerminalTask(runner);
 
-        return new TaskTerminal(this.context, this.projects, folder, definition, task);
+        return new TaskTerminal(this.projects, folder, definition, task);
     }
 }
 
