@@ -5,7 +5,7 @@ import type {MessageFile} from '../../common/messages.js';
 import type {Project} from '../projects/index.js';
 
 import {type TaskOutputFile} from './messaging.js';
-import {WebAssemblyTaskRunner} from './runner.js';
+import {getConfiguredRunner} from './runner.js';
 import {type TaskDefinition} from './task.js';
 import {TaskProvider, TaskTerminal} from './terminal.js';
 import {BaseYosysTerminalTask} from './yosys.js';
@@ -23,7 +23,7 @@ export class RTLTaskProvider extends TaskProvider {
         folder: vscode.WorkspaceFolder,
         definition: TaskDefinition
     ): TaskTerminal<YosysWorkerOptions> {
-        const runner = new WebAssemblyTaskRunner(this.context);
+        const runner = getConfiguredRunner(this.context);
         const task = new RTLTerminalTask(runner);
 
         return new TaskTerminal(this.projects, folder, definition, task);

@@ -74,8 +74,6 @@ export class WebAssemblyTaskRunner extends TaskRunner {
     }
 
     private handleMessage(event: MessageEvent<ExtensionMessage>) {
-        console.log(`Message event: ${event}`);
-
         try {
             switch (event.data.type) {
                 case 'terminal': {
@@ -117,3 +115,13 @@ export class NativeTaskRunner extends TaskRunner {
         throw new Error('Method not implemented.');
     }
 }
+
+export const getConfiguredRunner = (context: vscode.ExtensionContext): TaskRunner => {
+    const useNative = vscode.workspace.getConfiguration('edacation').get('useNativeRunners');
+
+    if (useNative) {
+        return new NativeTaskRunner(context);
+    } else {
+        return new WebAssemblyTaskRunner(context);
+    }
+};

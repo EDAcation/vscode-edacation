@@ -45,6 +45,16 @@
     ],
     "browser": "./dist/extension/extension.js",
     "contributes": {
+        "configuration": {
+            "title": "EDAcation",
+            "properties": {
+                "edacation.useNativeRunners": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Use native Yosys/Nextpnr programs installed on the system instead of the bundled WebAssembly runners."
+                }
+            }
+        },
         "commands": [
             {
                 "command": "edacation.newProject",

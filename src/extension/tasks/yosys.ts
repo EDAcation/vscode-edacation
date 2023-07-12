@@ -6,7 +6,7 @@ import type {Project} from '../projects/index.js';
 import {encodeText} from '../util.js';
 
 import {type TaskOutputFile} from './messaging.js';
-import {WebAssemblyTaskRunner} from './runner.js';
+import {getConfiguredRunner} from './runner.js';
 import {type TaskDefinition, TerminalTask} from './task.js';
 import {TaskProvider, TaskTerminal} from './terminal.js';
 
@@ -87,7 +87,7 @@ export class YosysTaskProvider extends TaskProvider {
         folder: vscode.WorkspaceFolder,
         definition: TaskDefinition
     ): TaskTerminal<YosysWorkerOptions> {
-        const runner = new WebAssemblyTaskRunner(this.context);
+        const runner = getConfiguredRunner(this.context);
         const task = new YosysTerminalTask(runner);
 
         return new TaskTerminal(this.projects, folder, definition, task);
