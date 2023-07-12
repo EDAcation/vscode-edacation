@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import type {ExtensionMessage, MessageFile} from '../../common/messages.js';
 import {type Project} from '../projects/index.js';
 
-import {TerminalMessageEmitter} from './messaging.js';
+import {type TaskOutputFile, TerminalMessageEmitter} from './messaging.js';
 
 export interface RunnerContext {
     project: Project;
@@ -84,27 +84,8 @@ export class WebAssemblyTaskRunner extends TaskRunner {
                     break;
                 }
                 case 'output': {
-                    // TODO: how to handle this??
-                    this.println(`Output files: ${event.data.files}`);
-
-                    // // Write output files
-                    // const files: TaskOutputFile[] = [];
-                    // for (const file of event.data.files) {
-                    //     const uri = vscode.Uri.joinPath(project.getRoot(), file.path);
-                    //     files.push({
-                    //         path: file.path,
-                    //         uri
-                    //     });
-
-                    //     await vscode.workspace.fs.writeFile(uri, file.data);
-                    // }
-
-                    // // Add output files to project output
-                    // await project.addOutputFileUris(files.map((file) => file.uri));
-
-                    // await this.task.handleEnd(project, files);
-
-                    this.done();
+                    const outputFiles = event.data.files as TaskOutputFile[];
+                    this.done(outputFiles);
 
                     break;
                 }

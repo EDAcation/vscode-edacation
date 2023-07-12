@@ -5,8 +5,9 @@ import type {MessageFile} from '../../common/messages.js';
 import type {Project} from '../projects/index.js';
 import {encodeText} from '../util.js';
 
+import {type TaskOutputFile} from './messaging.js';
 import {WebAssemblyTaskRunner} from './runner.js';
-import {type TaskDefinition, type TaskOutputFile, TerminalTask} from './task.js';
+import {type TaskDefinition, TerminalTask} from './task.js';
 import {TaskProvider, TaskTerminal} from './terminal.js';
 
 export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOptions> {
@@ -100,7 +101,8 @@ class YosysTerminalTask extends BaseYosysTerminalTask {
         // Open LUT file in DigitalJS editor
         const lutFile = outputFiles.find((file) => file.path.endsWith('luts.digitaljs.json'));
         if (lutFile) {
-            vscode.commands.executeCommand('vscode.open', lutFile.uri);
+            const uri = vscode.Uri.joinPath(project.getRoot(), lutFile.path);
+            vscode.commands.executeCommand('vscode.open', uri);
         }
     }
 }

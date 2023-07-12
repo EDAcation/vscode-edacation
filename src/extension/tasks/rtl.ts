@@ -4,8 +4,9 @@ import * as vscode from 'vscode';
 import type {MessageFile} from '../../common/messages.js';
 import type {Project} from '../projects/index.js';
 
+import {type TaskOutputFile} from './messaging.js';
 import {WebAssemblyTaskRunner} from './runner.js';
-import {type TaskDefinition, type TaskOutputFile} from './task.js';
+import {type TaskDefinition} from './task.js';
 import {TaskProvider, TaskTerminal} from './terminal.js';
 import {BaseYosysTerminalTask} from './yosys.js';
 
@@ -51,7 +52,8 @@ class RTLTerminalTask extends BaseYosysTerminalTask {
         // Open RTL file in DigitalJS editor
         const rtlFile = outputFiles.find((file) => file.path.endsWith('rtl.digitaljs.json'));
         if (rtlFile) {
-            vscode.commands.executeCommand('vscode.open', rtlFile.uri);
+            const uri = vscode.Uri.joinPath(project.getRoot(), rtlFile.path);
+            vscode.commands.executeCommand('vscode.open', uri);
         }
     }
 }

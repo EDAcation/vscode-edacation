@@ -1,3 +1,8 @@
+export interface TaskOutputFile {
+    path: string;
+    data?: Uint8Array;
+}
+
 export interface TerminalMessagePrintln {
     type: 'println';
     stream: 'stdout' | 'stderr';
@@ -11,6 +16,7 @@ export interface TerminalMessageError {
 
 export interface TerminalMessageDone {
     type: 'done';
+    outputFiles?: TaskOutputFile[];
 }
 
 export type TerminalMessage = TerminalMessagePrintln | TerminalMessageError | TerminalMessageDone;
@@ -42,7 +48,7 @@ export abstract class TerminalMessageEmitter {
         this.fire({type: 'error', error});
     }
 
-    protected done() {
-        this.fire({type: 'done'});
+    protected done(outputFiles?: TaskOutputFile[]) {
+        this.fire({type: 'done', outputFiles});
     }
 }

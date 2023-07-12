@@ -4,13 +4,8 @@ import type * as vscode from 'vscode';
 import type {MessageFile} from '../../common/messages.js';
 import {type Project} from '../projects/index.js';
 
-import {TerminalMessageEmitter} from './messaging.js';
+import {type TaskOutputFile, TerminalMessageEmitter} from './messaging.js';
 import {type RunnerContext, type TaskRunner} from './runner.js';
-
-export interface TaskOutputFile {
-    path: string;
-    uri: vscode.Uri;
-}
 
 export interface TaskDefinition extends vscode.TaskDefinition {
     project: string;

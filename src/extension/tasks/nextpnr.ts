@@ -2,8 +2,9 @@ import {type NextpnrWorkerOptions, getNextpnrWorkerOptions} from 'edacation';
 import * as vscode from 'vscode';
 
 import type {MessageFile} from '../../common/messages.js';
-import type {Project, ProjectFile} from '../projects/index.js';
+import type {Project} from '../projects/index.js';
 
+import {type TaskOutputFile} from './messaging.js';
 import {WebAssemblyTaskRunner} from './runner.js';
 import {type TaskDefinition, TerminalTask} from './task.js';
 import {TaskProvider, TaskTerminal} from './terminal.js';
@@ -69,7 +70,7 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
         this.println();
     }
 
-    async handleEnd(project: Project, outputFiles: ProjectFile[]) {
+    async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
         this.println();
         this.println(`Finished placing and routing EDA project "${project.getName()}" using nextpnr.`);
         this.println();
@@ -77,7 +78,8 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
         // Open placed and routed file in nextpnr editor
         const pnrFile = outputFiles.find((file) => file.path === 'routed.nextpnr.json');
         if (pnrFile) {
-            vscode.commands.executeCommand('vscode.open', pnrFile.uri);
+            const uri = vscode.Uri.joinPath(project.getRoot(), pnrFile.path);
+            vscode.commands.executeCommand('vscode.open', uri);
         }
     }
 }
