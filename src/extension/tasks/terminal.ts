@@ -4,6 +4,7 @@ import {Project, type Projects} from '../projects/index.js';
 import {encodeText} from '../util.js';
 
 import {BaseTaskProvider} from './base.js';
+import {type TerminalMessage} from './messaging.js';
 import {type TaskDefinition, type TerminalTask} from './task.js';
 
 const PROJECT_PATTERN = '**/*.edaproject';
@@ -185,6 +186,8 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
             return;
         }
 
+        this.task.onMessage(this.handleMessage.bind(this, project));
+
         try {
             await this.task.handleStart(project);
 
@@ -194,44 +197,27 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
         }
     }
 
-    // private async handleMessage(project: Project, event: MessageEvent<ExtensionMessage>) {
-    //     try {
-    //         switch (event.data.type) {
-    //             case 'terminal': {
-    //                 this.println(event.data.data, event.data.stream);
+    private async handleMessage(project: Project, message: TerminalMessage) {
+        try {
+            switch (message.type) {
+                case 'println': {
+                    this.println(message.line, message.stream);
 
-    //                 break;
-    //             }
-    //             case 'output': {
-    //                 // Write output files
-    //                 const files: TaskOutputFile[] = [];
-    //                 for (const file of event.data.files) {
-    //                     const uri = vscode.Uri.joinPath(project.getRoot(), file.path);
-    //                     files.push({
-    //                         path: file.path,
-    //                         uri
-    //                     });
+                    break;
+                }
+                case 'error': {
+                    await this.error(message.error, project);
 
-    //                     await vscode.workspace.fs.writeFile(uri, file.data);
-    //                 }
+                    break;
+                }
+                case 'done': {
+                    await this.exit(0, project);
 
-    //                 // Add output files to project output
-    //                 await project.addOutputFileUris(files.map((file) => file.uri));
-
-    //                 await this.task.handleEnd(project, files);
-
-    //                 await this.exit(0, project);
-
-    //                 break;
-    //             }
-    //             case 'error': {
-    //                 await this.error(event.data.error, project);
-
-    //                 break;
-    //             }
-    //         }
-    //     } catch (err) {
-    //         await this.error(err, project);
-    //     }
-    // }
+                    break;
+                }
+            }
+        } catch (err) {
+            await this.error(err, project);
+        }
+    }
 }

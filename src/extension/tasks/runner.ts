@@ -3,6 +3,8 @@ import * as vscode from 'vscode';
 import type {ExtensionMessage, MessageFile} from '../../common/messages.js';
 import {type Project} from '../projects/index.js';
 
+import {TerminalMessageEmitter} from './messaging.js';
+
 export interface RunnerContext {
     project: Project;
     workerFilename: string;
@@ -15,10 +17,12 @@ export interface RunnerContext {
     outputFiles: string[];
 }
 
-export abstract class TaskRunner {
-    protected extensionContext: vscode.ExtensionContext;
+export abstract class TaskRunner extends TerminalMessageEmitter {
+    protected readonly extensionContext: vscode.ExtensionContext;
 
     constructor(extensionContext: vscode.ExtensionContext) {
+        super();
+
         this.extensionContext = extensionContext;
     }
 
@@ -62,26 +66,68 @@ export class WebAssemblyTaskRunner extends TaskRunner {
             vscode.Uri.joinPath(this.extensionContext.extensionUri, 'dist', 'workers', workerFilename).toString(true)
         );
 
-        worker.addEventListener('message', this.handleMessage);
-        worker.addEventListener('messageerror', this.handleMessageError);
-        worker.addEventListener('error', this.handleError);
+        worker.addEventListener('message', (event) => this.handleMessage(event));
+        worker.addEventListener('messageerror', (event) => this.handleMessageError(event));
+        worker.addEventListener('error', (event) => this.handleError(event));
 
         return worker;
     }
 
     private handleMessage(event: MessageEvent<ExtensionMessage>) {
         console.log(`Message event: ${event}`);
+
+        try {
+            switch (event.data.type) {
+                case 'terminal': {
+                    this.println(event.data.data, event.data.stream);
+
+                    break;
+                }
+                case 'output': {
+                    // TODO: how to handle this??
+                    this.println(`Output files: ${event.data.files}`);
+
+                    // // Write output files
+                    // const files: TaskOutputFile[] = [];
+                    // for (const file of event.data.files) {
+                    //     const uri = vscode.Uri.joinPath(project.getRoot(), file.path);
+                    //     files.push({
+                    //         path: file.path,
+                    //         uri
+                    //     });
+
+                    //     await vscode.workspace.fs.writeFile(uri, file.data);
+                    // }
+
+                    // // Add output files to project output
+                    // await project.addOutputFileUris(files.map((file) => file.uri));
+
+                    // await this.task.handleEnd(project, files);
+
+                    this.done();
+
+                    break;
+                }
+                case 'error': {
+                    const error = event.data.error;
+                    this.error(typeof error === 'string' ? new Error(error) : error);
+
+                    break;
+                }
+            }
+        } catch (err) {
+            this.error(err);
+        }
     }
 
     private handleMessageError(event: MessageEvent) {
         console.error('Message error:', event);
 
-        // this.error(new Error('Message error'), project);
+        this.error(new Error('Message error'));
     }
 
     private handleError(event: ErrorEvent) {
-        console.error(`Error: ${event}`);
-        // this.error(event.error, project);
+        this.error(event.error);
     }
 }
 

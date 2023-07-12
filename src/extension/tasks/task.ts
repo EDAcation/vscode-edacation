@@ -1,9 +1,10 @@
 import {decodeText} from 'edacation';
-import * as vscode from 'vscode';
+import type * as vscode from 'vscode';
 
 import type {MessageFile} from '../../common/messages.js';
 import {type Project} from '../projects/index.js';
 
+import {TerminalMessageEmitter} from './messaging.js';
 import {type RunnerContext, type TaskRunner} from './runner.js';
 
 export interface TaskOutputFile {
@@ -17,20 +18,15 @@ export interface TaskDefinition extends vscode.TaskDefinition {
     uri?: vscode.Uri;
 }
 
-export interface TaskMessage {
-    type: string;
-}
-
-// TODO: abstract worker-specific code into TaskRunner
-export abstract class TerminalTask<WorkerOptions> {
-    private runner: TaskRunner;
-
-    public taskEvents: vscode.EventEmitter<TaskMessage>;
+export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter {
+    private readonly runner: TaskRunner;
 
     constructor(runner: TaskRunner) {
-        this.runner = runner;
+        super();
 
-        this.taskEvents = new vscode.EventEmitter();
+        this.runner = runner;
+        // proxy all runner messages to terminal
+        this.runner.onMessage((msg) => this.fire(msg));
     }
 
     abstract getName(): string;
@@ -52,11 +48,6 @@ export abstract class TerminalTask<WorkerOptions> {
     abstract handleStart(project: Project): Promise<void>;
 
     abstract handleEnd(project: Project, outputFiles: TaskOutputFile[]): Promise<void>;
-
-    protected println(line?: string) {
-        // TODO: link up to terminal
-        console.log(`TASK MESSAGE: ${line}`);
-    }
 
     async execute(project: Project, definition: TaskDefinition) {
         const workerOptions = this.getWorkerOptions(
