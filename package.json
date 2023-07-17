@@ -12,7 +12,6 @@
         "Bram Wesselink <wesselinkbram@gmail.com>",
         "Hendrik Folmer <h.h.folmer@utwente.nl>"
     ],
-    "type": "module",
     "engines": {
         "vscode": "^1.73.0"
     },
@@ -43,7 +42,7 @@
         "onView:edacation-outputFiles",
         "onView:edacation-actions"
     ],
-    "browser": "./dist/extension/extension.js",
+    "main": "./dist/extension/extension.js",
     "contributes": {
         "configuration": {
             "title": "EDAcation",

@@ -1,3 +1,4 @@
+import {spawn} from 'child_process';
 import * as vscode from 'vscode';
 
 import type {ExtensionMessage, MessageFile} from '../../common/messages.js';
@@ -111,8 +112,10 @@ export class WebAssemblyTaskRunner extends TaskRunner {
 }
 
 export class NativeTaskRunner extends TaskRunner {
-    async run(_ctx: RunnerContext): Promise<void> {
-        throw new Error('Method not implemented.');
+    async run(ctx: RunnerContext): Promise<void> {
+        const proc = spawn(ctx.command, ctx.args);
+        proc.stdout.on('data', (data) => this.println(data));
+        proc.on('error', (error) => this.error(error));
     }
 }
 
