@@ -124,6 +124,12 @@ export class NativeTaskRunner extends TaskRunner {
     }
 
     async run(ctx: RunnerContext): Promise<void> {
+        // Write generated input files so the native process can load them
+        for (const file of ctx.generatedInputFiles) {
+            const destUri = vscode.Uri.joinPath(ctx.project.getRoot(), file.path);
+            await vscode.workspace.fs.writeFile(destUri, file.data);
+        }
+
         const proc = spawn(ctx.command, ctx.args, {
             cwd: ctx.project.getRoot().fsPath
         });
@@ -156,8 +162,10 @@ export class NativeTaskRunner extends TaskRunner {
         }
 
         if (code === 0) {
-            const outputFiles = ctx.outputFiles.map((f) => ({path: f}));
-            this.done(outputFiles);
+            const outputFiles = ctx.outputFiles.map((file) => ({path: file}));
+            const writtenInputFiles = ctx.generatedInputFiles.map((file) => ({path: file.path}));
+
+            this.done(outputFiles.concat(writtenInputFiles));
         } else if (code !== null) {
             this.error(new Error(`Process exited with code ${code}`));
         } else {
