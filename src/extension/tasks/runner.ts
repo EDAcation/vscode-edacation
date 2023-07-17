@@ -112,10 +112,57 @@ export class WebAssemblyTaskRunner extends TaskRunner {
 }
 
 export class NativeTaskRunner extends TaskRunner {
+    private lineBuffer: Record<'stdout' | 'stderr', string>;
+
+    constructor(extensionContext: vscode.ExtensionContext) {
+        super(extensionContext);
+
+        this.lineBuffer = {
+            stdout: '',
+            stderr: ''
+        };
+    }
+
     async run(ctx: RunnerContext): Promise<void> {
-        const proc = spawn(ctx.command, ctx.args);
-        proc.stdout.on('data', (data) => this.println(data));
+        const proc = spawn(ctx.command, ctx.args, {
+            cwd: ctx.project.getRoot().fsPath
+        });
+
+        proc.on('exit', (code, signal) => this.handleProcessExit(ctx, code, signal));
         proc.on('error', (error) => this.error(error));
+
+        proc.stdout.on('data', (data) => this.onProcessData(data, 'stdout'));
+        proc.stderr.on('data', (data) => this.onProcessData(data, 'stderr'));
+    }
+
+    private onProcessData(data: string, stream: 'stdout' | 'stderr') {
+        this.lineBuffer[stream] += data;
+
+        const lines = this.lineBuffer[stream].split('\n');
+        this.lineBuffer[stream] = lines[lines.length - 1];
+
+        for (const line of lines.slice(0, -1)) {
+            this.println(line, stream);
+        }
+    }
+
+    private handleProcessExit(ctx: RunnerContext, code: number | null, signal: string | null) {
+        // flush buffers to get all output on the terminal
+        if (this.lineBuffer['stdout'].length >= 0) {
+            this.println(this.lineBuffer['stdout'], 'stdout');
+        }
+        if (this.lineBuffer['stderr'].length >= 0) {
+            this.println(this.lineBuffer['stderr'], 'stderr');
+        }
+
+        if (code === 0) {
+            const outputFiles = ctx.outputFiles.map((f) => ({path: f}));
+            this.done(outputFiles);
+        } else if (code !== null) {
+            this.error(new Error(`Process exited with code ${code}`));
+        } else {
+            this.error(new Error(`Process was killed with signal: ${signal}`));
+        }
     }
 }
 
