@@ -27,10 +27,16 @@ export abstract class TaskRunner extends TerminalMessageEmitter {
         this.extensionContext = extensionContext;
     }
 
+    abstract getName(): string;
+
     abstract run(ctx: RunnerContext): Promise<void>;
 }
 
 export class WebAssemblyTaskRunner extends TaskRunner {
+    getName() {
+        return 'WebAssembly';
+    }
+
     async run(ctx: RunnerContext): Promise<void> {
         const files = await this.readFiles(ctx.project, ctx.inputFiles);
 
@@ -113,6 +119,10 @@ export class WebAssemblyTaskRunner extends TaskRunner {
 
 export class NativeTaskRunner extends TaskRunner {
     private lineBuffer: Record<'stdout' | 'stderr', string>;
+
+    getName() {
+        return 'Native';
+    }
 
     constructor(extensionContext: vscode.ExtensionContext) {
         super(extensionContext);

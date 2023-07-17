@@ -139,9 +139,16 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
         // Do nothing
     }
 
-    protected println(line = '', _stream: 'stdout' | 'stderr' = 'stdout') {
-        this.writeEmitter.fire(`${line}\r\n`);
-        this.logMessages.push(`${line}\r\n`);
+    protected println(line = '', stream: 'stdout' | 'stderr' = 'stdout') {
+        let message = line;
+        if (stream === 'stderr') {
+            // Make line red (ANSI)
+            message = '\x1b[31m' + message + '\x1b[0m';
+        }
+        this.writeEmitter.fire(`${message}\r\n`);
+
+        const logMessage = `${new Date().toISOString()} - ${stream.toUpperCase()}: ${line}\r\n`;
+        this.logMessages.push(logMessage);
     }
 
     protected async exit(code: number, project?: Project) {
@@ -166,9 +173,12 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
 
     protected async error(error: unknown, project?: Project) {
         if (error instanceof Error) {
-            this.println(error.stack || error.message);
+            const messageLines = (error.stack || error.message).split('\n');
+            for (const line of messageLines) {
+                this.println(line, 'stderr');
+            }
         } else if (typeof error === 'string') {
-            this.println(error);
+            this.println(error, 'stderr');
         }
         await this.exit(1, project);
     }

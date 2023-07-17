@@ -57,13 +57,21 @@ export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter
         const outputFiles = this.getOutputFiles(workerOptions);
         const workerFilename = this.getWorkerFileName(workerOptions);
 
+        // Pretty-print input files and their contents
         for (const inputFile of generatedInputFiles) {
-            this.println(`${inputFile.path}:`);
-            this.println(decodeText(inputFile.data));
+            this.println(`\x1b[1m${inputFile.path}:\x1b[0m`);
+
+            const indented = decodeText(inputFile.data)
+                .split('\n')
+                .map((line) => '  ' + line)
+                .join('\n');
+            this.println(indented);
             this.println();
         }
 
-        this.println(`${command} ${args.join(' ')}`);
+        // Print the runner and command to execute
+        this.println(`\x1b[1mRunner command (${this.runner.getName()}):\x1b[0m`);
+        this.println(`  ${command} ${args.join(' ')}`);
         this.println();
 
         const ctx: RunnerContext = {
