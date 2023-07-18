@@ -43,6 +43,7 @@
         "onView:edacation-actions"
     ],
     "main": "./dist/extension/extension.js",
+    "browser": "./dist/extension/extension.js",
     "contributes": {
         "configuration": {
             "title": "EDAcation",

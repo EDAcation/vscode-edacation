@@ -1,4 +1,3 @@
-import {spawn} from 'child_process';
 import * as vscode from 'vscode';
 
 import type {ExtensionMessage, MessageFile} from '../../common/messages.js';
@@ -140,12 +139,21 @@ export class NativeTaskRunner extends TaskRunner {
             await vscode.workspace.fs.writeFile(destUri, file.data);
         }
 
-        const proc = spawn(ctx.command, ctx.args, {
+        const child_process = await import('child_process').catch((_) => {
+            this.error(
+                'Unable to import required dependencies. Please note that the native runner is unavailable in a web environment.'
+            );
+        });
+        if (!child_process) {
+            return;
+        }
+
+        const proc = child_process.spawn(ctx.command, ctx.args, {
             cwd: ctx.project.getRoot().fsPath
         });
 
-        proc.on('exit', (code, signal) => this.handleProcessExit(ctx, code, signal));
-        proc.on('error', (error) => this.error(error));
+        proc.on('exit', this.onProcessExit.bind(this, ctx));
+        proc.on('error', this.error.bind(this));
 
         proc.stdout.on('data', (data) => this.onProcessData(data, 'stdout'));
         proc.stderr.on('data', (data) => this.onProcessData(data, 'stderr'));
@@ -162,7 +170,7 @@ export class NativeTaskRunner extends TaskRunner {
         }
     }
 
-    private handleProcessExit(ctx: RunnerContext, code: number | null, signal: string | null) {
+    private onProcessExit(ctx: RunnerContext, code: number | null, signal: string | null) {
         // flush buffers to get all output on the terminal
         if (this.lineBuffer['stdout'].length >= 0) {
             this.println(this.lineBuffer['stdout'], 'stdout');
