@@ -4,7 +4,7 @@ import type * as vscode from 'vscode';
 import type {MessageFile} from '../../common/messages.js';
 import {type Project} from '../projects/index.js';
 
-import {type TaskOutputFile, TerminalMessageEmitter} from './messaging.js';
+import {type TaskOutputFile, type TerminalMessage, TerminalMessageEmitter} from './messaging.js';
 import {type RunnerContext, type TaskRunner} from './runner.js';
 
 export interface TaskDefinition extends vscode.TaskDefinition {
@@ -21,7 +21,7 @@ export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter
 
         this.runner = runner;
         // proxy all runner messages to terminal
-        this.runner.onMessage((msg) => this.fire(msg));
+        this.runner.onMessage(this.onRunnerMessage.bind(this));
     }
 
     abstract getName(): string;
@@ -43,6 +43,23 @@ export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter
     abstract handleStart(project: Project): Promise<void>;
 
     abstract handleEnd(project: Project, outputFiles: TaskOutputFile[]): Promise<void>;
+
+    private onRunnerMessage(message: TerminalMessage) {
+        switch (message.type) {
+            case 'println': {
+                this.println(message.line, message.stream);
+                break;
+            }
+            case 'done': {
+                this.done(message.outputFiles);
+                break;
+            }
+            case 'error': {
+                this.error(message.error);
+                break;
+            }
+        }
+    }
 
     async execute(project: Project, definition: TaskDefinition) {
         const workerOptions = this.getWorkerOptions(

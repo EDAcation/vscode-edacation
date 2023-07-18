@@ -34,7 +34,7 @@ export abstract class TerminalMessageEmitter {
         this.messageCallbacks.push(callback);
     }
 
-    protected fire(message: TerminalMessage) {
+    private fire(message: TerminalMessage) {
         for (const callback of this.messageCallbacks) {
             callback(message);
         }

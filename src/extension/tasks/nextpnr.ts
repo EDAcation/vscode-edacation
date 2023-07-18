@@ -62,6 +62,14 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
         return workerOptions.outputFiles;
     }
 
+    protected println(line = '', stream: 'stdout' | 'stderr' = 'stdout') {
+        // Force informational messages to go to stdout
+        if (line.toLowerCase().startsWith('info:')) {
+            return super.println(line, 'stdout');
+        }
+        return super.println(line, stream);
+    }
+
     async handleStart(project: Project) {
         this.println(`Placing and routing EDA project "${project.getName()}" using nextpnr...`);
         this.println(
