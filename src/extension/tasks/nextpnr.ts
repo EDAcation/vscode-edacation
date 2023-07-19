@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import type {MessageFile} from '../../common/messages.js';
 import type {Project} from '../projects/index.js';
 
-import {type TaskOutputFile} from './messaging.js';
+import {AnsiModifier, type TaskOutputFile} from './messaging.js';
 import {getConfiguredRunner} from './runner.js';
 import {type TaskDefinition, TerminalTask} from './task.js';
 import {TaskProvider, TaskTerminal} from './terminal.js';
@@ -62,12 +62,12 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
         return workerOptions.outputFiles;
     }
 
-    protected println(line = '', stream: 'stdout' | 'stderr' = 'stdout') {
+    protected println(line = '', stream: 'stdout' | 'stderr' = 'stdout', modifier?: AnsiModifier) {
         // Force informational messages to go to stdout
         if (line.toLowerCase().startsWith('info:')) {
             return super.println(line, 'stdout');
         }
-        return super.println(line, stream);
+        return super.println(line, stream, modifier);
     }
 
     async handleStart(project: Project) {
@@ -80,7 +80,11 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
 
     async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
         this.println();
-        this.println(`Finished placing and routing EDA project "${project.getName()}" using nextpnr.`);
+        this.println(
+            `Finished placing and routing EDA project "${project.getName()}" using nextpnr.`,
+            undefined,
+            AnsiModifier.GREEN
+        );
         this.println();
 
         // Open placed and routed file in nextpnr editor

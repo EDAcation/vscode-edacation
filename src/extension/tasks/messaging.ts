@@ -1,3 +1,10 @@
+export enum AnsiModifier {
+    RESET = '\x1b[0m',
+    BOLD = '\x1b[1m',
+    RED = '\x1b[31m',
+    GREEN = '\x1b[32m'
+}
+
 export interface TaskOutputFile {
     path: string;
     data?: Uint8Array;
@@ -7,6 +14,7 @@ export interface TerminalMessagePrintln {
     type: 'println';
     stream: 'stdout' | 'stderr';
     line?: string;
+    modifier?: AnsiModifier;
 }
 
 export interface TerminalMessageError {
@@ -40,8 +48,8 @@ export abstract class TerminalMessageEmitter {
         }
     }
 
-    protected println(line = '', stream: 'stdout' | 'stderr' = 'stdout') {
-        this.fire({type: 'println', stream, line});
+    protected println(line = '', stream: 'stdout' | 'stderr' = 'stdout', modifier?: AnsiModifier) {
+        this.fire({type: 'println', stream, line, modifier});
     }
 
     protected error(error: unknown) {

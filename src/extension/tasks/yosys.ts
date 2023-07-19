@@ -5,7 +5,7 @@ import type {MessageFile} from '../../common/messages.js';
 import type {Project} from '../projects/index.js';
 import {encodeText} from '../util.js';
 
-import {type TaskOutputFile} from './messaging.js';
+import {AnsiModifier, type TaskOutputFile} from './messaging.js';
 import {getConfiguredRunner} from './runner.js';
 import {type TaskDefinition, TerminalTask} from './task.js';
 import {TaskProvider, TaskTerminal} from './terminal.js';
@@ -50,7 +50,7 @@ export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOpti
         return workerOptions.outputFiles;
     }
 
-    protected println(line?: string) {
+    protected println(line?: string, stream: 'stdout' | 'stderr' = 'stdout', modifier?: AnsiModifier) {
         // Ignore duplicate lines, but allow repeated prints
         if (this.lastLogMessage === line) {
             this.lastLogMessage = undefined;
@@ -59,7 +59,7 @@ export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOpti
             this.lastLogMessage = line;
         }
 
-        super.println(line);
+        super.println(line, stream, modifier);
     }
 
     async handleStart(project: Project) {
@@ -69,7 +69,11 @@ export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOpti
 
     async handleEnd(project: Project, _outputFiles: TaskOutputFile[]) {
         this.println();
-        this.println(`Finished synthesizing EDA project "${project.getName()}" using Yosys.`);
+        this.println(
+            `Finished synthesizing EDA project "${project.getName()}" using Yosys.`,
+            undefined,
+            AnsiModifier.GREEN
+        );
         this.println();
     }
 }

@@ -4,7 +4,7 @@ import {Project, type Projects} from '../projects/index.js';
 import {encodeText} from '../util.js';
 
 import {BaseTaskProvider} from './base.js';
-import {type TerminalMessage} from './messaging.js';
+import {AnsiModifier, type TerminalMessage} from './messaging.js';
 import {type TaskDefinition, type TerminalTask} from './task.js';
 
 const PROJECT_PATTERN = '**/*.edaproject';
@@ -139,11 +139,13 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
         // Do nothing
     }
 
-    protected println(line = '', stream: 'stdout' | 'stderr' = 'stdout') {
+    protected println(line = '', stream: 'stdout' | 'stderr' = 'stdout', modifier?: AnsiModifier) {
         let message = line;
-        if (stream === 'stderr') {
-            // Make line red (ANSI)
-            message = '\x1b[31m' + message + '\x1b[0m';
+        if (modifier) {
+            message = modifier + message + AnsiModifier.RESET;
+        } else if (stream === 'stderr') {
+            // Make line red
+            message = AnsiModifier.RED + message + AnsiModifier.RESET;
         }
         this.writeEmitter.fire(`${message}\r\n`);
 
@@ -211,7 +213,7 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
         try {
             switch (message.type) {
                 case 'println': {
-                    this.println(message.line, message.stream);
+                    this.println(message.line, message.stream, message.modifier);
 
                     break;
                 }

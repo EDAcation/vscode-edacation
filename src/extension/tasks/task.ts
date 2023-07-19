@@ -4,7 +4,7 @@ import type * as vscode from 'vscode';
 import type {MessageFile} from '../../common/messages.js';
 import {type Project} from '../projects/index.js';
 
-import {type TaskOutputFile, type TerminalMessage, TerminalMessageEmitter} from './messaging.js';
+import {AnsiModifier, type TaskOutputFile, type TerminalMessage, TerminalMessageEmitter} from './messaging.js';
 import {type RunnerContext, type TaskRunner} from './runner.js';
 
 export interface TaskDefinition extends vscode.TaskDefinition {
@@ -76,7 +76,7 @@ export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter
 
         // Pretty-print input files and their contents
         for (const inputFile of generatedInputFiles) {
-            this.println(`\x1b[1m${inputFile.path}:\x1b[0m`);
+            this.println(inputFile.path + ':', undefined, AnsiModifier.BOLD);
 
             const indented = decodeText(inputFile.data)
                 .split('\n')
@@ -87,7 +87,7 @@ export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter
         }
 
         // Print the runner and command to execute
-        this.println(`\x1b[1mRunner command (${this.runner.getName()}):\x1b[0m`);
+        this.println(`Runner command (${this.runner.getName()}):`, undefined, AnsiModifier.BOLD);
         this.println(`  ${command} ${args.join(' ')}`);
         this.println();
 
