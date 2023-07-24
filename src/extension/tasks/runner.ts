@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import type {ExtensionMessage, MessageFile} from '../../common/messages.js';
+import {UniversalWorker} from '../../common/universalworker.js';
 import {type Project} from '../projects/index.js';
 
 import {type TaskOutputFile, TerminalMessageEmitter} from './messaging.js';
@@ -41,7 +42,7 @@ export class WebAssemblyTaskRunner extends TaskRunner {
 
         // Create & start worker
         const worker = this.createWorker(ctx.workerFilename);
-        worker.postMessage(
+        worker.sendMessage(
             {
                 type: 'input',
                 command: ctx.command,
@@ -67,34 +68,36 @@ export class WebAssemblyTaskRunner extends TaskRunner {
         return files;
     }
 
-    private createWorker(workerFilename: string): Worker {
-        const worker = new Worker(
+    private createWorker(workerFilename: string): UniversalWorker {
+        const worker = new UniversalWorker(
             vscode.Uri.joinPath(this.extensionContext.extensionUri, 'dist', 'workers', workerFilename).toString(true)
         );
 
-        worker.addEventListener('message', (event) => this.handleMessage(event));
-        worker.addEventListener('messageerror', (event) => this.handleMessageError(event));
-        worker.addEventListener('error', (event) => this.handleError(event));
+        worker.onEvent('message', this.handleMessage.bind(this));
+        worker.onEvent('messageerror', this.handleMessageError.bind(this));
+        worker.onEvent('error', this.handleError.bind(this));
 
         return worker;
     }
 
-    private handleMessage(event: MessageEvent<ExtensionMessage>) {
+    private handleMessage(message: ExtensionMessage) {
+        console.log('Worker -> runner:');
+        console.log(message);
         try {
-            switch (event.data.type) {
+            switch (message.type) {
                 case 'terminal': {
-                    this.println(event.data.data, event.data.stream);
+                    this.println(message.data, message.stream);
 
                     break;
                 }
                 case 'output': {
-                    const outputFiles = event.data.files as TaskOutputFile[];
+                    const outputFiles = message.files as TaskOutputFile[];
                     this.done(outputFiles);
 
                     break;
                 }
                 case 'error': {
-                    const error = event.data.error;
+                    const error = message.error;
                     this.error(typeof error === 'string' ? new Error(error) : error);
 
                     break;
@@ -105,14 +108,16 @@ export class WebAssemblyTaskRunner extends TaskRunner {
         }
     }
 
-    private handleMessageError(event: MessageEvent) {
+    private handleMessageError(event: Error) {
         console.error('Message error:', event);
 
         this.error(new Error('Message error'));
     }
 
-    private handleError(event: ErrorEvent) {
-        this.error(event.error);
+    private handleError(event: Error) {
+        console.log(event);
+
+        this.error(event);
     }
 }
 

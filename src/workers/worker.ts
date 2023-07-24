@@ -1,6 +1,7 @@
 import path from 'path';
 
 import type {ExtensionMessage, MessageFile, WorkerMessage} from '../common/messages.js';
+import {onEvent, sendMessage} from '../common/universalworker.js';
 
 export const run = () => {
     console.log('run');
@@ -12,6 +13,14 @@ export interface EmscriptenWrapper {
     getFS(): EmscriptenFS;
 }
 
+try {
+    process.on('unhandledRejection', (err) => {
+        throw err;
+    });
+} catch (err) {
+    /* ignore */
+}
+
 export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
     private toolPromise: Promise<Tool>;
     private tool?: Tool;
@@ -19,8 +28,8 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
     constructor() {
         this.toolPromise = this.initialize();
 
-        addEventListener('message', this.handleMessage.bind(this));
-        addEventListener('messageerror', this.handleMessageError.bind(this));
+        onEvent('message', this.handleMessage.bind(this));
+        onEvent('messageerror', this.handleMessageError.bind(this));
     }
 
     async getTool(): Promise<Tool> {
@@ -37,13 +46,19 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
 
     abstract initialize(): Promise<Tool>;
 
-    protected async fetchBinary(url: string): Promise<ArrayBuffer> {
-        const response = await fetch(url);
-        return await response.arrayBuffer();
+    protected async fetchBinary(dataUrl: string): Promise<ArrayBuffer> {
+        if (typeof Worker === 'undefined') {
+            // Node.js - warning: only works for data URLs
+            return Buffer.from(dataUrl.split(',')[1], 'base64');
+        } else {
+            // Web worker
+            const response = await fetch(dataUrl);
+            return await response.arrayBuffer();
+        }
     }
 
     protected send(message: ExtensionMessage, transferables: Transferable[] = []) {
-        postMessage(message, transferables);
+        sendMessage(message, transferables);
     }
 
     protected print(stream: 'stdout' | 'stderr', data: string) {
@@ -59,22 +74,28 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
     }
 
     protected error(error: unknown) {
+        console.log(`Error: ${error}`);
         this.send({
             type: 'error',
             error: error instanceof Error || typeof error === 'string' ? error : 'Unknown error'
         });
     }
 
-    private async handleMessage(event: MessageEvent<WorkerMessage>) {
+    private async handleMessage(message: WorkerMessage) {
+        console.log('runner -> worker:');
+        console.log(message);
         try {
-            switch (event.data.type) {
+            switch (message.type) {
                 case 'input': {
+                    console.log('We have input!');
+
                     // Obtain Emscripten tool and its FS
                     const tool = await this.getTool();
                     const fs = await this.getFS();
 
                     // Write input files
-                    for (const file of event.data.inputFiles) {
+                    for (const file of message.inputFiles) {
+                        console.log(file);
                         if (file.path.startsWith('/')) {
                             throw new Error('Absolute file paths are currently not supported.');
                         }
@@ -85,6 +106,7 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
                         let position = 0;
                         while (position < dirname.length) {
                             position = dirname.indexOf('/', position + 1);
+                            console.log(position);
                             if (position === -1) {
                                 break;
                             }
@@ -111,11 +133,11 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
 
                     // Execute Emscripten tool
                     // @ts-expect-error: TODO
-                    tool.getModule().callMain(event.data.args);
+                    tool.getModule().callMain(message.args);
 
                     // Read output files
                     const files: MessageFile[] = [];
-                    for (const outputFilePath of event.data.outputFiles) {
+                    for (const outputFilePath of message.outputFiles) {
                         files.push({
                             path: outputFilePath,
                             data: fs.readFile(outputFilePath)
@@ -139,8 +161,8 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
         }
     }
 
-    private handleMessageError(event: MessageEvent) {
-        console.error('Message error:', event);
+    private handleMessageError(error: Error) {
+        console.error('Message error:', error);
 
         this.error(new Error('Message error'));
     }

@@ -59,7 +59,8 @@ const webExtensionConfig = {
     ],
     externals: {
         vscode: 'commonjs vscode', // ignored because it doesn't exist
-        child_process: 'child_process'
+        child_process: 'child_process',
+        worker_threads: 'worker_threads'
     },
     performance: {
         hints: false
