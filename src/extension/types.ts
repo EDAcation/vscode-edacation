@@ -12,7 +12,7 @@ export interface ViewMessageRequestSave {
     data: {
         fileContents: string;
         defaultPath?: string;
-        filters?: Record<string, Array<string>>;
+        filters?: Record<string, string[]>;
     };
 }
 
