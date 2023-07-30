@@ -49,7 +49,7 @@ export class DigitalJSEditor extends BaseEditor {
             });
         } else if (message.type === 'requestSave') {
             // Save to project root, or the parent dir of the current editor's file if we can't find it
-            const projectRoot = util.findProjectRoot(document.uri) || util.parentDir(document.uri);
+            const projectRoot = util.findProjectRoot(document.uri) || util.getParentUri(document.uri);
             const path = vscode.Uri.joinPath(projectRoot, message.data.defaultPath || '');
 
             util.offerSaveFile(message.data.fileContents, {

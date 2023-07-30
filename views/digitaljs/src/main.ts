@@ -108,7 +108,8 @@ class View {
 
         // Extract viewable SVG data from elem
         const svgData = getSvg(
-            svgElem.cloneNode(true) as Element, // Deep clone so we don't affect the SVG in the DOM
+            // Deep clone so we don't affect the SVG in the DOM
+            svgElem.cloneNode(true) as Element,
             svgElem.clientWidth,
             svgElem.clientHeight
         );
