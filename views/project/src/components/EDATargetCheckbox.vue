@@ -1,5 +1,5 @@
 <script lang="ts">
-import type {NextpnrOptions, WorkerConfiguration, WorkerId, YosysOptions} from 'edacation';
+import type {NextpnrOptions, WorkerConfiguration, TargetConfiguration, WorkerTargetConfiguration, WorkerId, YosysOptions} from 'edacation';
 import {defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
@@ -28,45 +28,35 @@ export default defineComponent({
         };
     },
     computed: {
-        workerConfig(): WorkerConfiguration | undefined {
-            const {project} = this.state;
-            if (!project) return;
-
-            project.configuration = project.configuration || {};
-
-            if (this.targetIndex !== undefined) {
-                const target = project.configuration.targets[this.targetIndex];
-                target[this.workerId as WorkerId] = target[this.workerId as WorkerId] || {};
-                return target[this.workerId as WorkerId];
-            } else {
-                project.configuration.defaults = project.configuration.defaults || {};
-                project.configuration.defaults[this.workerId as WorkerId] =
-                    project.configuration.defaults[this.workerId as WorkerId] || {};
-                return project.configuration.defaults[this.workerId as WorkerId];
+        target(): TargetConfiguration | undefined {
+            if (this.targetIndex === undefined) {
+                return undefined;
             }
+            return this.state.project!.configuration.targets[this.targetIndex];
+        },
+        defaultWorker(): WorkerConfiguration | undefined {
+            if (!this.state.project!.configuration.defaults) {
+                return undefined;
+            }
+            return this.state.project!.configuration.defaults[this.workerId as WorkerId];
+        },
+        worker(): WorkerConfiguration | WorkerTargetConfiguration | undefined {
+            return this.target ? this.target[this.workerId as WorkerId] : this.defaultWorker;
+        },
+        config(): YosysOptions | NextpnrOptions | undefined {
+            if (!this.worker) {
+                return undefined;
+            }
+            return (this.worker as Record<string, YosysOptions | NextpnrOptions>)[this.configId];
         }
     },
     methods: {
         toggleOption() {
             this.option = !this.option;
-
-            const {project} = this.state;
-            if (!project) return;
-
-            project.configuration = project.configuration || {};
-            project.configuration.defaults = project.configuration.defaults || {};
-
-            const workerOptions = project.configuration.defaults[this.workerId as WorkerId];
-
-            if (workerOptions) {
-                workerOptions.options = workerOptions.options || {};
-
-                if (this.workerId === 'yosys') {
-                    (workerOptions.options as YosysOptions)[this.configId as keyof YosysOptions] = this.option;
-                } else if (this.workerId === 'nextpnr') {
-                    (workerOptions.options as NextpnrOptions)[this.configId as keyof NextpnrOptions] = this.option;
-                }
+            if (!this.config) {
+                return;
             }
+            (this.config as Record<string, boolean>)[this.configId] = this.option;
         },
         handleCheckboxChange() {
             this.toggleOption();
