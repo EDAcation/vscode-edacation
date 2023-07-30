@@ -10,6 +10,6 @@ export default defineComponent({
 </script>
 
 <template>
-    <EDATargetCheckbox worker="yosys" configTarget="optimize" label="Enable optimize">
+    <EDATargetCheckbox worker-id="yosys" config-id="optimize" label="Enable Yosys optimization">
     </EDATargetCheckbox>
 </template>

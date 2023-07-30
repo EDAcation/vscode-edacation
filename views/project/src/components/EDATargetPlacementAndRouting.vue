@@ -12,7 +12,7 @@ export default defineComponent({
 </script>
 
 <template>
-    <EDATargetCheckbox worker="nextpnr" configTarget="placedSvg" label="Enable placedSvg"></EDATargetCheckbox>
-    <EDATargetCheckbox worker="nextpnr" configTarget="routedSvg" label="Enable routedSvg"></EDATargetCheckbox>
-    <EDATargetCheckbox worker="nextpnr" configTarget="routedJson" label="Enable routedJson"></EDATargetCheckbox>
+    <EDATargetCheckbox worker-id="nextpnr" config-id="placedSvg" label="Enable Placed Scalable Vector Graphics (SVG) Output"></EDATargetCheckbox>
+    <EDATargetCheckbox worker-id="nextpnr" config-id="routedSvg" label="Enable Routed Scalable Vector Graphics (SVG) Output"></EDATargetCheckbox>
+    <EDATargetCheckbox worker-id="nextpnr" config-id="routedJson" label="Enable Routed JSON Output"></EDATargetCheckbox>
 </template>
