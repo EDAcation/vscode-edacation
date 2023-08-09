@@ -31,8 +31,11 @@ export default defineComponent({
     data() {
         return {
             state: globalState,
-            option: false
+            option: false,
         };
+    },
+    created() {
+        this.option = this.checkOption();
     },
     computed: {
         target(): TargetConfiguration | undefined {
@@ -49,44 +52,42 @@ export default defineComponent({
         },
         worker(): WorkerConfiguration | WorkerTargetConfiguration | undefined {
             return this.target ? this.target[this.workerId as WorkerId] : this.defaultWorker;
-        }
+        },
+        
     },
 
     methods: {
         toggleOption() {
-            console.log(this.target);
-            console.log('KISH IS TINY');
-
             this.option = !this.option;
+          
+            if (!this.target) return;
+            this.target[this.workerId as WorkerId] = this.target[this.workerId as WorkerId] || {};
+            let workerOptions = this.target[this.workerId as WorkerId];
+            workerOptions = workerOptions || {};
+            workerOptions.options = workerOptions.options || {};
 
-            const {project} = this.state;
-            console.log(project);
-            if (!project || !this.target) return;
-
-            project.configuration = project.configuration || {};
-            project.configuration.defaults = project.configuration.defaults || {};
-
-            const workerOptions = this.target[this.workerId as WorkerId];
-            console.log("Shrimpy");
-
-            if (workerOptions) {
-                workerOptions.options = workerOptions.options || {};
-
-                if (this.workerId === 'yosys') {
-                   
-                    this.target.yosys = this.target.yosys || {};
-                    this.target.yosys.options = this.target.yosys.options || {};
-                    this.target.yosys.options[this.configId as keyof YosysOptions] = this.option;
-                    (workerOptions.options as YosysOptions)[this.configId as keyof YosysOptions] = this.option;
-                } else if (this.workerId === 'nextpnr') {
-                    console.log("Tiny croquette");
-
-                    this.target.nextpnr = this.target.nextpnr || {};
-                    this.target.nextpnr.options = this.target.nextpnr.options || {};
-                    this.target.nextpnr.options[this.configId as keyof NextpnrOptions] = this.option;
-                    (workerOptions.options as NextpnrOptions)[this.configId as keyof NextpnrOptions] = this.option;
-                }
+            if (this.workerId === 'yosys') {
+                (workerOptions.options as YosysOptions)[this.configId as keyof YosysOptions] = this.option;
+            } else if (this.workerId === 'nextpnr') {
+                (workerOptions.options as NextpnrOptions)[this.configId as keyof NextpnrOptions] = this.option;
             }
+
+        },
+        checkOption() {
+            if (!this.target) return false;
+            if (!this.target[this.workerId as WorkerId]) return false;
+            let workerOptions = this.target[this.workerId as WorkerId];
+            if(!workerOptions) return false;
+            if(!workerOptions.options) return false;
+
+
+            if (this.workerId === 'yosys') {
+               return (workerOptions.options as YosysOptions)[this.configId as keyof YosysOptions] ?? false;
+            } else if (this.workerId === 'nextpnr') {
+                return (workerOptions.options as NextpnrOptions)[this.configId as keyof NextpnrOptions] ?? false;
+            }            
+            return false;
+
         },
         handleCheckboxChange() {
             this.toggleOption();
@@ -96,5 +97,5 @@ export default defineComponent({
 </script>
 
 <template>
-    <vscode-checkbox v-model="option" @change="handleCheckboxChange">{{ label }}</vscode-checkbox>
+    <vscode-checkbox :checked = "option" v-bind="option" @change="handleCheckboxChange" >{{ label }}</vscode-checkbox>
 </template>
