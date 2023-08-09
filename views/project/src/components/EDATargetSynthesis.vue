@@ -6,6 +6,9 @@ export default defineComponent({
     components: {
         EDATargetCheckbox
     },
+    targetIndex: {
+        type: Number
+    }
 })
 </script>
 

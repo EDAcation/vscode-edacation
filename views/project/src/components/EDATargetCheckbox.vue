@@ -1,5 +1,12 @@
 <script lang="ts">
-import type {NextpnrOptions, WorkerConfiguration, TargetConfiguration, WorkerTargetConfiguration, WorkerId, YosysOptions} from 'edacation';
+import type {
+    NextpnrOptions,
+    TargetConfiguration,
+    WorkerConfiguration,
+    WorkerId,
+    WorkerTargetConfiguration,
+    YosysOptions
+} from 'edacation';
 import {defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
@@ -42,21 +49,44 @@ export default defineComponent({
         },
         worker(): WorkerConfiguration | WorkerTargetConfiguration | undefined {
             return this.target ? this.target[this.workerId as WorkerId] : this.defaultWorker;
-        },
-        config(): YosysOptions | NextpnrOptions | undefined {
-            if (!this.worker) {
-                return undefined;
-            }
-            return (this.worker as Record<string, YosysOptions | NextpnrOptions>)[this.configId];
         }
     },
+
     methods: {
         toggleOption() {
+            console.log(this.target);
+            console.log('KISH IS TINY');
+
             this.option = !this.option;
-            if (!this.config) {
-                return;
+
+            const {project} = this.state;
+            console.log(project);
+            if (!project || !this.target) return;
+
+            project.configuration = project.configuration || {};
+            project.configuration.defaults = project.configuration.defaults || {};
+
+            const workerOptions = this.target[this.workerId as WorkerId];
+            console.log("Shrimpy");
+
+            if (workerOptions) {
+                workerOptions.options = workerOptions.options || {};
+
+                if (this.workerId === 'yosys') {
+                   
+                    this.target.yosys = this.target.yosys || {};
+                    this.target.yosys.options = this.target.yosys.options || {};
+                    this.target.yosys.options[this.configId as keyof YosysOptions] = this.option;
+                    (workerOptions.options as YosysOptions)[this.configId as keyof YosysOptions] = this.option;
+                } else if (this.workerId === 'nextpnr') {
+                    console.log("Tiny croquette");
+
+                    this.target.nextpnr = this.target.nextpnr || {};
+                    this.target.nextpnr.options = this.target.nextpnr.options || {};
+                    this.target.nextpnr.options[this.configId as keyof NextpnrOptions] = this.option;
+                    (workerOptions.options as NextpnrOptions)[this.configId as keyof NextpnrOptions] = this.option;
+                }
             }
-            (this.config as Record<string, boolean>)[this.configId] = this.option;
         },
         handleCheckboxChange() {
             this.toggleOption();
