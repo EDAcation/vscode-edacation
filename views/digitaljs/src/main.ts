@@ -1,8 +1,7 @@
 import 'jquery-ui/dist/jquery-ui.min.js';
 import '@vscode/codicons/dist/codicon.css';
 import {allComponents} from '@vscode/webview-ui-toolkit/dist/toolkit.js';
-// @ts-expect-error: TODO: add module declaration (digitaljs.d.ts)
-import {Circuit} from 'digitaljs';
+import {Circuit, type HeadlessCircuit} from 'digitaljs';
 import {yosys2digitaljs} from 'yosys2digitaljs';
 
 import './main.css';
@@ -22,24 +21,77 @@ interface MessageDocument {
 
 type Message = MessageDocument;
 
-const getSvg = (svgElem: Element, width: number, height: number): string => {
-    // Filter conveniently labeled foreign objects from element
-    const foreignElems = svgElem.getElementsByTagName('foreignObject');
-    for (const elem of Array.from(foreignElems)) {
-        elem.remove();
+type CircuitData = ReturnType<typeof yosys2digitaljs>;
+type CircuitGraph = ReturnType<typeof HeadlessCircuit._makeGraph>;
+
+class ExportableCircuit extends Circuit {
+    private observer: MutationObserver;
+
+    constructor(data: CircuitData, options = {}) {
+        super(data, options);
+
+        this.observer = new MutationObserver(this.onElemChange.bind(this));
     }
 
-    // Set correct XML namespace
-    svgElem.removeAttribute('xmlns:xlink');
-    svgElem.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    private onElemChange(records: MutationRecord[], _observer: MutationObserver) {
+        for (const record of records) {
+            for (const addedNode of Array.of(record.addedNodes)) {
+                console.log(`Added:`);
+                console.log(addedNode);
+            }
+            for (const removedNode of Array.of(record.removedNodes)) {
+                console.log(`Removed:`);
+                console.log(removedNode);
+            }
+        }
+    }
 
-    // Correctly specify width / height to prevent clipping
-    svgElem.setAttribute('width', `${width}px`);
-    svgElem.setAttribute('height', `${height}px`);
+    //@ts-expect-error: fix by making proper digitaljs types
+    override _makePaper(elem: HTMLElement, graph: CircuitGraph) {
+        const paper = super._makePaper(elem, graph);
 
-    // Add XML header
-    return '<?xml version="1.0" encoding="utf-8"?>\n' + svgElem.outerHTML;
-};
+        console.log(elem);
+        console.log(graph);
+        console.log(paper);
+        console.log(paper.model);
+
+        return paper;
+    }
+
+    setRoot(elem: HTMLElement) {
+        this.observer.disconnect();
+        this.observer.observe(elem, {childList: true});
+    }
+
+    exportSvg() {
+        // TODO: (re)drawing is expensive, use existing elems from DOM if exists?
+        const svgElem = document.createElement('div');
+        this.displayOn(svgElem);
+
+        // TODO: find correct width / height
+        const width = 500;
+        const height = 200;
+
+        console.log(svgElem);
+
+        // Filter conveniently labeled foreign objects from element
+        const foreignElems = svgElem.getElementsByTagName('foreignObject');
+        for (const elem of Array.from(foreignElems)) {
+            elem.remove();
+        }
+
+        // Set correct XML namespace
+        svgElem.removeAttribute('xmlns:xlink');
+        svgElem.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+        // Correctly specify width / height to prevent clipping
+        svgElem.setAttribute('width', `${width}px`);
+        svgElem.setAttribute('height', `${height}px`);
+
+        // Add XML header
+        return '<?xml version="1.0" encoding="utf-8"?>\n' + svgElem.outerHTML;
+    }
+}
 
 class View {
     private readonly root: HTMLDivElement;
@@ -98,21 +150,8 @@ class View {
         this.renderDocument();
     }
 
-    requestExport() {
-        // Find our SVG root element
-        const svgElems = document.getElementsByTagName('svg');
-        if (!svgElems) {
-            throw new Error('Could not find SVG element to export');
-        }
-        const svgElem = svgElems[0];
-
-        // Extract viewable SVG data from elem
-        const svgData = getSvg(
-            // Deep clone so we don't affect the SVG in the DOM
-            svgElem.cloneNode(true) as Element,
-            svgElem.clientWidth,
-            svgElem.clientHeight
-        );
+    requestExport(circuit: ExportableCircuit) {
+        const svgData = circuit.exportSvg();
 
         // Send save request to main worker
         vscode.postMessage({
@@ -138,7 +177,7 @@ class View {
             const digitalJs = yosys2digitaljs(json);
 
             // Initialize circuit
-            const circuit = new Circuit(digitalJs);
+            const circuit = new ExportableCircuit(digitalJs);
 
             // Clear
             this.root.replaceChildren();
@@ -168,7 +207,7 @@ class View {
 
             buttonStart?.addEventListener('click', () => circuit.start());
             buttonStop?.addEventListener('click', () => circuit.stop());
-            buttonExport?.addEventListener('click', this.requestExport);
+            buttonExport?.addEventListener('click', this.requestExport.bind(this, circuit));
 
             circuit.on('changeRunning', () => {
                 if (circuit.running) {
@@ -184,6 +223,7 @@ class View {
             const elementCircuit = document.createElement('div');
             circuit.displayOn(elementCircuit);
             this.root.appendChild(elementCircuit);
+            circuit.setRoot(this.root);
         } catch (err) {
             this.handleError(err);
         }
