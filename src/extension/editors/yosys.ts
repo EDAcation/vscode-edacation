@@ -1,11 +1,13 @@
 import * as vscode from 'vscode';
 
-import {type ViewMessage} from '../types.js';
 import * as util from '../util.js';
 
 import {BaseEditor} from './base.js';
+import {type ViewMessage} from './messages.js';
 
-export class DigitalJSEditor extends BaseEditor {
+export class YosysEditor extends BaseEditor {
+    private static activeViews: Set<vscode.Webview> = new Set();
+
     public static getViewType() {
         return 'edacation.digitaljs';
     }
@@ -47,6 +49,13 @@ export class DigitalJSEditor extends BaseEditor {
                 type: 'document',
                 document: document.getText()
             });
+        } else if (message.type === 'broadcast') {
+            for (const view of YosysEditor.activeViews) {
+                if (view === webview) {
+                    continue;
+                }
+                view.postMessage(message);
+            }
         } else if (message.type === 'requestSave') {
             // Save to project root, or the parent dir of the current editor's file if we can't find it
             const projectRoot = util.findProjectRoot(document.uri) || util.getParentUri(document.uri);
@@ -66,9 +75,18 @@ export class DigitalJSEditor extends BaseEditor {
 
     protected onSave(_document: vscode.TextDocument, _webview: vscode.Webview): void {
         // Do nothing
+        console.log(YosysEditor.activeViews);
+    }
+
+    protected onClose(_document: vscode.TextDocument, webview: vscode.Webview): void {
+        console.log('Editor closed!');
+        YosysEditor.activeViews.delete(webview);
     }
 
     protected update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean) {
+        console.log('View becomes active! (maybe)');
+        YosysEditor.activeViews.add(webview);
+
         if (!isDocumentChange) {
             vscode.commands.executeCommand('edacation-projects.focus');
         }

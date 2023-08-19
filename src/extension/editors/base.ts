@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 
 import type {Projects} from '../projects/index.js';
-import {type ViewMessage} from '../types.js';
 import {getWebviewUri} from '../util.js';
+
+import {type ViewMessage} from './messages.js';
 
 export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
     protected readonly context: vscode.ExtensionContext;
@@ -45,6 +46,16 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
             vscode.workspace.onDidSaveTextDocument((event) => {
                 if (event.uri.toString() === document.uri.toString()) {
                     this.onSave(document, webviewPanel.webview);
+                }
+            })
+        );
+        // TODO: does not work reliably!
+        disposables.push(
+            vscode.window.onDidChangeVisibleTextEditors((event) => {
+                console.log('New windows:');
+                console.log(event);
+                if (event.map((editor) => editor.document).indexOf(document) !== -1) {
+                    this.onClose(document, webviewPanel.webview);
                 }
             })
         );
@@ -128,6 +139,8 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
     ): void;
 
     protected abstract onSave(document: vscode.TextDocument, webview: vscode.Webview): void;
+
+    protected abstract onClose(document: vscode.TextDocument, webview: vscode.Webview): void;
 
     protected abstract update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean): void;
 }

@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 
 import {Project} from '../projects/index.js';
-import {type ViewMessage} from '../types.js';
 
 import {BaseEditor} from './base.js';
+import {type ViewMessage} from './messages.js';
 
 export class ProjectEditor extends BaseEditor {
     public static getViewType() {
@@ -64,6 +64,10 @@ export class ProjectEditor extends BaseEditor {
         await this.projects.reload(document.uri);
 
         this.update(document, webview, false);
+    }
+
+    protected onClose(_document: vscode.TextDocument, _webview: vscode.Webview): void {
+        // Do nothing
     }
 
     protected update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean) {

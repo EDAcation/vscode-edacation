@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 
-import {type ViewMessage} from '../types.js';
 import {getWebviewUri} from '../util.js';
 
 import {BaseEditor} from './base.js';
+import {type ViewMessage} from './messages.js';
 
 export class NextpnrEditor extends BaseEditor {
     public static getViewType() {
@@ -45,6 +45,10 @@ export class NextpnrEditor extends BaseEditor {
     }
 
     protected onSave(_document: vscode.TextDocument, _webview: vscode.Webview): void {
+        // Do nothing
+    }
+
+    protected onClose(_document: vscode.TextDocument, _webview: vscode.Webview): void {
         // Do nothing
     }
 
