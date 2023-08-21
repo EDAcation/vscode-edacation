@@ -4,8 +4,8 @@ import 'jquery-ui/dist/jquery-ui.min.js';
 
 import './main.css';
 import type {EditorMessage, ForeignViewMessage, ViewMessage} from './messages';
-import * as viewers from './viewers';
-import type {BaseViewer} from './viewers/base';
+import type {YosysFile} from './types';
+import {type BaseViewer, DiagramViewer, StatsViewer} from './viewers';
 import {vscode} from './vscode';
 
 // Force bundler to include VS Code Webview UI Toolkit
@@ -19,7 +19,7 @@ export class View {
     public readonly root: HTMLDivElement;
 
     private state: State;
-    private viewer: BaseViewer | null;
+    private viewer: BaseViewer<YosysFile['data']> | null;
 
     constructor(root: HTMLDivElement, state: State) {
         this.root = root;
@@ -72,26 +72,23 @@ export class View {
         this.renderDocument();
     }
 
-    private findViewer(): BaseViewer {
+    private findViewer(): BaseViewer<YosysFile['data']> {
         if (!this.state.document) {
             throw new Error('No data to find viewer!');
         }
 
-        const fileData = JSON.parse(this.state.document);
-        const fileType = fileData['type'];
-        const viewerData = fileData['data'];
-        if (!fileType || !viewerData) {
+        const fileData = JSON.parse(this.state.document) as YosysFile;
+        if (!fileData['type'] || !fileData['data']) {
             throw new Error('File is missing type or data keys.');
         }
 
-        for (const viewer of Object.values(viewers)) {
-            const viewerInst = new viewer(this, viewerData);
-            if (viewerInst.getType() === fileType) {
-                return viewerInst;
-            }
+        if (fileData['type'] === 'rtl') {
+            return new DiagramViewer(this, fileData['data']);
+        } else if (fileData['type'] === 'stats') {
+            return new StatsViewer(this, fileData['data']);
+        } else {
+            throw new Error(`Could not find viewer for type: ${fileData['type']}`);
         }
-
-        throw new Error(`Could not find viewer for type: ${fileType}`);
     }
 
     private renderDocument() {
@@ -119,7 +116,7 @@ export class View {
         });
     }
 
-    handleError(error: unknown, sourceViewer: BaseViewer | null = null) {
+    handleError(error: unknown, sourceViewer: BaseViewer<YosysFile['data']> | null = null) {
         if (error instanceof Error || typeof error === 'string') {
             this.renderError(error, sourceViewer);
         } else {
@@ -127,13 +124,13 @@ export class View {
         }
     }
 
-    private renderError(error: Error | string, sourceViewer: BaseViewer | null) {
+    private renderError(error: Error | string, sourceViewer: BaseViewer<YosysFile['data']> | null) {
         const elementHeader = document.createElement('h3');
         elementHeader.textContent = 'Unable to open DigitalJS file';
 
         const elementCode = document.createElement('code');
         if (sourceViewer !== null) {
-            elementCode.textContent = `*** Error in Viewer: ${sourceViewer.getType()} ***\n\n`;
+            elementCode.textContent = `*** Error in Viewer: ${typeof sourceViewer} ***\n\n`;
         }
         elementCode.textContent += typeof error === 'string' ? error : error.stack || error.message;
 

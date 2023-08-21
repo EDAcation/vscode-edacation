@@ -1,12 +1,9 @@
 import type {ForeignViewMessage} from '../messages';
+import type {YosysStats} from '../types';
 
 import {BaseViewer} from './base';
 
-export class StatsViewer extends BaseViewer {
-    getType() {
-        return 'stats';
-    }
-
+export class StatsViewer extends BaseViewer<YosysStats> {
     handleForeignViewMessage(message: ForeignViewMessage): void {
         console.log('Foreign message:');
         console.log(message);

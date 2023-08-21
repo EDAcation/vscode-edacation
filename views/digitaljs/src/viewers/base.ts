@@ -1,17 +1,14 @@
 import type {View} from '../main';
 import type {ForeignViewMessage, ViewMessage} from '../messages';
 
-export abstract class BaseViewer {
+export abstract class BaseViewer<InitialData> {
     private readonly mainView: View;
-    protected readonly data: object;
+    protected readonly data: InitialData;
 
-    constructor(mainView: View, initData: object) {
+    constructor(mainView: View, initData: InitialData) {
         this.mainView = mainView;
         this.data = initData;
     }
-
-    // TODO: Should preferably be abstract as well...
-    abstract getType(): string;
 
     abstract render(): Promise<void>;
 

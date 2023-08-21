@@ -3,10 +3,9 @@ import {Circuit} from 'digitaljs';
 import {yosys2digitaljs} from 'yosys2digitaljs';
 
 import type {ForeignViewMessage} from '../messages';
+import type {YosysRTL} from '../types';
 
 import {BaseViewer} from './base';
-
-type YosysOutput = Parameters<typeof yosys2digitaljs>[0];
 
 const getSvg = (svgElem: Element, width: number, height: number): string => {
     // Filter conveniently labeled foreign objects from element
@@ -27,11 +26,7 @@ const getSvg = (svgElem: Element, width: number, height: number): string => {
     return '<?xml version="1.0" encoding="utf-8"?>\n' + svgElem.outerHTML;
 };
 
-export class DiagramViewer extends BaseViewer {
-    getType() {
-        return 'rtl';
-    }
-
+export class DiagramViewer extends BaseViewer<YosysRTL> {
     handleForeignViewMessage(message: ForeignViewMessage): void {
         console.log('Foreign message:');
         console.log(message);
@@ -39,7 +34,7 @@ export class DiagramViewer extends BaseViewer {
 
     async render() {
         // Convert from Yosys netlist to DigitalJS format
-        const digitalJs = yosys2digitaljs(this.data as YosysOutput);
+        const digitalJs = yosys2digitaljs(this.data);
 
         // Initialize circuit
         const circuit = new Circuit(digitalJs);

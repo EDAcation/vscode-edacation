@@ -75,7 +75,6 @@ export class YosysEditor extends BaseEditor {
 
     protected onSave(_document: vscode.TextDocument, _webview: vscode.Webview): void {
         // Do nothing
-        console.log(YosysEditor.activeViews);
     }
 
     protected onClose(_document: vscode.TextDocument, webview: vscode.Webview): void {
