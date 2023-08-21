@@ -79,12 +79,10 @@ export class YosysEditor extends BaseEditor {
     }
 
     protected onClose(_document: vscode.TextDocument, webview: vscode.Webview): void {
-        console.log('Editor closed!');
         YosysEditor.activeViews.delete(webview);
     }
 
     protected update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean) {
-        console.log('View becomes active! (maybe)');
         YosysEditor.activeViews.add(webview);
 
         if (!isDocumentChange) {

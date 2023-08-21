@@ -24,58 +24,51 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
         _token: vscode.CancellationToken
     ): void | Thenable<void> {
         const disposables: vscode.Disposable[] = [];
+        const webview = webviewPanel.webview;
 
         // Render webview
-        webviewPanel.webview.options = {
+        webview.options = {
             enableScripts: true
         };
-        webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview, document);
+        webview.html = this.getHtmlForWebview(webview, document);
 
         // Add message listener
-        webviewPanel.webview.onDidReceiveMessage(this.onDidReceiveMessage.bind(this, document, webviewPanel.webview));
+        webview.onDidReceiveMessage(this.onDidReceiveMessage.bind(this, document, webview));
 
         // Add text document listener
         disposables.push(
             vscode.workspace.onDidChangeTextDocument((event) => {
                 if (event.document.uri.toString() === document.uri.toString()) {
-                    this.update(document, webviewPanel.webview, true);
+                    this.update(document, webview, true);
                 }
             })
         );
         disposables.push(
             vscode.workspace.onDidSaveTextDocument((event) => {
                 if (event.uri.toString() === document.uri.toString()) {
-                    this.onSave(document, webviewPanel.webview);
-                }
-            })
-        );
-        // TODO: does not work reliably!
-        disposables.push(
-            vscode.window.onDidChangeVisibleTextEditors((event) => {
-                console.log('New windows:');
-                console.log(event);
-                if (event.map((editor) => editor.document).indexOf(document) !== -1) {
-                    this.onClose(document, webviewPanel.webview);
+                    this.onSave(document, webview);
                 }
             })
         );
 
         // Create file system watcher
         const watcher = vscode.workspace.createFileSystemWatcher(document.uri.fsPath);
-        watcher.onDidCreate(() => this.update(document, webviewPanel.webview, true));
-        watcher.onDidChange(() => this.update(document, webviewPanel.webview, true));
-        watcher.onDidDelete(() => this.update(document, webviewPanel.webview, true));
+        watcher.onDidCreate(() => this.update(document, webview, true));
+        watcher.onDidChange(() => this.update(document, webview, true));
+        watcher.onDidDelete(() => this.update(document, webview, true));
         disposables.push(watcher);
 
         // Add dispose listener
         webviewPanel.onDidDispose(() => {
+            this.onClose(document, webview);
+
             for (const disposable of disposables) {
                 disposable.dispose();
             }
         });
 
         // Update document
-        this.update(document, webviewPanel.webview, false);
+        this.update(document, webview, false);
     }
 
     protected getHtmlForWebview(webview: vscode.Webview, document: vscode.TextDocument): string {
