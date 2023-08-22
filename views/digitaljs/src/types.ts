@@ -7,7 +7,7 @@ interface YosysFileRTL {
     data: YosysRTL;
 }
 
-interface YosysModuleStats {
+export interface YosysModuleStats {
     num_wires: number;
     num_wire_bits: number;
     num_pub_wires: number;
