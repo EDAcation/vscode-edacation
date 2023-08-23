@@ -158,10 +158,24 @@ export class NativeTaskRunner extends TaskRunner {
         });
 
         proc.on('exit', this.onProcessExit.bind(this, ctx));
-        proc.on('error', this.error.bind(this));
+        proc.on('error', this.onProcessError.bind(this));
 
         proc.stdout.on('data', (data) => this.onProcessData(data, 'stdout'));
         proc.stderr.on('data', (data) => this.onProcessData(data, 'stderr'));
+    }
+
+    private onProcessError(error: unknown) {
+        if (error instanceof Error) {
+            // ugly, but it's a nodejs error so there's no typings for the code attribute
+            if (Object(error)?.code === 'ENOENT') {
+                this.error(
+                    'Could not find native runner entrypoint. Are Yosys/Nextpnr installed on your system and available in PATH?'
+                );
+                return;
+            }
+        }
+
+        this.error(error);
     }
 
     private onProcessData(data: string, stream: 'stdout' | 'stderr') {
@@ -177,10 +191,10 @@ export class NativeTaskRunner extends TaskRunner {
 
     private onProcessExit(ctx: RunnerContext, code: number | null, signal: string | null) {
         // flush buffers to get all output on the terminal
-        if (this.lineBuffer['stdout'].length >= 0) {
+        if (this.lineBuffer['stdout'].length > 0) {
             this.println(this.lineBuffer['stdout'], 'stdout');
         }
-        if (this.lineBuffer['stderr'].length >= 0) {
+        if (this.lineBuffer['stderr'].length > 0) {
             this.println(this.lineBuffer['stderr'], 'stderr');
         }
 
