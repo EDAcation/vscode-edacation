@@ -74,7 +74,7 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
     }
 
     protected error(error: unknown) {
-        console.log(`Error: ${error}`);
+        console.trace(error);
         this.send({
             type: 'error',
             error: error instanceof Error || typeof error === 'string' ? error : 'Unknown error'
