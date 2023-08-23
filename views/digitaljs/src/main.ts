@@ -22,6 +22,13 @@ interface MessageDocument {
 
 type Message = MessageDocument;
 
+// TODO: better typing - should be fixed from our digitaljs fork
+interface ButtonCallback {
+    circuit: Circuit;
+    model: any  // eslint-disable-line @typescript-eslint/no-explicit-any
+    paper: any  // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
 const getSvg = (svgElem: Element, width: number, height: number): string => {
     // Filter conveniently labeled foreign objects from element
     const foreignElems = svgElem.getElementsByTagName('foreignObject');
@@ -44,6 +51,28 @@ const getSvg = (svgElem: Element, width: number, height: number): string => {
 class View {
     private readonly root: HTMLDivElement;
     private state: State;
+
+    private static subCircuitButtons = [
+        {
+            id: 'exportSvg',
+            buttonText: 'SVG',
+            callback: ({model, paper}: ButtonCallback) => {
+                const svgData = getSvg(
+                    paper.svg.cloneNode(true) as Element,
+                    paper.svg.clientWidth,
+                    paper.svg.clientHeight
+                );
+                vscode.postMessage({
+                    type: 'requestSave',
+                    data: {
+                        fileContents: svgData,
+                        defaultPath: `${model.get('label')}.svg`,
+                        saveFilters: {svg: ['.svg']}
+                    }
+                });
+            }
+        }
+    ]
 
     constructor(root: HTMLDivElement, state: State) {
         this.root = root;
@@ -119,7 +148,7 @@ class View {
             type: 'requestSave',
             data: {
                 fileContents: svgData,
-                defaultPath: 'export.svg',
+                defaultPath: 'topLevel.svg',
                 saveFilters: {svg: ['.svg']}
             }
         });
@@ -138,7 +167,7 @@ class View {
             const digitalJs = yosys2digitaljs(json);
 
             // Initialize circuit
-            const circuit = new Circuit(digitalJs);
+            const circuit = new Circuit(digitalJs, {subcircuitButtons: View.subCircuitButtons});
 
             // Clear
             this.root.replaceChildren();
