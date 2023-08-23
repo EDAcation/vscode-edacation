@@ -1,7 +1,11 @@
+import type {TransferListItem} from 'worker_threads';
+
 import type {ExtensionMessage, WorkerMessage} from './messages';
 
+/* eslint-disable @typescript-eslint/consistent-type-imports */
 type WorkerThreadsModule = typeof import('worker_threads');
 type WorkerThreadsWorker = import('worker_threads').Worker;
+/* eslint-enable @typescript-eslint/consistent-type-imports */
 
 const module: WorkerThreadsModule | undefined =
     typeof Worker === 'undefined' ? __non_webpack_require__('worker_threads') : undefined;
@@ -17,12 +21,12 @@ type InternalWebWorker = {
 type InternalWorker = InternalNodeWorker | InternalWebWorker;
 
 interface EventCallbacks {
-    error: (err: Error) => any;
-    messageerror: (err: Error) => any;
-    message: ((message: ExtensionMessage) => any) | ((message: WorkerMessage) => any);
+    error: (err: Error) => void;
+    messageerror: (err: Error) => void;
+    message: ((message: ExtensionMessage) => void) | ((message: WorkerMessage) => void);
 }
 
-export const sendMessage = (message: ExtensionMessage, transferables: any) => {
+export const sendMessage = (message: ExtensionMessage, transferables: readonly TransferListItem[] & Transferable[]) => {
     if (module) {
         module.parentPort?.postMessage(message, transferables);
     } else {
@@ -38,6 +42,7 @@ export const onEvent = <E extends keyof EventCallbacks>(event: E, callback: Even
     }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const extractData = (event: MessageEvent | ErrorEvent): any => {
     if (event instanceof MessageEvent) {
         return event.data;
@@ -76,7 +81,10 @@ export class UniversalWorker {
         }
     }
 
-    public sendMessage(message: WorkerMessage, transferList?: ReadonlyArray<any>) {
+    public sendMessage(
+        message: WorkerMessage,
+        transferList?: StructuredSerializeOptions & readonly TransferListItem[]
+    ) {
         this.worker.worker.postMessage(message, transferList);
     }
 }

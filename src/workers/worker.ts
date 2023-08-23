@@ -1,4 +1,5 @@
 import path from 'path';
+import type {TransferListItem} from 'worker_threads';
 
 import type {ExtensionMessage, MessageFile, WorkerMessage} from '../common/messages.js';
 import {onEvent, sendMessage} from '../common/universalworker.js';
@@ -57,7 +58,7 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
         }
     }
 
-    protected send(message: ExtensionMessage, transferables: Transferable[] = []) {
+    protected send(message: ExtensionMessage, transferables: readonly TransferListItem[] & Transferable[] = []) {
         sendMessage(message, transferables);
     }
 
