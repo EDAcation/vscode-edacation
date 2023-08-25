@@ -4,6 +4,8 @@ import path from 'path';
 import {fileURLToPath} from 'url';
 import webpack from 'webpack';
 
+import {BundleReplacePlugin} from './webpack-replace-patch.mjs';
+
 // @ts-check
 
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -104,6 +106,16 @@ const workerConfig = {
             path: 'path-browserify'
         }
     },
+    plugins: [
+        // Patch out NODEFS mounts in final Yosys bundle
+        new BundleReplacePlugin([
+            {
+                fileName: 'yosys.js',
+                from: /FS\.mount\(\s*NODEFS.*?\);?/g,
+                to: ''
+            }
+        ])
+    ],
     module: {
         rules: [
             {
