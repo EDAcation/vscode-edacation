@@ -67,6 +67,12 @@ export class DataGrid extends CustomElement {
         return pos;
     }
 
+    delColumn(pos: number) {
+        for (const row of this.cells) {
+            row.splice(pos, 1);
+        }
+    }
+
     addRow(contents: DataGridCell[], pos?: number): number {
         contents = contents.slice(0, this.width);
         if (contents.length < this.width) {
@@ -135,18 +141,14 @@ export class DataGrid extends CustomElement {
 }
 
 export class ModuleOverviewGrid extends DataGrid {
-    private moduleStats: ModuleStatId[];
-
     private readonly modules: Module[];
 
     constructor(modules: Module[]) {
         super();
 
         this.modules = modules;
-        this.moduleStats = [];
 
-        super.addColumn(['Module Name']);
-        super.addColumn(['Count']);
+        this.reset();
     }
 
     private fillCell(x: number, y: number, statId?: ModuleStatId) {
@@ -161,12 +163,13 @@ export class ModuleOverviewGrid extends DataGrid {
 
         if (!statId) {
             // Find active column stat id
-            const dropdown = this.cells[0][x];
-            if (!(dropdown instanceof Element)) {
+            const header = this.cells[0][x];
+            if (!(header instanceof Element)) {
                 return super.setCell(x, y, '-');
             }
-            const activeId = dropdown.getAttribute('aria-activedescendant');
-            const activeElem = dropdown.querySelector(`#${activeId}`);
+            const dropdown = header.querySelector('vscode-dropdown');
+            const activeId = dropdown?.getAttribute('aria-activedescendant');
+            const activeElem = dropdown?.querySelector(`#${activeId}`);
             statId = activeElem?.getAttribute('stat-id') as ModuleStatId;
             if (!statId) {
                 return;
@@ -193,13 +196,28 @@ export class ModuleOverviewGrid extends DataGrid {
     }
 
     addColumn(): number {
-        const header = document.createElement('vscode-dropdown');
+        const header = document.createElement('div');
+
+        const delBtn = document.createElement('vscode-button');
+        delBtn.innerHTML = /* html */ `<span class="codicon codicon-close"></span>`;
+        delBtn.addEventListener('click', (_ev) => {
+            const coli = this.cells[0].indexOf(header);
+            if (coli !== -1) {
+                this.delColumn(coli);
+                this.render();
+            }
+        });
+        header.appendChild(delBtn);
+
+        const dropdown = document.createElement('vscode-dropdown');
         for (const id of getModuleStatIds()) {
             const opt = document.createElement('vscode-option');
             opt.textContent = getModuleStatName(id);
             opt.setAttribute('stat-id', id);
-            header.appendChild(opt);
+            dropdown.appendChild(opt);
         }
+        header.appendChild(dropdown);
+
         const pos = super.addColumn([header]);
 
         // Render after 100ms, the dropdown isn't updated immediately
@@ -216,15 +234,25 @@ export class ModuleOverviewGrid extends DataGrid {
         return pos;
     }
 
+    reset() {
+        this.clearRows();
+        while (this.width > 0) {
+            this.delColumn(0);
+        }
+
+        super.addColumn(['Module Name']);
+        super.addColumn(['Count']);
+        this.addColumn();
+        this.addColumn();
+
+        setTimeout(this.render.bind(this), 100);
+    }
+
     render() {
         this.clearRows();
 
         for (const module of this.modules) {
-            const row = [module.name + (module.isTopLevel ? ' (top-level)' : '')];
-            for (const statId of this.moduleStats) {
-                row.push(module.globalStats[statId].toString());
-            }
-            this.addRow(row);
+            this.addRow([module.name + (module.isTopLevel ? ' (top-level)' : '')]);
         }
 
         for (let y = 1; y < this.height; y++) {

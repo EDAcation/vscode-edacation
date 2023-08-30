@@ -56,12 +56,19 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         overviewHeader.textContent = 'Circuit overview';
         this.root.appendChild(overviewHeader);
 
-        const btn = document.createElement('button');
-        btn.textContent = 'Click for more columns';
-        btn.addEventListener('click', (_ev) => {
+        const addColBtn = document.createElement('vscode-button');
+        addColBtn.innerHTML = /* html */ `<span class="codicon codicon-add"></span>`;
+        addColBtn.addEventListener('click', (_ev) => {
             this.overviewGrid.addColumn();
         });
-        this.root.appendChild(btn);
+        this.root.appendChild(addColBtn);
+
+        const resetBtn = document.createElement('vscode-button');
+        resetBtn.innerHTML = /* html */ `<span class="codicon codicon-clear-all"></span>`;
+        resetBtn.addEventListener('click', (_ev) => {
+            this.overviewGrid.reset();
+        });
+        this.root.appendChild(resetBtn);
 
         this.root.appendChild(document.createElement('br'));
 
