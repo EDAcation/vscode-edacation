@@ -31,7 +31,7 @@ export class View {
         addEventListener('resize', this.handleResize.bind(this));
 
         if (this.state.document) {
-            this.renderDocument();
+            this.renderDocument(false);
         } else {
             this.sendMessage({
                 type: 'ready'
@@ -53,7 +53,7 @@ export class View {
                 this.updateState({
                     document: message.data.document
                 });
-                this.renderDocument();
+                this.renderDocument(false);
                 break;
             }
             case 'broadcast': {
@@ -69,7 +69,7 @@ export class View {
     }
 
     private handleResize() {
-        this.renderDocument();
+        this.renderDocument(true);
     }
 
     private findViewer(): BaseViewer<YosysFile['data']> {
@@ -91,7 +91,7 @@ export class View {
         }
     }
 
-    private renderDocument() {
+    private renderDocument(isUpdate: boolean) {
         try {
             if (!this.state.document) {
                 throw new Error('No data to render document!');
@@ -99,7 +99,7 @@ export class View {
                 this.viewer = this.findViewer();
             }
 
-            this.viewer.render().catch((err) => this.handleError(err, this.viewer));
+            this.viewer.render(isUpdate).catch((err) => this.handleError(err, this.viewer));
         } catch (err) {
             this.handleError(err);
         }

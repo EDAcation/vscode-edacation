@@ -31,7 +31,7 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
         console.log(message);
     }
 
-    async render() {
+    async render(_isUpdate: boolean) {
         // Convert from Yosys netlist to DigitalJS format
         const digitalJs = yosys2digitaljs(this.data);
 

@@ -48,7 +48,11 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         this.explorerNavigator.render();
     }
 
-    async render(): Promise<void> {
+    async render(isUpdate: boolean): Promise<void> {
+        if (isUpdate) {
+            // All elements are dynamically resized so we don't need to redraw
+            return;
+        }
         this.root.replaceChildren();
 
         // ** Overview Table **

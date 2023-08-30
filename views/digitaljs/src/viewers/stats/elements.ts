@@ -13,12 +13,18 @@ const fmtStat = (stat1: number, stat2: number): string => {
 export abstract class CustomElement {
     protected abstract rootElem: HTMLElement;
 
+    private eventsElem: Element;
+
+    constructor() {
+        this.eventsElem = document.createElement('events');
+    }
+
     addEventListener<K extends keyof CustomEvents>(type: K, listener: CustomEventListener<K>) {
-        this.element.addEventListener(type, (ev: CustomEventInit) => listener(ev.detail));
+        this.eventsElem.addEventListener(type, (ev: CustomEventInit) => listener(ev.detail));
     }
 
     protected dispatchEvent<K extends keyof CustomEvents>(type: K, data: CustomEvents[K]) {
-        this.element.dispatchEvent(new CustomEvent(type, {detail: data}));
+        this.eventsElem.dispatchEvent(new CustomEvent(type, {detail: data}));
     }
 
     get element() {

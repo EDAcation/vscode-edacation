@@ -10,7 +10,7 @@ export abstract class BaseViewer<InitialData> {
         this.data = initData;
     }
 
-    abstract render(): Promise<void>;
+    abstract render(isUpdate: boolean): Promise<void>;
 
     abstract handleForeignViewMessage(message: ForeignViewMessage): void;
 
