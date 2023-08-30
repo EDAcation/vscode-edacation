@@ -2,10 +2,9 @@
 import {Circuit} from 'digitaljs';
 import {yosys2digitaljs} from 'yosys2digitaljs';
 
-import type {ForeignViewMessage} from '../messages';
-import type {YosysRTL} from '../types';
-
-import {BaseViewer} from './base';
+import type {ForeignViewMessage} from '../../messages';
+import type {YosysRTL} from '../../types';
+import {BaseViewer} from '../base';
 
 const getSvg = (svgElem: Element, width: number, height: number): string => {
     // Filter conveniently labeled foreign objects from element

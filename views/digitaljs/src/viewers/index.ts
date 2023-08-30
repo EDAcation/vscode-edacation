@@ -1,3 +1,3 @@
-export * from './diagram';
-export * from './stats';
+export * from './diagram/diagram';
+export * from './stats/stats';
 export * from './base';
