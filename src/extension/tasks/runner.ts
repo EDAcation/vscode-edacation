@@ -144,12 +144,11 @@ export class NativeTaskRunner extends TaskRunner {
             await vscode.workspace.fs.writeFile(destUri, file.data);
         }
 
-        const child_process = await import('child_process').catch((_) => {
+        const child_process = await import('child_process').catch(() => void 0);
+        if (!child_process || !child_process.spawn) {
             this.error(
                 'Unable to import required dependencies. Please note that the native runner is unavailable in a web environment.'
             );
-        });
-        if (!child_process) {
             return;
         }
 
