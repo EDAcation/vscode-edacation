@@ -1,6 +1,6 @@
 import type {TransferListItem} from 'worker_threads';
 
-import type {ExtensionMessage, WorkerMessage} from './messages';
+import type {ExtensionMessage, WorkerMessage} from './messages.js';
 
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 type WorkerThreadsModule = typeof import('worker_threads');
