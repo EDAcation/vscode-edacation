@@ -93,3 +93,40 @@ export type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType exten
 
 export const keysForEnum = <M extends Record<string, unknown>>(map: M): [keyof M, ...(keyof M)[]] =>
     Object.keys(map) as unknown as [keyof M, ...(keyof M)[]];
+
+export const offerSaveFile = async (
+    content: string,
+    options: vscode.SaveDialogOptions
+): Promise<vscode.Uri | undefined> => {
+    const chosenUri = await vscode.window.showSaveDialog(options);
+    if (!chosenUri) {
+        return;
+    }
+
+    const encoded = encodeText(content);
+    await vscode.workspace.fs.writeFile(chosenUri, encoded);
+
+    return chosenUri;
+};
+
+export const getParentUri = (uri: vscode.Uri): vscode.Uri => vscode.Uri.file(path.dirname(uri.fsPath));
+
+export const findProjectRoot = (fileUri: vscode.Uri): vscode.Uri | undefined => {
+    const workspaces = vscode.workspace.workspaceFolders;
+
+    const workspaceUris = workspaces?.map((ws) => ws.uri.fsPath);
+    if (!workspaceUris) {
+        return;
+    }
+
+    let path = fileUri;
+    while (workspaceUris.indexOf(path.fsPath) === -1) {
+        const newPath = getParentUri(path);
+        if (newPath === path) {
+            // Prevent possible infinite loop
+            return;
+        }
+        path = newPath;
+    }
+    return path;
+};
