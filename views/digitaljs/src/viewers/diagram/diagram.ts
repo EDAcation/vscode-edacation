@@ -6,6 +6,13 @@ import type {ForeignViewMessage} from '../../messages';
 import type {YosysRTL} from '../../types';
 import {BaseViewer} from '../base';
 
+// TODO: better typing - should be fixed from our digitaljs fork
+interface ButtonCallback {
+    circuit: Circuit;
+    model: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    paper: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
 const getSvg = (svgElem: Element, width: number, height: number): string => {
     // Filter conveniently labeled foreign objects from element
     const foreignElems = svgElem.getElementsByTagName('foreignObject');
@@ -26,6 +33,16 @@ const getSvg = (svgElem: Element, width: number, height: number): string => {
 };
 
 export class DiagramViewer extends BaseViewer<YosysRTL> {
+    private subCircuitButtons = [
+        {
+            id: 'exportSvg',
+            buttonText: 'SVG',
+            callback: ({model, paper}: ButtonCallback) => {
+                this.requestExport(paper.svg, `${model.get('label')}.svg`);
+            }
+        }
+    ];
+
     handleForeignViewMessage(message: ForeignViewMessage): void {
         console.log('Foreign message:');
         console.log(message);
@@ -36,7 +53,7 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
         const digitalJs = yosys2digitaljs(this.data);
 
         // Initialize circuit
-        const circuit = new Circuit(digitalJs);
+        const circuit = new Circuit(digitalJs, {subcircuitButtons: this.subCircuitButtons});
 
         // Clear
         this.root.replaceChildren();
@@ -66,7 +83,15 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
 
         buttonStart?.addEventListener('click', () => circuit.start());
         buttonStop?.addEventListener('click', () => circuit.stop());
-        buttonExport?.addEventListener('click', this.requestExport.bind(this));
+        buttonExport?.addEventListener('click', () => {
+            const svgElems = document.getElementsByTagName('svg');
+            if (!svgElems) {
+                throw new Error('Could not find SVG element to export');
+            }
+            const svgElem = svgElems[0];
+
+            this.requestExport(svgElem, 'topLevel.svg');
+        });
 
         circuit.on('changeRunning', () => {
             if (circuit.running) {
@@ -84,28 +109,13 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
         this.root.appendChild(elementCircuit);
     }
 
-    private requestExport() {
-        // Find our SVG root element
-        const svgElems = document.getElementsByTagName('svg');
-        if (!svgElems) {
-            throw new Error('Could not find SVG element to export');
-        }
-        const svgElem = svgElems[0];
-
-        // Extract viewable SVG data from elem
-        const svgData = getSvg(
-            // Deep clone so we don't affect the SVG in the DOM
-            svgElem.cloneNode(true) as Element,
-            svgElem.clientWidth,
-            svgElem.clientHeight
-        );
-
-        // Send save request to main worker
+    private requestExport(elem: Element, defaultPath: string) {
+        const svgData = getSvg(elem.cloneNode(true) as Element, elem.clientWidth, elem.clientHeight);
         this.sendMessage({
             type: 'requestSave',
             data: {
                 fileContents: svgData,
-                defaultPath: 'export.svg',
+                defaultPath: defaultPath,
                 filters: {svg: ['.svg']}
             }
         });
