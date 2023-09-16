@@ -1,6 +1,6 @@
 interface ForeignViewMessageModuleFocus {
     type: 'moduleFocus';
-    module: string;
+    breadcrumbs: string[];
 }
 
 export type ForeignViewMessage = ForeignViewMessageModuleFocus;
