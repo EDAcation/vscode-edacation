@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import {Project} from '../projects/index.js';
 import {type ViewMessage} from '../types.js';
 
-import {BaseEditor} from './base.js';
+import {BaseEditor, type EditorWebviewArgs} from './base.js';
 
 export class ProjectEditor extends BaseEditor {
     public static getViewType() {
@@ -20,8 +20,8 @@ export class ProjectEditor extends BaseEditor {
         return [['views', 'project', 'dist', 'assets', 'index.js']];
     }
 
-    protected getInitialData(document: vscode.TextDocument): Record<string, unknown> {
-        const project = this.projects.get(document.uri);
+    protected getInitialData(args: EditorWebviewArgs): Record<string, unknown> {
+        const project = this.projects.get(args.document.uri);
 
         if (project) {
             return {
