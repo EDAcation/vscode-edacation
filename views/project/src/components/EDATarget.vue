@@ -6,9 +6,9 @@ import {state as globalState} from '../state';
 
 import EDATargetGeneral from './EDATargetGeneral.vue';
 import EDATargetNextpnr from './EDATargetNextpnr.vue';
-import EDATargetYosys from './EDATargetYosys.vue';
+import EDATargetPlacementAndRouting from './EDATargetPlacementAndRouting.vue';
 import EDATargetSynthesis from './EDATargetSynthesis.vue';
-import EDATargetPlacementAndRouting from './EDATargetPlacementAndRouting.vue'
+import EDATargetYosys from './EDATargetYosys.vue';
 
 export default defineComponent({
     components: {
