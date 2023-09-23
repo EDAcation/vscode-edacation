@@ -77,6 +77,10 @@ export class DataGrid extends CustomElement {
         for (const row of this.cells) {
             row.splice(pos, 1);
         }
+
+        if (pos >= 2) {
+            this.dispatchEvent('overviewGridStatUpdate', {element: this, data: {index: pos - 2, statId: null}});
+        }
     }
 
     addRow(contents: DataGridCell[], pos?: number): number {
@@ -182,11 +186,18 @@ export class ModuleOverviewGrid extends DataGrid {
             }
         }
 
-        return super.setCell(
+        const res = super.setCell(
             x,
             y,
             fmtStat(this.modules[y - 1].globalStats[statId], this.modules[0].globalStats[statId])
         );
+
+        this.dispatchEvent('overviewGridStatUpdate', {
+            element: this,
+            data: {index: x - 2, statId}
+        });
+
+        return res;
     }
 
     addRow(contents: DataGridCell[], pos?: number): number {
@@ -201,7 +212,7 @@ export class ModuleOverviewGrid extends DataGrid {
         return y;
     }
 
-    addColumn(): number {
+    addStat(statId?: ModuleStatId): number {
         const header = document.createElement('div');
 
         const delBtn = document.createElement('vscode-button');
@@ -216,12 +227,22 @@ export class ModuleOverviewGrid extends DataGrid {
         header.appendChild(delBtn);
 
         const dropdown = document.createElement('vscode-dropdown');
-        for (const id of getModuleStatIds()) {
+        const addOption = (id: ModuleStatId) => {
             const opt = document.createElement('vscode-option');
             opt.textContent = getModuleStatName(id);
             opt.setAttribute('stat-id', id);
             dropdown.appendChild(opt);
+        };
+
+        if (statId) {
+            addOption(statId);
         }
+        for (const id of getModuleStatIds()) {
+            if (id !== statId) {
+                addOption(id);
+            }
+        }
+
         header.appendChild(dropdown);
 
         const pos = super.addColumn([header]);
@@ -248,8 +269,6 @@ export class ModuleOverviewGrid extends DataGrid {
 
         super.addColumn(['Module Name']);
         super.addColumn(['Count']);
-        this.addColumn();
-        this.addColumn();
 
         setTimeout(this.render.bind(this), 100);
     }

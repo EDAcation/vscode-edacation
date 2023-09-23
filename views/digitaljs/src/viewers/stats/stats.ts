@@ -4,7 +4,11 @@ import type {YosysStats} from '../../types';
 import {BaseViewer} from '../base';
 
 import {ModuleExplorerGrid, ModuleNavigator, ModuleOverviewGrid} from './elements';
-import {type Module, buildModuleTree} from './modules';
+import {type Module, type ModuleStatId, buildModuleTree} from './modules';
+
+interface OverviewGridSettings {
+    columns: ModuleStatId[];
+}
 
 export class StatsViewer extends BaseViewer<YosysStats> {
     handleForeignViewMessage(message: ForeignViewMessage): void {
@@ -28,6 +32,7 @@ export class StatsViewer extends BaseViewer<YosysStats> {
 
     private modules: Module[];
 
+    private overviewSettings: OverviewGridSettings;
     private overviewGrid: ModuleOverviewGrid;
 
     private explorerNavigator: ModuleNavigator;
@@ -42,6 +47,30 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         }
 
         this.overviewGrid = new ModuleOverviewGrid(this.modules);
+        this.overviewGrid.addEventListener('overviewGridStatUpdate', (event) => {
+            if (this.overviewSettings.columns[event.data.index] === event.data.statId) {
+                return;
+            }
+            if (event.data.statId === null) {
+                this.overviewSettings.columns.splice(event.data.index, 1);
+            } else {
+                this.overviewSettings.columns[event.data.index] = event.data.statId;
+            }
+            this.storeValue('djs-stats-overview-settings', this.overviewSettings);
+        });
+
+        this.overviewSettings = {columns: []};
+        this.getValue('djs-stats-overview-settings').then((value) => {
+            if (Object.keys(value).length === 0) {
+                this.overviewSettings = {columns: []};
+            } else {
+                this.overviewSettings = value as OverviewGridSettings;
+            }
+            for (const col of this.overviewSettings.columns) {
+                console.log(`Add ${col}`);
+                this.overviewGrid.addStat(col);
+            }
+        });
 
         this.explorerNavigator = new ModuleNavigator(this.modules[0]);
         this.explorerNavigator.addEventListener('explorerFocusUpdate', (event) => {
@@ -86,7 +115,7 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         const addColBtn = document.createElement('vscode-button');
         addColBtn.innerHTML = /* html */ `<span class="codicon codicon-add"></span>`;
         addColBtn.addEventListener('click', (_ev) => {
-            this.overviewGrid.addColumn();
+            this.overviewGrid.addStat();
         });
         this.root.appendChild(addColBtn);
 

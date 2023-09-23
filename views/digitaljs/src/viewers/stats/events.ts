@@ -1,6 +1,11 @@
 import type {CustomElement} from './elements';
 import type {Module, ModuleStatId} from './modules';
 
+interface OverviewStatUpdateEvent {
+    index: number;
+    statId: ModuleStatId | null;
+}
+
 interface ModuleClickedEvent {
     module: Module;
 }
@@ -20,6 +25,7 @@ interface CustomEvent<E> {
 }
 
 export interface CustomEvents {
+    overviewGridStatUpdate: CustomEvent<OverviewStatUpdateEvent>;
     explorerModuleClicked: CustomEvent<ModuleClickedEvent>;
     explorerFocusUpdate: CustomEvent<ExplorerFocusUpdateEvent>;
     checkboxClicked: CustomEvent<CheckboxClickedEvent>;
