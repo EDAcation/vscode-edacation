@@ -353,16 +353,18 @@ export class ModuleNavigator extends CustomElement {
         this.moduleBreadcrumbs.push(module);
     }
 
+    navigateSplice(i: number) {
+        this.moduleBreadcrumbs.splice(i + 1);
+        this.dispatchEvent('explorerFocusUpdate', {element: this, data: {module: this.moduleBreadcrumbs[i]}});
+    }
+
     render(): void {
         this.rootElem.replaceChildren();
 
         for (let i = 0; i < this.moduleBreadcrumbs.length; i++) {
             const link = document.createElement('vscode-link');
             link.textContent = this.moduleBreadcrumbs[i].name;
-            link.addEventListener('click', (_ev) => {
-                this.moduleBreadcrumbs.splice(i + 1);
-                this.dispatchEvent('explorerFocusUpdate', {element: this, data: {module: this.moduleBreadcrumbs[i]}});
-            });
+            link.addEventListener('click', (_ev) => this.navigateSplice(i));
             this.rootElem.append(link);
 
             if (i != this.moduleBreadcrumbs.length - 1) {

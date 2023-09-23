@@ -7,10 +7,13 @@ import type {YosysRTL} from '../../types';
 import {BaseViewer} from '../base';
 
 // TODO: better typing - should be fixed from our digitaljs fork
+type Model = any; // eslint-disable-line @typescript-eslint/no-explicit-any
+
 interface ButtonCallback {
     circuit: Circuit;
-    model: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    model: Model;
     paper: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    navHistory: Model[];
 }
 
 const getSvg = (svgElem: Element, width: number, height: number): string => {
@@ -39,6 +42,14 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
             buttonText: 'SVG',
             callback: ({model, paper}: ButtonCallback) => {
                 this.requestExport(paper.svg, `${model.get('label')}.svg`);
+            }
+        },
+        {
+            id: 'showStats',
+            buttonText: '🔍',
+            callback: ({navHistory}: ButtonCallback) => {
+                const cellHistory = navHistory.map((model) => model.get('celltype') as string);
+                this.broadcastMessage({type: 'moduleFocus', breadcrumbs: cellHistory});
             }
         }
     ];

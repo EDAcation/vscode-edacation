@@ -8,8 +8,22 @@ import {type Module, buildModuleTree} from './modules';
 
 export class StatsViewer extends BaseViewer<YosysStats> {
     handleForeignViewMessage(message: ForeignViewMessage): void {
-        console.log('Foreign message:');
-        console.log(message);
+        if (message.type === 'moduleFocus') {
+            // Focus explorer navigator according to breadcrumbs from djs viewer
+            this.explorerNavigator.navigateSplice(0);
+            let lastModule: Module = this.modules[0];
+            for (const moduleName of message.breadcrumbs) {
+                const module = this.getModule(moduleName);
+                if (!module) {
+                    throw new Error(`Unknown module: ${moduleName}`);
+                }
+                this.explorerNavigator.navigateModule(module);
+
+                lastModule = module;
+            }
+
+            this.renderExplorer(lastModule);
+        }
     }
 
     private modules: Module[];
@@ -39,6 +53,15 @@ export class StatsViewer extends BaseViewer<YosysStats> {
             this.explorerNavigator.navigateModule(event.data.module);
             this.renderExplorer(event.data.module);
         });
+    }
+
+    private getModule(name: string): Module | null {
+        for (const module of this.modules) {
+            if (module.name === name) {
+                return module;
+            }
+        }
+        return null;
     }
 
     private renderExplorer(module: Module) {
@@ -92,16 +115,5 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         this.root.appendChild(this.explorerNavigator.element);
         this.explorerGrid.render();
         this.root.appendChild(this.explorerGrid.element);
-
-        // ** Other stuff **
-        const button = document.createElement('button');
-        button.textContent = 'Click for broadcast';
-        button.addEventListener('click', (_ev) => {
-            this.broadcastMessage({
-                type: 'moduleFocus',
-                breadcrumbs: ['test_module_goes_here']
-            });
-        });
-        this.root.appendChild(button);
     }
 }
