@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import type {Projects} from '../projects/index.js';
 import {getWebviewUri} from '../util.js';
 
-import {type ViewMessage} from './messages.js';
+import type {GlobalStoreMessage, ViewMessage} from './messages.js';
 
 export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
     protected readonly context: vscode.ExtensionContext;
@@ -121,15 +121,42 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
             .join('\n');
     }
 
+    protected onDidReceiveMessage(
+        _document: vscode.TextDocument,
+        webview: vscode.Webview,
+        message: ViewMessage | GlobalStoreMessage
+    ): boolean {
+        if (message.type === 'globalStore') {
+            if (message.action === 'set') {
+                this.context.globalState.update(message.name, message.value).then(() => {
+                    const response: GlobalStoreMessage = {
+                        type: 'globalStore',
+                        action: 'result',
+                        transaction: message.transaction
+                    };
+                    webview.postMessage(response);
+                });
+                return true;
+            } else if (message.action === 'get') {
+                const value = this.context.globalState.get(message.name) || ({} as object);
+                const response: GlobalStoreMessage = {
+                    type: 'globalStore',
+                    action: 'result',
+                    transaction: message.transaction,
+                    result: value
+                };
+                webview.postMessage(response);
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     protected abstract getStylePaths(): string[][];
 
     protected abstract getScriptPaths(): string[][];
-
-    protected abstract onDidReceiveMessage(
-        document: vscode.TextDocument,
-        webview: vscode.Webview,
-        message: ViewMessage
-    ): void;
 
     protected abstract onSave(document: vscode.TextDocument, webview: vscode.Webview): void;
 

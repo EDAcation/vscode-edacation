@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import {Project} from '../projects/index.js';
 
 import {BaseEditor} from './base.js';
-import {type ViewMessage} from './messages.js';
+import type {GlobalStoreMessage, ViewMessage} from './messages.js';
 
 export class ProjectEditor extends BaseEditor {
     public static getViewType() {
@@ -34,7 +34,14 @@ export class ProjectEditor extends BaseEditor {
         }
     }
 
-    protected onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: ViewMessage): void {
+    protected onDidReceiveMessage(
+        document: vscode.TextDocument,
+        webview: vscode.Webview,
+        message: ViewMessage | GlobalStoreMessage
+    ): boolean {
+        if (super.onDidReceiveMessage(document, webview, message)) {
+            return true;
+        }
         console.log(message);
 
         if (message.type === 'ready') {
@@ -48,15 +55,20 @@ export class ProjectEditor extends BaseEditor {
                     project: Project.serialize(project)
                 });
             }
+            return true;
         } else if (message.type === 'change') {
             if (document.getText() === message.document) {
-                return;
+                return true;
             }
 
             const edit = new vscode.WorkspaceEdit();
             edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), message.document as string);
             vscode.workspace.applyEdit(edit);
+
+            return true;
         }
+
+        return false;
     }
 
     protected async onSave(document: vscode.TextDocument, webview: vscode.Webview) {

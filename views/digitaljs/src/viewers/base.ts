@@ -18,6 +18,14 @@ export abstract class BaseViewer<InitialData> {
         return this.mainView.root;
     }
 
+    protected storeValue(name: string, value: object): Promise<void> {
+        return this.mainView.storeValue(name, value);
+    }
+
+    protected getValue(name: string): Promise<object> {
+        return this.mainView.getValue(name);
+    }
+
     protected broadcastMessage(message: ForeignViewMessage) {
         return this.mainView.broadcastMessage(message);
     }

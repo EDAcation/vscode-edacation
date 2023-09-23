@@ -2,8 +2,9 @@ import '@vscode/codicons/dist/codicon.css';
 import {allComponents} from '@vscode/webview-ui-toolkit/dist/toolkit.js';
 import 'jquery-ui/dist/jquery-ui.min.js';
 
+import {GlobalStoreConnector} from './globalStore';
 import './main.css';
-import type {EditorMessage, ForeignViewMessage, ViewMessage} from './messages';
+import type {EditorMessage, ForeignViewMessage, GlobalStoreMessage, ViewMessage} from './messages';
 import type {YosysFile} from './types';
 import {type BaseViewer, DiagramViewer, StatsViewer} from './viewers';
 import {vscode} from './vscode';
@@ -20,11 +21,14 @@ export class View {
 
     private state: State;
     private viewer: BaseViewer<YosysFile['data']> | null;
+    private readonly globalStore: GlobalStoreConnector;
 
     constructor(root: HTMLDivElement, state: State) {
         this.root = root;
         this.state = state;
         this.viewer = null;
+
+        this.globalStore = new GlobalStoreConnector();
 
         addEventListener('message', this.handleMessage.bind(this));
         addEventListener('messageerror', this.handleMessageError.bind(this));
@@ -47,7 +51,7 @@ export class View {
         vscode.setState(this.state);
     }
 
-    private handleMessage(message: MessageEvent<EditorMessage>) {
+    private handleMessage(message: MessageEvent<EditorMessage | GlobalStoreMessage>) {
         switch (message.data.type) {
             case 'document': {
                 this.updateState({
@@ -60,6 +64,10 @@ export class View {
                 if (this.viewer) {
                     this.viewer.handleForeignViewMessage(message.data.message);
                 }
+                break;
+            }
+            case 'globalStore': {
+                this.globalStore.onMessage(message.data);
             }
         }
     }
@@ -103,6 +111,14 @@ export class View {
         } catch (err) {
             this.handleError(err);
         }
+    }
+
+    storeValue(name: string, value: object): Promise<void> {
+        return this.globalStore.set(name, value);
+    }
+
+    getValue(name: string): Promise<object> {
+        return this.globalStore.get(name);
     }
 
     sendMessage(message: ViewMessage) {

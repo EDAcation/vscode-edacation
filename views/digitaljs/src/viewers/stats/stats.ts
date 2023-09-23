@@ -99,7 +99,7 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         button.addEventListener('click', (_ev) => {
             this.broadcastMessage({
                 type: 'moduleFocus',
-                module: 'test_module_goes_here'
+                breadcrumbs: ['test_module_goes_here']
             });
         });
         this.root.appendChild(button);

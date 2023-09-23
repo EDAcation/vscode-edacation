@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import {getWebviewUri} from '../util.js';
 
 import {BaseEditor} from './base.js';
-import {type ViewMessage} from './messages.js';
+import type {GlobalStoreMessage, ViewMessage} from './messages.js';
 
 export class NextpnrEditor extends BaseEditor {
     public static getViewType() {
@@ -35,13 +35,23 @@ export class NextpnrEditor extends BaseEditor {
         `;
     }
 
-    protected onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: ViewMessage): void {
+    protected onDidReceiveMessage(
+        document: vscode.TextDocument,
+        webview: vscode.Webview,
+        message: ViewMessage | GlobalStoreMessage
+    ): boolean {
+        if (super.onDidReceiveMessage(document, webview, message)) {
+            return true;
+        }
         if (message.type === 'ready') {
             webview.postMessage({
                 type: 'document',
                 document: document.getText()
             });
+            return true;
         }
+
+        return false;
     }
 
     protected onSave(_document: vscode.TextDocument, _webview: vscode.Webview): void {

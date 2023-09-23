@@ -36,3 +36,26 @@ interface ViewMessageRequestSave {
 }
 
 export type ViewMessage = ViewMessageReady | ViewMessageChange | MessageBroadcast | ViewMessageRequestSave;
+
+interface GlobalStore {
+    type: 'globalStore';
+    transaction: number;
+}
+
+interface GlobalStoreSet extends GlobalStore {
+    action: 'set';
+    name: string;
+    value: object;
+}
+
+interface GlobalStoreGet extends GlobalStore {
+    action: 'get';
+    name: string;
+}
+
+interface GlobalStoreResult extends GlobalStore {
+    action: 'result';
+    result?: object;
+}
+
+export type GlobalStoreMessage = GlobalStoreSet | GlobalStoreGet | GlobalStoreResult;

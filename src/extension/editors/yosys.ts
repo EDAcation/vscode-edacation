@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as util from '../util.js';
 
 import {BaseEditor} from './base.js';
-import {type ViewMessage} from './messages.js';
+import type {GlobalStoreMessage, ViewMessage} from './messages.js';
 
 export class YosysEditor extends BaseEditor {
     private static activeViews: Set<vscode.Webview> = new Set();
@@ -43,12 +43,21 @@ export class YosysEditor extends BaseEditor {
         `;
     }
 
-    protected onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: ViewMessage): void {
+    protected onDidReceiveMessage(
+        document: vscode.TextDocument,
+        webview: vscode.Webview,
+        message: ViewMessage | GlobalStoreMessage
+    ): boolean {
+        if (super.onDidReceiveMessage(document, webview, message)) {
+            return true;
+        }
+
         if (message.type === 'ready') {
             webview.postMessage({
                 type: 'document',
                 document: document.getText()
             });
+            return true;
         } else if (message.type === 'broadcast') {
             for (const view of YosysEditor.activeViews) {
                 if (view === webview) {
@@ -56,6 +65,7 @@ export class YosysEditor extends BaseEditor {
                 }
                 view.postMessage(message);
             }
+            return true;
         } else if (message.type === 'requestSave') {
             // Save to project root, or the parent dir of the current editor's file if we can't find it
             const projectRoot = util.findProjectRoot(document.uri) || util.getParentUri(document.uri);
@@ -70,7 +80,10 @@ export class YosysEditor extends BaseEditor {
                 }
                 this.showSaveNotification(path);
             });
+            return true;
         }
+
+        return false;
     }
 
     protected onSave(_document: vscode.TextDocument, _webview: vscode.Webview): void {
