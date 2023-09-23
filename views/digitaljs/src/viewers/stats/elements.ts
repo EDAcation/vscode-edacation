@@ -4,7 +4,8 @@ import {type Module, ModuleStatId, getModuleStatIds, getModuleStatName} from './
 const fmtStat = (stat1: number, stat2: number): string => {
     let res = `${stat1}/${stat2}`;
     if (stat1 !== 0) {
-        res += ` (${(stat1 / stat2) * 100}%)`;
+        const perc = Math.floor((stat1 / stat2) * 10_000) / 100;
+        res += ` (${perc}%)`;
     }
 
     return res;
@@ -166,9 +167,10 @@ export class ModuleOverviewGrid extends DataGrid {
             throw new Error('Cannot fill header cells!');
         }
 
+        const rowModule = this.modules[y - 1];
+        const moduleCount = this.modules[0].globalChildren.get(rowModule) ?? 0;
         if (x === 1) {
-            // TODO: add module count
-            return super.setCell(x, y, '-');
+            return super.setCell(x, y, moduleCount.toString());
         }
 
         if (!statId) {
@@ -189,7 +191,7 @@ export class ModuleOverviewGrid extends DataGrid {
         const res = super.setCell(
             x,
             y,
-            fmtStat(this.modules[y - 1].globalStats[statId], this.modules[0].globalStats[statId])
+            fmtStat(rowModule.globalStats[statId] * moduleCount, this.modules[0].globalStats[statId])
         );
 
         this.dispatchEvent('overviewGridStatUpdate', {
@@ -323,9 +325,7 @@ export class ModuleExplorerGrid extends DataGrid {
         // Current module stats
         this.addRow(
             ['<current circuit>', ''].concat(
-                this.moduleStats.map((statId) =>
-                    fmtStat(this.curModule.localStats[statId], this.curModule.localStats[statId])
-                )
+                this.moduleStats.map((statId) => fmtStat(this.curModule.stats[statId], this.curModule.stats[statId]))
             )
         );
 

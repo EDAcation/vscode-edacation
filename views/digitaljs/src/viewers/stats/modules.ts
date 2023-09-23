@@ -29,66 +29,78 @@ export const getModuleStatName = (stat: ModuleStatId): string => {
 };
 
 export class Module {
-    private _children: Map<Module, number>;
     private parents: Set<Module>;
-    private primitiveModules: Map<string, number>;
+    private _primitives: Map<string, number>;
 
     public readonly name: string;
-    public readonly localStats: ModuleStats;
-    private _globalStats: ModuleStats | null;
+
+    private _children: Map<Module, number>;
+    private _globalChildren: Map<Module, number>;
+
+    private _stats: ModuleStats;
+    private _globalStats: ModuleStats;
 
     constructor(name: string, stats: YosysModuleStats) {
-        this._children = new Map();
-        this.parents = new Set();
-        this.primitiveModules = new Map();
-
         this.name = name;
-        this.localStats = {
+        this._stats = {
             memoryCount: stats.num_memories,
             memoryBitCount: stats.num_memory_bits,
             processCount: stats.num_processes,
             cellCount: stats.num_cells
         };
-        this._globalStats = null;
-    }
+        this._globalStats = structuredClone(this._stats);
 
-    get primitives(): Map<string, number> {
-        return this.primitiveModules;
-    }
+        this._children = new Map();
+        this._globalChildren = new Map();
 
-    get children(): Map<Module, number> {
-        return this._children;
+        this._primitives = new Map();
+
+        this.parents = new Set();
     }
 
     get isTopLevel(): boolean {
         return this.parents.size === 0;
     }
 
+    get primitives(): Map<string, number> {
+        return this._primitives;
+    }
+
+    get children(): Map<Module, number> {
+        return this._children;
+    }
+
+    get globalChildren(): Map<Module, number> {
+        return this._globalChildren;
+    }
+
+    get stats(): ModuleStats {
+        return this._stats;
+    }
+
     get globalStats(): ModuleStats {
-        if (this._globalStats) {
-            return this._globalStats;
-        }
-
-        this._globalStats = structuredClone(this.localStats);
-        for (const [module, count] of this._children) {
-            const moduleStats = module.globalStats;
-            this._globalStats.memoryCount += count * moduleStats.memoryCount;
-            this._globalStats.memoryBitCount += count * moduleStats.memoryBitCount;
-            this._globalStats.cellCount += count * moduleStats.cellCount;
-        }
-
         return this._globalStats;
     }
 
     addPrimitive(prim: string, count: number) {
-        const curCount = this.primitiveModules.get(prim) || 0;
-        this.primitiveModules.set(prim, curCount + count);
+        this._primitives.set(prim, (this._primitives.get(prim) ?? 0) + count);
     }
 
     addChild(module: Module, count: number) {
-        const curCount = this._children.get(module) || 0;
-        this._children.set(module, curCount + count);
+        console.log(`Add ${module.name} to ${this.name} - x${count}`);
+        this._children.set(module, (this._children.get(module) ?? 0) + count);
         module.addParent(this);
+
+        // Update global stats
+        this._globalStats.memoryCount += count * module.globalStats.memoryCount;
+        this._globalStats.memoryBitCount += count * module.globalStats.memoryBitCount;
+        this._globalStats.cellCount += count * module.globalStats.cellCount;
+
+        // Update global children
+        this._globalChildren.set(module, (this._globalChildren.get(module) ?? 0) + count);
+        for (const [gloModule, gloCount] of module.globalChildren.entries()) {
+            this._globalChildren.set(gloModule, (this._globalChildren.get(gloModule) ?? 0) + count * gloCount);
+        }
     }
 
     protected addParent(module: Module) {
