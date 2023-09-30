@@ -1,5 +1,5 @@
 import type {CustomEventListener, CustomEvents} from './events';
-import {type Module, ModuleStatId, getModuleStatIds, getModuleStatName} from './modules';
+import {type Module, type ModuleStatId, getModuleStatIds, getModuleStatName} from './modules';
 
 const fmtStat = (stat1: number, stat2: number): string => {
     let res = `${stat1}/${stat2}`;
@@ -151,62 +151,84 @@ export class DataGrid extends CustomElement {
     }
 }
 
-export class ModuleOverviewGrid extends DataGrid {
-    private readonly modules: Module[];
+abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGrid {
+    private rows: RowItem[];
+    private cols: ColumnOption[];
 
-    constructor(modules: Module[]) {
+    private actualRoot: HTMLElement;
+
+    constructor() {
         super();
 
-        this.modules = modules;
+        this.rows = [];
+        this.cols = [];
 
-        this.reset();
+        // The object renders to this.rootElem, but we want buttons outside
+        // the datagrid. This actualRoot is just a div containing those buttons
+        // and the rendered rootElem so we can 'adopt' the buttons into this class.
+        this.actualRoot = this.createRoot();
+
+        this.reset(true, true);
     }
 
-    private fillCell(x: number, y: number, statId?: ModuleStatId) {
-        if (x === 0 || y === 0) {
-            throw new Error('Cannot fill header cells!');
-        }
+    override get element(): HTMLElement {
+        return this.actualRoot;
+    }
 
-        const rowModule = this.modules[y - 1];
-        const moduleCount = this.modules[0].globalChildren.get(rowModule) ?? 0;
-        if (x === 1) {
-            return super.setCell(x, y, moduleCount.toString());
-        }
+    protected abstract getDefaultOptions(): ColumnOption[];
 
-        if (!statId) {
-            // Find active column stat id
-            const header = this.cells[0][x];
-            if (!(header instanceof Element)) {
-                return super.setCell(x, y, '-');
-            }
-            const dropdown = header.querySelector('vscode-dropdown');
-            const activeId = dropdown?.getAttribute('aria-activedescendant');
-            const activeElem = dropdown?.querySelector(`#${activeId}`);
-            statId = activeElem?.getAttribute('stat-id') as ModuleStatId;
-            if (!statId) {
-                return;
-            }
-        }
+    protected abstract getAvailableOptions(): ColumnOption[];
 
-        const res = super.setCell(
-            x,
-            y,
-            fmtStat(rowModule.globalStats[statId] * moduleCount, this.modules[0].globalStats[statId])
-        );
+    protected abstract getNewOption(): ColumnOption;
 
-        this.dispatchEvent('overviewGridStatUpdate', {
-            element: this,
-            data: {index: x - 2, statId}
+    protected abstract getOptionName(option: ColumnOption): string;
+
+    protected abstract getValue(item: RowItem, option: ColumnOption): DataGridCell;
+
+    private createRoot() {
+        const root = document.createElement('div');
+
+        // Add column button
+        const addColBtn = document.createElement('vscode-button');
+        addColBtn.innerHTML = /* html */ `<span class="codicon codicon-add"></span>`;
+        addColBtn.addEventListener('click', (_ev) => {
+            this.addCol();
         });
+        root.appendChild(addColBtn);
 
-        return res;
+        // Reset button
+        const resetBtn = document.createElement('vscode-button');
+        resetBtn.innerHTML = /* html */ `<span class="codicon codicon-clear-all"></span>`;
+        resetBtn.addEventListener('click', (_ev) => {
+            this.reset(true, false);
+        });
+        root.appendChild(resetBtn);
+
+        // The actual DataGrid
+        root.appendChild(super.element);
+
+        return root;
     }
 
-    addRow(contents: DataGridCell[], pos?: number): number {
-        const y = super.addRow(contents, pos);
+    protected fillCell(x: number, y: number) {
+        const defColsLen = this.getDefaultOptions().length;
+        if (x < 0 || x >= defColsLen + this.cols.length || y < 1 || y - 1 >= this.rows.length) {
+            throw new Error('Out of bounds!');
+        }
+
+        const option = this.getDefaultOptions().concat(this.cols)[x];
+        const item = this.rows[y - 1];
+        const value = this.getValue(item, option);
+
+        return super.setCell(x, y, value);
+    }
+
+    addRowItem(item: RowItem): number {
+        this.rows.push(item);
+        const y = super.addRow([]);
 
         if (y !== 0) {
-            for (let x = 1; x < this.width; x++) {
+            for (let x = 0; x < this.width; x++) {
                 this.fillCell(x, y);
             }
         }
@@ -214,76 +236,83 @@ export class ModuleOverviewGrid extends DataGrid {
         return y;
     }
 
-    addStat(statId?: ModuleStatId): number {
+    addCol(option?: ColumnOption): number {
+        if (option === undefined) {
+            option = this.getNewOption();
+        }
+        this.cols.push(option);
+
         const header = document.createElement('div');
 
         const delBtn = document.createElement('vscode-button');
         delBtn.innerHTML = /* html */ `<span class="codicon codicon-close"></span>`;
         delBtn.addEventListener('click', (_ev) => {
             const coli = this.cells[0].indexOf(header);
-            if (coli !== -1) {
+            const defColCount = this.getDefaultOptions().length;
+            if (coli >= defColCount) {
+                this.cols.splice(coli - defColCount, 1);
                 this.delColumn(coli);
                 this.render();
             }
         });
         header.appendChild(delBtn);
 
-        const dropdown = document.createElement('vscode-dropdown');
-        const addOption = (id: ModuleStatId) => {
+        const dropdown = document.createElement('vscode-dropdown') as HTMLSelectElement;
+        for (const avOption of this.getAvailableOptions()) {
             const opt = document.createElement('vscode-option');
-            opt.textContent = getModuleStatName(id);
-            opt.setAttribute('stat-id', id);
-            dropdown.appendChild(opt);
-        };
-
-        if (statId) {
-            addOption(statId);
-        }
-        for (const id of getModuleStatIds()) {
-            if (id !== statId) {
-                addOption(id);
+            opt.textContent = this.getOptionName(avOption);
+            if (avOption === option) {
+                opt.setAttribute('selected', '');
             }
+            dropdown.appendChild(opt);
         }
-
         header.appendChild(dropdown);
+
+        dropdown.addEventListener('change', (_ev) => {
+            const headerIndex = this.cells[0].indexOf(header);
+            if (headerIndex === -1) return;
+
+            const newOption = this.getAvailableOptions()[dropdown.selectedIndex];
+
+            // Actually update the column and re-render
+            this.cols.splice(headerIndex - this.getDefaultOptions().length, 1, newOption);
+            this.render();
+        });
 
         const pos = super.addColumn([header]);
 
-        // Render after 100ms, the dropdown isn't updated immediately
-        header.addEventListener('change', (_ev) => setTimeout(this.render.bind(this), 100));
-
-        // Adds the new column into the table
         this.render();
 
-        // Fill column cells with default values
         for (let y = 1; y < this.height; y++) {
-            this.fillCell(pos, y, Object.values(ModuleStatId)[0]);
+            this.fillCell(pos, y);
         }
 
         return pos;
     }
 
-    reset() {
+    reset(resetCols: boolean, resetRows: boolean) {
+        if (resetCols) this.cols = [];
+        if (resetRows) this.rows = [];
+
         this.clearRows();
         while (this.width > 0) {
             this.delColumn(0);
         }
 
-        super.addColumn(['Module Name']);
-        super.addColumn(['Count']);
+        for (const option of this.getDefaultOptions()) {
+            super.addColumn([this.getOptionName(option)]);
+        }
 
-        setTimeout(this.render.bind(this), 100);
+        this.render();
     }
 
     render() {
         this.clearRows();
 
-        for (const module of this.modules) {
-            this.addRow([module.name + (module.isTopLevel ? ' (top-level)' : '')]);
-        }
+        this.rows.forEach(() => super.addRow([]));
 
         for (let y = 1; y < this.height; y++) {
-            for (let x = 1; x < this.width; x++) {
+            for (let x = 0; x < this.width; x++) {
                 this.fillCell(x, y);
             }
         }
@@ -292,68 +321,203 @@ export class ModuleOverviewGrid extends DataGrid {
     }
 }
 
-export class ModuleExplorerGrid extends DataGrid {
-    private curModule: Module;
+type ModuleOverviewOptions = 'name' | 'count' | ModuleStatId;
 
-    private moduleStats: ModuleStatId[];
+export class ModuleOverviewGrid extends InteractiveDataGrid<Module, ModuleOverviewOptions> {
+    private modules: Module[];
+
+    constructor(modules: Module[]) {
+        super();
+
+        this.modules = modules;
+
+        for (const module of modules) {
+            this.addRowItem(module);
+        }
+    }
+
+    protected getDefaultOptions(): ModuleOverviewOptions[] {
+        return ['name'];
+    }
+
+    protected getAvailableOptions(): ModuleOverviewOptions[] {
+        return getModuleStatIds();
+    }
+
+    protected getNewOption(): ModuleOverviewOptions {
+        return this.getAvailableOptions()[0];
+    }
+
+    protected getOptionName(option: ModuleOverviewOptions): string {
+        switch (option) {
+            case 'name':
+                return 'Module name';
+            case 'count':
+                return 'Count';
+            default:
+                return getModuleStatName(option);
+        }
+    }
+
+    protected getValue(item: Module, option: ModuleOverviewOptions): DataGridCell {
+        switch (option) {
+            case 'name':
+                return item.name;
+            case 'count':
+                return this.modules[0].globalChildren.get(item)?.toString() ?? '-';
+            default:
+                return fmtStat(item.globalStats[option], this.modules[0].globalStats[option]);
+        }
+    }
+}
+
+interface ModuleExplorerRowCurrent {
+    type: 'current';
+}
+interface ModuleExplorerRowPrimitive {
+    type: 'primitive';
+    primitive: string;
+}
+interface ModuleExplorerRowChild {
+    type: 'child';
+    module: Module;
+}
+type ModuleExplorerRowItems = ModuleExplorerRowCurrent | ModuleExplorerRowPrimitive | ModuleExplorerRowChild;
+type ModuleExplorerOptions = 'name' | 'count' | ModuleStatId;
+
+export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowItems, ModuleExplorerOptions> {
+    private curModule: Module;
 
     constructor(initModule: Module) {
         super();
 
         this.curModule = initModule;
-        this.moduleStats = [];
 
-        this.addColumn(['Module Name']);
-        this.addColumn(['Count']);
+        this.setModule(this.curModule);
     }
 
     setModule(module: Module) {
         this.curModule = module;
+
+        this.reset(false, true);
+
+        this.addRowItem({type: 'current'});
+        for (const prim of this.curModule.primitives.keys()) {
+            this.addRowItem({type: 'primitive', primitive: prim});
+        }
+        for (const subCircuit of this.curModule.children.keys()) {
+            this.addRowItem({type: 'child', module: subCircuit});
+        }
     }
 
-    addStat(stat: ModuleStatId) {
-        if (this.moduleStats.indexOf(stat) !== -1) {
-            return;
-        }
-        this.moduleStats.push(stat);
-        this.addColumn([getModuleStatName(stat)]);
+    protected getDefaultOptions(): ModuleExplorerOptions[] {
+        return ['name', 'count'];
     }
 
-    render() {
-        this.clearRows();
-
-        // Current module stats
-        this.addRow(
-            ['<current circuit>', ''].concat(
-                this.moduleStats.map((statId) => fmtStat(this.curModule.stats[statId], this.curModule.stats[statId]))
-            )
-        );
-
-        // Primitives
-        const rowFiller: string[] = new Array(this.width - 2).map((_) => '');
-        for (const [prim, count] of this.curModule.primitives.entries()) {
-            this.addRow([`$${prim}`, count.toString()].concat(rowFiller));
-        }
-
-        // Child modules
-        for (const [child, count] of this.curModule.children.entries()) {
-            const link = document.createElement('vscode-link');
-            link.textContent = child.name;
-            link.addEventListener('click', (_ev) => {
-                this.dispatchEvent('explorerModuleClicked', {element: this, data: {module: child}});
-            });
-
-            this.addRow(
-                [link, count.toString()].concat(
-                    this.moduleStats.map((statId) =>
-                        fmtStat(child.globalStats[statId] * count, this.curModule.globalStats[statId])
-                    )
-                )
-            );
-        }
-
-        super.render();
+    protected getAvailableOptions(): ModuleExplorerOptions[] {
+        return getModuleStatIds();
     }
+
+    protected getNewOption(): ModuleExplorerOptions {
+        return this.getAvailableOptions()[0];
+    }
+
+    protected getOptionName(option: ModuleOverviewOptions): string {
+        switch (option) {
+            case 'name':
+                return 'Module name';
+            case 'count':
+                return 'Count';
+            default:
+                return getModuleStatName(option);
+        }
+    }
+
+    protected getValue(item: ModuleExplorerRowItems, option: ModuleOverviewOptions): DataGridCell {
+        switch (item.type) {
+            case 'current':
+                return this.getValueCurrent(item, option);
+            case 'primitive':
+                return this.getValuePrimitive(item, option);
+            case 'child':
+                return this.getValueChild(item, option);
+        }
+    }
+
+    private getValueCurrent(_item: ModuleExplorerRowCurrent, option: ModuleOverviewOptions): DataGridCell {
+        switch (option) {
+            case 'name':
+                return '< Current Module >';
+            case 'count':
+                return '-';
+            default:
+                return '[TODO]'; // TODO
+        }
+    }
+
+    private getValuePrimitive(item: ModuleExplorerRowPrimitive, option: ModuleOverviewOptions): DataGridCell {
+        switch (option) {
+            case 'name':
+                return item.primitive;
+            case 'count':
+                return this.curModule.primitives.get(item.primitive)?.toString() ?? '-';
+            default:
+                return '[TODO]'; // TODO
+        }
+    }
+
+    private getValueChild(item: ModuleExplorerRowChild, option: ModuleOverviewOptions): DataGridCell {
+        switch (option) {
+            case 'name': {
+                const link = document.createElement('vscode-link');
+                link.textContent = item.module.name;
+                link.addEventListener('click', (_ev) => {
+                    this.dispatchEvent('explorerModuleClicked', {element: this, data: {module: item.module}});
+                });
+                return link;
+            }
+            case 'count':
+                return this.curModule.children.get(item.module)?.toString() ?? '-';
+            default:
+                return '[TODO]'; // TODO
+        }
+    }
+
+    // render() {
+    //     this.clearRows();
+
+    //     // Current module stats
+    //     this.addRow(
+    //         ['<current circuit>', ''].concat(
+    //             this.moduleStats.map((statId) => fmtStat(this.curModule.stats[statId], this.curModule.stats[statId]))
+    //         )
+    //     );
+
+    //     // Primitives
+    //     const rowFiller: string[] = new Array(this.width - 2).map((_) => '');
+    //     for (const [prim, count] of this.curModule.primitives.entries()) {
+    //         this.addRow([`$${prim}`, count.toString()].concat(rowFiller));
+    //     }
+
+    //     // Child modules
+    //     for (const [child, count] of this.curModule.children.entries()) {
+    //         const link = document.createElement('vscode-link');
+    //         link.textContent = child.name;
+    //         link.addEventListener('click', (_ev) => {
+    //             this.dispatchEvent('explorerModuleClicked', {element: this, data: {module: child}});
+    //         });
+
+    //         this.addRow(
+    //             [link, count.toString()].concat(
+    //                 this.moduleStats.map((statId) =>
+    //                     fmtStat(child.globalStats[statId] * count, this.curModule.globalStats[statId])
+    //                 )
+    //             )
+    //         );
+    //     }
+
+    //     super.render();
+    // }
 }
 
 export class ModuleNavigator extends CustomElement {

@@ -87,7 +87,6 @@ export class Module {
     }
 
     addChild(module: Module, count: number) {
-        console.log(`Add ${module.name} to ${this.name} - x${count}`);
         this._children.set(module, (this._children.get(module) ?? 0) + count);
         module.addParent(this);
 

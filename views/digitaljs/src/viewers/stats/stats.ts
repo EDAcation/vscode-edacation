@@ -68,7 +68,7 @@ export class StatsViewer extends BaseViewer<YosysStats> {
             }
             for (const col of this.overviewSettings.columns) {
                 console.log(`Add ${col}`);
-                this.overviewGrid.addStat(col);
+                this.overviewGrid.addCol(col);
             }
         });
 
@@ -111,22 +111,6 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         const overviewHeader = document.createElement('h2');
         overviewHeader.textContent = 'Circuit overview';
         this.root.appendChild(overviewHeader);
-
-        const addColBtn = document.createElement('vscode-button');
-        addColBtn.innerHTML = /* html */ `<span class="codicon codicon-add"></span>`;
-        addColBtn.addEventListener('click', (_ev) => {
-            this.overviewGrid.addStat();
-        });
-        this.root.appendChild(addColBtn);
-
-        const resetBtn = document.createElement('vscode-button');
-        resetBtn.innerHTML = /* html */ `<span class="codicon codicon-clear-all"></span>`;
-        resetBtn.addEventListener('click', (_ev) => {
-            this.overviewGrid.reset();
-        });
-        this.root.appendChild(resetBtn);
-
-        this.root.appendChild(document.createElement('br'));
 
         this.overviewGrid.render();
         this.root.appendChild(this.overviewGrid.element);
