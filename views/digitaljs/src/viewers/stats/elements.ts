@@ -398,21 +398,66 @@ type ModuleExplorerRowItems = ModuleExplorerRowCurrent | ModuleExplorerRowPrimit
 type ModuleExplorerOptions = 'name' | 'count' | ModuleStatId;
 
 export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowItems, ModuleExplorerOptions> {
-    private curModule: Module;
+    private actualRoot2: HTMLElement;
+    private breadcrumbHeader: HTMLParagraphElement;
+
+    private moduleBreadcrumbs: Module[];
 
     constructor(initModule: Module) {
         super();
 
-        this.curModule = initModule;
+        this.breadcrumbHeader = document.createElement('p');
+        this.actualRoot2 = document.createElement('div');
+        this.actualRoot2.appendChild(this.breadcrumbHeader);
+        this.actualRoot2.appendChild(super.element);
 
-        this.setModule(this.curModule);
+        this.moduleBreadcrumbs = [initModule];
+
+        this.update();
     }
 
-    setModule(module: Module) {
-        this.curModule = module;
+    override get element(): HTMLElement {
+        return this.actualRoot2;
+    }
 
+    get curModule(): Module {
+        return this.moduleBreadcrumbs[this.moduleBreadcrumbs.length - 1];
+    }
+
+    navigateSplice(i: number) {
+        if (i === 0) {
+            throw new Error('Cannot navigate above top-level module!');
+        }
+        this.moduleBreadcrumbs.splice(i);
+    }
+
+    navigate(module: Module) {
+        if (Array.from(this.curModule.children.keys()).indexOf(module) === -1) {
+            throw new Error(`Cannot navigate to module "${module.name}": not a child of "${this.curModule.name}"`);
+        }
+        this.moduleBreadcrumbs.push(module);
+    }
+
+    update() {
+        // Update breadcrumbs
+        this.breadcrumbHeader.replaceChildren();
+
+        for (let i = 0; i < this.moduleBreadcrumbs.length; i++) {
+            const link = document.createElement('vscode-link');
+            link.textContent = this.moduleBreadcrumbs[i].name;
+            link.addEventListener('click', (_ev) => {
+                this.navigateSplice(i + 1);
+                this.update();
+            });
+            this.breadcrumbHeader.append(link);
+
+            if (i != this.moduleBreadcrumbs.length - 1) {
+                this.breadcrumbHeader.append(' > ');
+            }
+        }
+
+        // Update grid
         this.reset(false, true);
-
         this.addRowItem({type: 'current'});
         for (const prim of this.curModule.primitives.keys()) {
             this.addRowItem({type: 'primitive', primitive: prim});
@@ -420,6 +465,8 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
         for (const subCircuit of this.curModule.children.keys()) {
             this.addRowItem({type: 'child', module: subCircuit});
         }
+
+        this.render();
     }
 
     protected getDefaultOptions(): ModuleExplorerOptions[] {
@@ -484,8 +531,8 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
                 const link = document.createElement('vscode-link');
                 link.textContent = item.module.name;
                 link.addEventListener('click', (_ev) => {
-                    //@ts-expect-error: TODO
-                    this.dispatchEvent('explorerModuleClicked', {element: this, data: {module: item.module}});
+                    this.navigate(item.module);
+                    this.update();
                 });
                 return link;
             }
@@ -496,44 +543,6 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
                 const stat2 = this.curModule.globalStats[option];
 
                 return `${stat1} (${getPercentage(stat1, stat2)}%)`;
-            }
-        }
-    }
-}
-
-export class ModuleNavigator extends CustomElement<Record<string, never>> {
-    protected rootElem: HTMLElement;
-
-    private moduleBreadcrumbs: Module[];
-
-    constructor(initModule: Module) {
-        super();
-
-        this.rootElem = document.createElement('p');
-        this.moduleBreadcrumbs = [initModule];
-    }
-
-    navigateModule(module: Module) {
-        this.moduleBreadcrumbs.push(module);
-    }
-
-    navigateSplice(i: number) {
-        this.moduleBreadcrumbs.splice(i + 1);
-        //@ts-expect-error: TODO
-        this.dispatchEvent('explorerFocusUpdate', {element: this, data: {module: this.moduleBreadcrumbs[i]}});
-    }
-
-    render(): void {
-        this.rootElem.replaceChildren();
-
-        for (let i = 0; i < this.moduleBreadcrumbs.length; i++) {
-            const link = document.createElement('vscode-link');
-            link.textContent = this.moduleBreadcrumbs[i].name;
-            link.addEventListener('click', (_ev) => this.navigateSplice(i));
-            this.rootElem.append(link);
-
-            if (i != this.moduleBreadcrumbs.length - 1) {
-                this.rootElem.append(' > ');
             }
         }
     }
