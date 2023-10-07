@@ -32,7 +32,6 @@ export class StatsViewer extends BaseViewer<YosysStats> {
 
     private modules: Module[];
 
-    private overviewSettings: OverviewGridSettings;
     private overviewGrid: ModuleOverviewGrid;
 
     private explorerNavigator: ModuleNavigator;
@@ -47,41 +46,26 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         }
 
         this.overviewGrid = new ModuleOverviewGrid(this.modules);
-        this.overviewGrid.addEventListener('overviewGridStatUpdate', (event) => {
-            if (this.overviewSettings.columns[event.data.index] === event.data.statId) {
-                return;
-            }
-            if (event.data.statId === null) {
-                this.overviewSettings.columns.splice(event.data.index, 1);
-            } else {
-                this.overviewSettings.columns[event.data.index] = event.data.statId;
-            }
-            this.storeValue('djs-stats-overview-settings', this.overviewSettings);
+        this.overviewGrid.addEventListener('gridHeadersUpdate', (data) => {
+            this.storeValue('yosys-stats-overview-settings', {columns: data.newHeaders});
         });
-
-        this.overviewSettings = {columns: []};
-        this.getValue('djs-stats-overview-settings').then((value) => {
-            if (Object.keys(value).length === 0) {
-                this.overviewSettings = {columns: []};
-            } else {
-                this.overviewSettings = value as OverviewGridSettings;
-            }
-            for (const col of this.overviewSettings.columns) {
-                console.log(`Add ${col}`);
+        this.getValue('yosys-stats-overview-settings').then((value) => {
+            const settings = Object.keys(value).length ? (value as OverviewGridSettings) : {columns: []};
+            for (const col of settings.columns) {
                 this.overviewGrid.addCol(col);
             }
         });
 
         this.explorerNavigator = new ModuleNavigator(this.modules[0]);
-        this.explorerNavigator.addEventListener('explorerFocusUpdate', (event) => {
-            this.renderExplorer(event.data.module);
-        });
+        // this.explorerNavigator.addEventListener('explorerFocusUpdate', (event) => {
+        //     this.renderExplorer(event.data.module);
+        // });
 
         this.explorerGrid = new ModuleExplorerGrid(this.modules[0]);
-        this.explorerGrid.addEventListener('explorerModuleClicked', (event) => {
-            this.explorerNavigator.navigateModule(event.data.module);
-            this.renderExplorer(event.data.module);
-        });
+        // this.explorerGrid.addEventListener('explorerModuleClicked', (event) => {
+        //     this.explorerNavigator.navigateModule(event.data.module);
+        //     this.renderExplorer(event.data.module);
+        // });
     }
 
     private getModule(name: string): Module | null {

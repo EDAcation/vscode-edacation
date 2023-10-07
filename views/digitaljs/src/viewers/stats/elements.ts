@@ -1,4 +1,3 @@
-import type {CustomEventListener, CustomEvents} from './events';
 import {type Module, type ModuleStatId, getModuleStatIds, getModuleStatName} from './modules';
 
 const getPercentage = (val1: number, val2: number): number => {
@@ -9,7 +8,7 @@ const getPercentage = (val1: number, val2: number): number => {
     return Math.floor((val1 / val2) * 10_000) / 100;
 };
 
-export abstract class CustomElement {
+export abstract class CustomElement<EventsDirectory> {
     protected abstract rootElem: HTMLElement;
 
     private eventsElem: Element;
@@ -18,11 +17,11 @@ export abstract class CustomElement {
         this.eventsElem = document.createElement('events');
     }
 
-    addEventListener<K extends keyof CustomEvents>(type: K, listener: CustomEventListener<K>) {
+    addEventListener<K extends keyof EventsDirectory & string>(type: K, listener: (ev: EventsDirectory[K]) => void) {
         this.eventsElem.addEventListener(type, (ev: CustomEventInit) => listener(ev.detail));
     }
 
-    protected dispatchEvent<K extends keyof CustomEvents>(type: K, data: CustomEvents[K]) {
+    protected dispatchEvent<K extends keyof EventsDirectory & string>(type: K, data: EventsDirectory[K]) {
         this.eventsElem.dispatchEvent(new CustomEvent(type, {detail: data}));
     }
 
@@ -35,7 +34,7 @@ export abstract class CustomElement {
 
 type DataGridCell = Node | string;
 
-export class DataGrid extends CustomElement {
+export class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
     protected rootElem: HTMLElement;
 
     protected cells: DataGridCell[][];
@@ -75,10 +74,6 @@ export class DataGrid extends CustomElement {
     delColumn(pos: number) {
         for (const row of this.cells) {
             row.splice(pos, 1);
-        }
-
-        if (pos >= 2) {
-            this.dispatchEvent('overviewGridStatUpdate', {element: this, data: {index: pos - 2, statId: null}});
         }
     }
 
@@ -149,7 +144,14 @@ export class DataGrid extends CustomElement {
     }
 }
 
-abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGrid {
+interface GridHeadersUpdateEvent<ColumnOption> {
+    newHeaders: ColumnOption[];
+}
+interface InteractiveDataGridEvents<ColumnOption> {
+    gridHeadersUpdate: GridHeadersUpdateEvent<ColumnOption>;
+}
+
+abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGrid<InteractiveDataGridEvents<ColumnOption>> {
     private rows: RowItem[];
     private cols: ColumnOption[];
 
@@ -191,6 +193,8 @@ abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGrid {
         addColBtn.innerHTML = /* html */ `<span class="codicon codicon-add"></span>`;
         addColBtn.addEventListener('click', (_ev) => {
             this.addCol();
+
+            this.dispatchEvent('gridHeadersUpdate', {newHeaders: this.cols});
         });
         root.appendChild(addColBtn);
 
@@ -199,6 +203,8 @@ abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGrid {
         resetBtn.innerHTML = /* html */ `<span class="codicon codicon-clear-all"></span>`;
         resetBtn.addEventListener('click', (_ev) => {
             this.reset(true, false);
+
+            this.dispatchEvent('gridHeadersUpdate', {newHeaders: this.cols});
         });
         root.appendChild(resetBtn);
 
@@ -251,6 +257,8 @@ abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGrid {
                 this.cols.splice(coli - defColCount, 1);
                 this.delColumn(coli);
                 this.render();
+
+                this.dispatchEvent('gridHeadersUpdate', {newHeaders: this.cols});
             }
         });
         header.appendChild(delBtn);
@@ -275,6 +283,8 @@ abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGrid {
             // Actually update the column and re-render
             this.cols.splice(headerIndex - this.getDefaultOptions().length, 1, newOption);
             this.render();
+
+            this.dispatchEvent('gridHeadersUpdate', {newHeaders: this.cols});
         });
 
         const pos = super.addColumn([header]);
@@ -474,6 +484,7 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
                 const link = document.createElement('vscode-link');
                 link.textContent = item.module.name;
                 link.addEventListener('click', (_ev) => {
+                    //@ts-expect-error: TODO
                     this.dispatchEvent('explorerModuleClicked', {element: this, data: {module: item.module}});
                 });
                 return link;
@@ -490,7 +501,7 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
     }
 }
 
-export class ModuleNavigator extends CustomElement {
+export class ModuleNavigator extends CustomElement<Record<string, never>> {
     protected rootElem: HTMLElement;
 
     private moduleBreadcrumbs: Module[];
@@ -508,6 +519,7 @@ export class ModuleNavigator extends CustomElement {
 
     navigateSplice(i: number) {
         this.moduleBreadcrumbs.splice(i + 1);
+        //@ts-expect-error: TODO
         this.dispatchEvent('explorerFocusUpdate', {element: this, data: {module: this.moduleBreadcrumbs[i]}});
     }
 
