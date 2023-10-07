@@ -240,11 +240,13 @@ abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGrid<Inter
         return y;
     }
 
-    addCol(option?: ColumnOption): number {
+    addCol(option?: ColumnOption, onlyDraw = false): number {
         if (option === undefined) {
             option = this.getNewOption();
         }
-        this.cols.push(option);
+        if (!onlyDraw) {
+            this.cols.push(option);
+        }
 
         const header = document.createElement('div');
 
@@ -302,13 +304,18 @@ abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGrid<Inter
         if (resetCols) this.cols = [];
         if (resetRows) this.rows = [];
 
+        // Clear all row/cols
         this.clearRows();
         while (this.width > 0) {
             this.delColumn(0);
         }
 
+        // Restore them again
         for (const option of this.getDefaultOptions()) {
             super.addColumn([this.getOptionName(option)]);
+        }
+        for (const col of this.cols) {
+            this.addCol(col, true);
         }
 
         this.render();
