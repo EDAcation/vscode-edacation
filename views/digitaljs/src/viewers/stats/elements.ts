@@ -1,14 +1,12 @@
 import type {CustomEventListener, CustomEvents} from './events';
 import {type Module, type ModuleStatId, getModuleStatIds, getModuleStatName} from './modules';
 
-const fmtStat = (stat1: number, stat2: number): string => {
-    let res = `${stat1}/${stat2}`;
-    if (stat1 !== 0) {
-        const perc = Math.floor((stat1 / stat2) * 10_000) / 100;
-        res += ` (${perc}%)`;
+const getPercentage = (val1: number, val2: number): number => {
+    if (val1 === 0 || val2 === 0) {
+        return 0;
     }
 
-    return res;
+    return Math.floor((val1 / val2) * 10_000) / 100;
 };
 
 export abstract class CustomElement {
@@ -365,8 +363,12 @@ export class ModuleOverviewGrid extends InteractiveDataGrid<Module, ModuleOvervi
                 return item.name;
             case 'count':
                 return this.modules[0].globalChildren.get(item)?.toString() ?? '-';
-            default:
-                return fmtStat(item.globalStats[option], this.modules[0].globalStats[option]);
+            default: {
+                const stat1 = item.globalStats[option];
+                const stat2 = this.modules[0].globalStats[option];
+
+                return `${stat1}/${stat2} (${getPercentage(stat1, stat2)}%)`;
+            }
         }
     }
 }
@@ -451,7 +453,7 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
             case 'count':
                 return '-';
             default:
-                return '[TODO]'; // TODO
+                return this.curModule.globalStats[option].toString();
         }
     }
 
@@ -462,7 +464,7 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
             case 'count':
                 return this.curModule.primitives.get(item.primitive)?.toString() ?? '-';
             default:
-                return '[TODO]'; // TODO
+                return '';
         }
     }
 
@@ -478,46 +480,14 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
             }
             case 'count':
                 return this.curModule.children.get(item.module)?.toString() ?? '-';
-            default:
-                return '[TODO]'; // TODO
+            default: {
+                const stat1 = item.module.globalStats[option];
+                const stat2 = this.curModule.globalStats[option];
+
+                return `${stat1} (${getPercentage(stat1, stat2)}%)`;
+            }
         }
     }
-
-    // render() {
-    //     this.clearRows();
-
-    //     // Current module stats
-    //     this.addRow(
-    //         ['<current circuit>', ''].concat(
-    //             this.moduleStats.map((statId) => fmtStat(this.curModule.stats[statId], this.curModule.stats[statId]))
-    //         )
-    //     );
-
-    //     // Primitives
-    //     const rowFiller: string[] = new Array(this.width - 2).map((_) => '');
-    //     for (const [prim, count] of this.curModule.primitives.entries()) {
-    //         this.addRow([`$${prim}`, count.toString()].concat(rowFiller));
-    //     }
-
-    //     // Child modules
-    //     for (const [child, count] of this.curModule.children.entries()) {
-    //         const link = document.createElement('vscode-link');
-    //         link.textContent = child.name;
-    //         link.addEventListener('click', (_ev) => {
-    //             this.dispatchEvent('explorerModuleClicked', {element: this, data: {module: child}});
-    //         });
-
-    //         this.addRow(
-    //             [link, count.toString()].concat(
-    //                 this.moduleStats.map((statId) =>
-    //                     fmtStat(child.globalStats[statId] * count, this.curModule.globalStats[statId])
-    //                 )
-    //             )
-    //         );
-    //     }
-
-    //     super.render();
-    // }
 }
 
 export class ModuleNavigator extends CustomElement {
