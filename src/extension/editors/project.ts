@@ -42,8 +42,6 @@ export class ProjectEditor extends BaseEditor {
         if (super.onDidReceiveMessage(document, webview, message)) {
             return true;
         }
-        console.log(message);
-
         if (message.type === 'ready') {
             const project = this.projects.get(document.uri);
 

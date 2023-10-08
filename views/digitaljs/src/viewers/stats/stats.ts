@@ -3,7 +3,7 @@ import type {ForeignViewMessage} from '../../messages';
 import type {YosysStats} from '../../types';
 import {BaseViewer} from '../base';
 
-import {ModuleExplorerGrid, ModuleOverviewGrid} from './elements';
+import {ModuleExplorerGrid, ModuleOverviewGrid, TabsContainer} from './elements';
 import {type Module, type ModuleStatId, buildModuleTree} from './modules';
 
 interface GridColumnSettings {
@@ -28,6 +28,8 @@ export class StatsViewer extends BaseViewer<YosysStats> {
     }
 
     private modules: Module[];
+
+    private tabsContainer: TabsContainer;
 
     private moduleOverview: ModuleOverviewGrid;
     private moduleExplorer: ModuleExplorerGrid;
@@ -61,6 +63,11 @@ export class StatsViewer extends BaseViewer<YosysStats> {
                 this.moduleExplorer.addCol(col);
             }
         });
+
+        this.tabsContainer = new TabsContainer([
+            {title: 'Overview', element: this.moduleOverview},
+            {title: 'Explorer', element: this.moduleExplorer}
+        ]);
     }
 
     private getModule(name: string): Module | null {
@@ -79,24 +86,11 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         }
         this.root.replaceChildren();
 
-        // ** Overview Table **
-        const overviewHeader = document.createElement('h2');
-        overviewHeader.textContent = 'Circuit overview';
-        this.root.appendChild(overviewHeader);
+        const header = document.createElement('h1');
+        header.textContent = 'Module Statistics';
+        this.root.appendChild(header);
 
-        this.moduleOverview.render();
-        this.root.appendChild(this.moduleOverview.element);
-
-        // ** Divider **
-        this.root.appendChild(document.createElement('br'));
-        this.root.appendChild(document.createElement('vscode-divider'));
-
-        // ** Circuit explorer **
-        const explorerHeader = document.createElement('h2');
-        explorerHeader.textContent = 'Circuit explorer';
-        this.root.appendChild(explorerHeader);
-
-        this.moduleExplorer.render();
-        this.root.appendChild(this.moduleExplorer.element);
+        this.root.appendChild(this.tabsContainer.element);
+        this.tabsContainer.render();
     }
 }
