@@ -352,7 +352,7 @@ export class ModuleOverviewGrid extends InteractiveDataGrid<Module, ModuleOvervi
     }
 
     protected getDefaultOptions(): ModuleOverviewOptions[] {
-        return ['name'];
+        return ['name', 'count'];
     }
 
     protected getAvailableOptions(): ModuleOverviewOptions[] {
