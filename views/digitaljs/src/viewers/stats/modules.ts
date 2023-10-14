@@ -4,7 +4,9 @@ export enum ModuleStatId {
     memoryCount = 'memoryCount',
     memoryBitCount = 'memoryBitCount',
     processCount = 'processCount',
-    cellCount = 'cellCount'
+    cellCount = 'cellCount',
+    wireCount = 'wireCount',
+    wireCountPub = 'wireCountPub'
 }
 
 type ModuleStats = Record<ModuleStatId, number>;
@@ -23,8 +25,10 @@ export const getModuleStatName = (stat: ModuleStatId): string => {
             return 'Processes';
         case ModuleStatId.cellCount:
             return 'Cells';
-        default:
-            return '';
+        case ModuleStatId.wireCount:
+            return 'Wires';
+        case ModuleStatId.wireCountPub:
+            return 'Wires (Pub.)';
     }
 };
 
@@ -55,7 +59,9 @@ export class Module {
             memoryCount: stats.num_memories,
             memoryBitCount: stats.num_memory_bits,
             processCount: stats.num_processes,
-            cellCount: stats.num_cells
+            cellCount: stats.num_cells,
+            wireCount: stats.num_wires,
+            wireCountPub: stats.num_pub_wires
         };
         this._globalStats = structuredClone(this._stats);
 
