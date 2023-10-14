@@ -555,9 +555,10 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
     }
 }
 
-type PrimitivesOverviewOptions = 'name' | 'all' | Module;
+// TODO: typing for primitives (needs exhaustive list)
+type PrimitivesOverviewOptions = 'name' | string;
 
-export class PrimitivesOverviewGrid extends InteractiveDataGrid<string, PrimitivesOverviewOptions> {
+export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, PrimitivesOverviewOptions> {
     private modules: Module[];
 
     constructor(modules: Module[]) {
@@ -567,62 +568,50 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<string, Primitiv
 
         this.update();
 
-        for (let i = 0; i < modules.length && i < 5; i++) {
-            this.addCol(modules[i]);
+        const prims = this.getAvailableOptions();
+        for (let i = 0; i < prims.length && i < 5; i++) {
+            this.addCol(prims[i]);
         }
     }
 
     protected getDefaultOptions(): PrimitivesOverviewOptions[] {
-        return ['name', 'all'];
+        return ['name'];
     }
 
     protected getAvailableOptions(): PrimitivesOverviewOptions[] {
-        return this.modules;
+        return Array.from(this.modules[0].globalPrimitives.keys());
     }
 
     protected getNewOption(): PrimitivesOverviewOptions {
         return this.getAvailableOptions()[0];
     }
 
-    protected getOptionName(option: PrimitivesOverviewOptions): string {
-        switch (option) {
-            case 'name':
-                return 'Primitive Name';
-            case 'all':
-                return 'Count (Total)';
-            default:
-                return option.name;
+    protected getOptionName(option: string): string {
+        if (option === 'name') {
+            return 'Module name';
         }
+        return '$' + option;
     }
 
-    protected getValue(item: string, option: PrimitivesOverviewOptions): DataGridCell {
-        switch (option) {
-            case 'name':
-                return '$' + item;
-            case 'all':
-                return this.modules[0].globalPrimitives.get(item)?.toString() ?? '-';
-            default: {
-                const count = option.globalPrimitives.get(item);
-                const totalCount = this.modules[0].globalPrimitives.get(item);
-                if (count === undefined || !totalCount) {
-                    return '-';
-                }
-
-                return `${count} (${getPercentage(count, totalCount)}%)`;
-            }
+    protected getValue(item: Module, option: PrimitivesOverviewOptions): DataGridCell {
+        if (option === 'name') {
+            return item.name;
         }
+
+        const count = item.globalPrimitives.get(option);
+        const totalCount = this.modules[0].globalPrimitives.get(option);
+        if (count === undefined || !totalCount) {
+            return '-';
+        }
+
+        return `${count} (${getPercentage(count, totalCount)}%)`;
     }
 
     update() {
         this.reset(false, true);
 
-        // Sort primitives by total occurence, descending
-        const allPrims = [...this.modules[0].globalPrimitives.entries()]
-            .sort((a, b) => b[1] - a[1])
-            .map((entry) => entry[0]);
-
-        for (const primitive of allPrims) {
-            this.addRowItem(primitive);
+        for (const module of this.modules) {
+            this.addRowItem(module);
         }
 
         this.render();
