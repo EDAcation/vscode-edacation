@@ -555,6 +555,80 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
     }
 }
 
+type PrimitivesOverviewOptions = 'name' | 'all' | Module;
+
+export class PrimitivesOverviewGrid extends InteractiveDataGrid<string, PrimitivesOverviewOptions> {
+    private modules: Module[];
+
+    constructor(modules: Module[]) {
+        super();
+
+        this.modules = modules;
+
+        this.update();
+
+        for (let i = 0; i < modules.length && i < 5; i++) {
+            this.addCol(modules[i]);
+        }
+    }
+
+    protected getDefaultOptions(): PrimitivesOverviewOptions[] {
+        return ['name', 'all'];
+    }
+
+    protected getAvailableOptions(): PrimitivesOverviewOptions[] {
+        return this.modules;
+    }
+
+    protected getNewOption(): PrimitivesOverviewOptions {
+        return this.getAvailableOptions()[0];
+    }
+
+    protected getOptionName(option: PrimitivesOverviewOptions): string {
+        switch (option) {
+            case 'name':
+                return 'Primitive Name';
+            case 'all':
+                return 'Count (Total)';
+            default:
+                return option.name;
+        }
+    }
+
+    protected getValue(item: string, option: PrimitivesOverviewOptions): DataGridCell {
+        switch (option) {
+            case 'name':
+                return '$' + item;
+            case 'all':
+                return this.modules[0].globalPrimitives.get(item)?.toString() ?? '-';
+            default: {
+                const count = option.globalPrimitives.get(item);
+                const totalCount = this.modules[0].globalPrimitives.get(item);
+                if (count === undefined || !totalCount) {
+                    return '-';
+                }
+
+                return `${count} (${getPercentage(count, totalCount)}%)`;
+            }
+        }
+    }
+
+    update() {
+        this.reset(false, true);
+
+        // Sort primitives by total occurence, descending
+        const allPrims = [...this.modules[0].globalPrimitives.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .map((entry) => entry[0]);
+
+        for (const primitive of allPrims) {
+            this.addRowItem(primitive);
+        }
+
+        this.render();
+    }
+}
+
 interface Tab<EventsDictionary> {
     title: string;
     element: CustomElement<EventsDictionary>;

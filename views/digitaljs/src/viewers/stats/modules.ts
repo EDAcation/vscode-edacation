@@ -30,9 +30,11 @@ export const getModuleStatName = (stat: ModuleStatId): string => {
 
 export class Module {
     private parents: Set<Module>;
-    private _primitives: Map<string, number>;
 
     public readonly name: string;
+
+    private _primitives: Map<string, number>;
+    private _globalPrimitives: Map<string, number>;
 
     private _children: Map<Module, number>;
     private _globalChildren: Map<Module, number>;
@@ -42,6 +44,13 @@ export class Module {
 
     constructor(name: string, stats: YosysModuleStats) {
         this.name = name;
+
+        this._primitives = new Map();
+        this._globalPrimitives = new Map();
+
+        this._children = new Map();
+        this._globalChildren = new Map();
+
         this._stats = {
             memoryCount: stats.num_memories,
             memoryBitCount: stats.num_memory_bits,
@@ -49,11 +58,6 @@ export class Module {
             cellCount: stats.num_cells
         };
         this._globalStats = structuredClone(this._stats);
-
-        this._children = new Map();
-        this._globalChildren = new Map();
-
-        this._primitives = new Map();
 
         this.parents = new Set();
     }
@@ -64,6 +68,10 @@ export class Module {
 
     get primitives(): Map<string, number> {
         return this._primitives;
+    }
+
+    get globalPrimitives(): Map<string, number> {
+        return this._globalPrimitives;
     }
 
     get children(): Map<Module, number> {
@@ -84,6 +92,7 @@ export class Module {
 
     addPrimitive(prim: string, count: number) {
         this._primitives.set(prim, (this._primitives.get(prim) ?? 0) + count);
+        this._globalPrimitives.set(prim, (this._globalPrimitives.get(prim) ?? 0) + count);
     }
 
     addChild(module: Module, count: number) {
@@ -99,6 +108,11 @@ export class Module {
         this._globalChildren.set(module, (this._globalChildren.get(module) ?? 0) + count);
         for (const [gloModule, gloCount] of module.globalChildren.entries()) {
             this._globalChildren.set(gloModule, (this._globalChildren.get(gloModule) ?? 0) + count * gloCount);
+        }
+
+        // Update global primitives
+        for (const [gloPrim, gloCount] of module.globalPrimitives.entries()) {
+            this._globalPrimitives.set(gloPrim, (this._globalPrimitives.get(gloPrim) ?? 0) + count * gloCount);
         }
     }
 

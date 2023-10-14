@@ -3,7 +3,7 @@ import type {ForeignViewMessage} from '../../messages';
 import type {YosysStats} from '../../types';
 import {BaseViewer} from '../base';
 
-import {ModuleExplorerGrid, ModuleOverviewGrid, TabsContainer} from './elements';
+import {ModuleExplorerGrid, ModuleOverviewGrid, PrimitivesOverviewGrid, TabsContainer} from './elements';
 import {type Module, type ModuleStatId, buildModuleTree} from './modules';
 
 interface GridColumnSettings {
@@ -33,6 +33,7 @@ export class StatsViewer extends BaseViewer<YosysStats> {
 
     private moduleOverview: ModuleOverviewGrid;
     private moduleExplorer: ModuleExplorerGrid;
+    private primitivesOverview: PrimitivesOverviewGrid;
 
     constructor(mainView: View, initData: YosysStats) {
         super(mainView, initData);
@@ -53,6 +54,8 @@ export class StatsViewer extends BaseViewer<YosysStats> {
             }
         });
 
+        this.primitivesOverview = new PrimitivesOverviewGrid(this.modules);
+
         this.moduleExplorer = new ModuleExplorerGrid(this.modules[0]);
         this.moduleExplorer.addEventListener('gridHeadersUpdate', (data) => {
             this.storeValue('yosys-stats-explorer-settings', {columns: data.newHeaders});
@@ -66,7 +69,8 @@ export class StatsViewer extends BaseViewer<YosysStats> {
 
         this.tabsContainer = new TabsContainer([
             {title: 'Overview', element: this.moduleOverview},
-            {title: 'Explorer', element: this.moduleExplorer}
+            {title: 'Explorer', element: this.moduleExplorer},
+            {title: 'Primitives', element: this.primitivesOverview}
         ]);
     }
 
