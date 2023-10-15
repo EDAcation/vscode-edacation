@@ -1,6 +1,6 @@
 import {type Module} from '../modules';
 
-import {type DataGridCell, InteractiveDataGrid} from './datagrid';
+import {type DataGridCell, type DatagridSetting, InteractiveDataGrid} from './datagrid';
 import {getPercentage} from './util';
 
 // TODO: typing for primitives (needs exhaustive list)
@@ -20,6 +20,10 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
         for (let i = 0; i < prims.length && i < 5; i++) {
             this.addCol(prims[i]);
         }
+    }
+
+    protected getSettings(): DatagridSetting[] {
+        return [{id: 'count-all', text: 'Count all module occurences', default: true}];
     }
 
     protected getDefaultOptions(): PrimitivesOverviewOptions[] {
@@ -46,16 +50,20 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
             return item.name;
         }
 
-        const count = item.globalPrimitives.get(option);
+        let count = item.globalPrimitives.get(option);
         const totalCount = this.modules[0].globalPrimitives.get(option);
         if (count === undefined || !totalCount) {
             return '-';
         }
 
+        if (this.getSettingValue('count-all')) {
+            count *= this.modules[0].globalChildren.get(item) || 1;
+        }
+
         return `${count} (${getPercentage(count, totalCount)}%)`;
     }
 
-    update() {
+    override update() {
         this.reset(false, true);
 
         for (const module of this.modules) {

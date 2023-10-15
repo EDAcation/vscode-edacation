@@ -112,6 +112,12 @@ class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
     }
 }
 
+export interface DatagridSetting {
+    id: string;
+    text: string;
+    default: boolean;
+}
+
 interface GridHeadersUpdateEvent<ColumnOption> {
     newHeaders: ColumnOption[];
 }
@@ -127,11 +133,18 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
 
     private actualRoot: HTMLElement;
 
+    private settingValues: Record<string, boolean>;
+
     constructor() {
         super();
 
         this.rows = [];
         this.cols = [];
+
+        this.settingValues = {};
+        for (const setting of this.getSettings()) {
+            this.settingValues[setting.id] = setting.default;
+        }
 
         // The object renders to this.rootElem, but we want buttons outside
         // the datagrid. This actualRoot is just a div containing those buttons
@@ -145,6 +158,12 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
         return this.actualRoot;
     }
 
+    protected getSettingValue(settingId: string): boolean {
+        return this.settingValues[settingId];
+    }
+
+    protected abstract getSettings(): DatagridSetting[];
+
     protected abstract getDefaultOptions(): ColumnOption[];
 
     protected abstract getAvailableOptions(): ColumnOption[];
@@ -157,6 +176,26 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
 
     private createRoot() {
         const root = document.createElement('div');
+        root.style.width = '100%';
+
+        // Add settings
+        for (const setting of this.getSettings()) {
+            const checkbox = document.createElement('vscode-checkbox') as HTMLInputElement;
+            if (this.settingValues[setting.id]) {
+                checkbox.setAttribute('checked', 'true');
+            }
+            checkbox.textContent = setting.text;
+            checkbox.addEventListener('change', (_) => {
+                this.settingValues[setting.id] = checkbox.checked;
+
+                this.update();
+            });
+
+            root.appendChild(checkbox);
+        }
+
+        root.appendChild(document.createElement('vscode-divider'));
+        root.appendChild(document.createElement('br'));
 
         // Add column button
         const addColBtn = document.createElement('vscode-button');
@@ -288,6 +327,10 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
             this.addCol(col, true);
         }
 
+        this.render();
+    }
+
+    update() {
         this.render();
     }
 

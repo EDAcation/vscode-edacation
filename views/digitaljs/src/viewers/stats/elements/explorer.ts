@@ -1,6 +1,6 @@
 import {type Module, type ModuleStatId, getModuleStatIds, getModuleStatName} from '../modules';
 
-import {type DataGridCell, InteractiveDataGrid} from './datagrid';
+import {type DataGridCell, type DatagridSetting, InteractiveDataGrid} from './datagrid';
 import {getPercentage} from './util';
 
 interface ModuleExplorerRowCurrent {
@@ -87,6 +87,10 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
         }
 
         this.render();
+    }
+
+    protected getSettings(): DatagridSetting[] {
+        return [];
     }
 
     protected getDefaultOptions(): ModuleExplorerOptions[] {

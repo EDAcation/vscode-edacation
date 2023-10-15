@@ -1,6 +1,6 @@
 import {type Module, type ModuleStatId, getModuleStatIds, getModuleStatName} from '../modules';
 
-import {type DataGridCell, InteractiveDataGrid} from './datagrid';
+import {type DataGridCell, type DatagridSetting, InteractiveDataGrid} from './datagrid';
 import {getPercentage} from './util';
 
 type ModuleOverviewOptions = 'name' | 'count' | ModuleStatId;
@@ -16,6 +16,10 @@ export class ModuleOverviewGrid extends InteractiveDataGrid<Module, ModuleOvervi
         for (const module of modules) {
             this.addRowItem(module);
         }
+    }
+
+    protected getSettings(): DatagridSetting[] {
+        return [];
     }
 
     protected getDefaultOptions(): ModuleOverviewOptions[] {
