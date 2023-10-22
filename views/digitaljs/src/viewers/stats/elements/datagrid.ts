@@ -131,7 +131,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
     private rows: RowItem[];
     private cols: ColumnOption[];
 
-    private actualRoot: HTMLElement;
+    private actualRoot: HTMLElement | null;
 
     private settingValues: Record<string, boolean>;
 
@@ -140,22 +140,32 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
 
         this.rows = [];
         this.cols = [];
+        this.actualRoot = null;
 
         this.settingValues = {};
         for (const setting of this.getSettings()) {
             this.settingValues[setting.id] = setting.default;
         }
 
-        // The object renders to this.rootElem, but we want buttons outside
-        // the datagrid. This actualRoot is just a div containing those buttons
-        // and the rendered rootElem so we can 'adopt' the buttons into this class.
-        this.actualRoot = this.createRoot();
+        // The object renders to this.rootElem, but we want elements outside
+        // the datagrid. This actualRoot is just a div containing those elements
+        // and the rendered rootElem so we can 'adopt' them into this class.
+        this.actualRoot = null;
 
         this.reset(true, true);
     }
 
     override get element(): HTMLElement {
+        if (this.actualRoot === null) {
+            this.actualRoot = this.createRoot();
+        }
         return this.actualRoot;
+    }
+
+    // *** Start overrideable methods ***
+
+    update() {
+        this.render();
     }
 
     protected getSettingValue(settingId: string): boolean {
@@ -174,9 +184,8 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
 
     protected abstract getValue(item: RowItem, option: ColumnOption): DataGridCell;
 
-    private createRoot() {
+    protected getGridHeaderElement(): HTMLElement {
         const root = document.createElement('div');
-        root.style.width = '100%';
 
         // Add settings
         for (const setting of this.getSettings()) {
@@ -194,8 +203,10 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
             root.appendChild(checkbox);
         }
 
-        root.appendChild(document.createElement('vscode-divider'));
-        root.appendChild(document.createElement('br'));
+        if (this.getSettings().length !== 0) {
+            root.appendChild(document.createElement('vscode-divider'));
+            root.appendChild(document.createElement('br'));
+        }
 
         // Add column button
         const addColBtn = document.createElement('vscode-button');
@@ -216,6 +227,18 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
             this.dispatchEvent('gridHeadersUpdate', {newHeaders: this.cols});
         });
         root.appendChild(resetBtn);
+
+        return root;
+    }
+
+    // *** End overrideable methods ***
+
+    private createRoot() {
+        const root = document.createElement('div');
+        root.style.width = '100%';
+
+        // Custom content
+        root.appendChild(this.getGridHeaderElement());
 
         // The actual DataGrid
         root.appendChild(super.element);
@@ -327,10 +350,6 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
             this.addCol(col, true);
         }
 
-        this.render();
-    }
-
-    update() {
         this.render();
     }
 

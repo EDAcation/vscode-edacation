@@ -18,7 +18,6 @@ type ModuleExplorerRowItems = ModuleExplorerRowCurrent | ModuleExplorerRowPrimit
 type ModuleExplorerOptions = 'name' | 'count' | ModuleStatId;
 
 export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowItems, ModuleExplorerOptions> {
-    private actualRoot2: HTMLElement;
     private breadcrumbHeader: HTMLParagraphElement;
 
     private moduleBreadcrumbs: Module[];
@@ -27,21 +26,22 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
         super();
 
         this.breadcrumbHeader = document.createElement('p');
-        this.actualRoot2 = document.createElement('div');
-        this.actualRoot2.appendChild(this.breadcrumbHeader);
-        this.actualRoot2.appendChild(super.element);
 
         this.moduleBreadcrumbs = [initModule];
 
         this.update();
     }
 
-    override get element(): HTMLElement {
-        return this.actualRoot2;
-    }
-
     get curModule(): Module {
         return this.moduleBreadcrumbs[this.moduleBreadcrumbs.length - 1];
+    }
+
+    protected override getGridHeaderElement(): HTMLElement {
+        const headerElem = super.getGridHeaderElement();
+
+        headerElem.appendChild(this.breadcrumbHeader);
+
+        return headerElem;
     }
 
     navigateSplice(i: number) {
@@ -86,7 +86,7 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
             this.addRowItem({type: 'child', module: subCircuit});
         }
 
-        this.render();
+        super.update();
     }
 
     protected getSettings(): DatagridSetting[] {
