@@ -4,7 +4,7 @@ import {type DataGridCell, type DatagridSetting, InteractiveDataGrid} from './da
 import {getPercentage} from './util';
 
 // TODO: typing for primitives (needs exhaustive list)
-type PrimitivesOverviewOptions = 'name' | string;
+type PrimitivesOverviewOptions = 'name' | 'count' | string;
 
 export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, PrimitivesOverviewOptions> {
     private modules: Module[];
@@ -27,7 +27,7 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
     }
 
     protected getDefaultOptions(): PrimitivesOverviewOptions[] {
-        return ['name'];
+        return ['name', 'count'];
     }
 
     protected getAvailableOptions(): PrimitivesOverviewOptions[] {
@@ -41,6 +41,8 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
     protected getOptionName(option: string): string {
         if (option === 'name') {
             return 'Module name';
+        } else if (option === 'count') {
+            return 'Count';
         }
         return '$' + option;
     }
@@ -48,6 +50,8 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
     protected getValue(item: Module, option: PrimitivesOverviewOptions): DataGridCell {
         if (option === 'name') {
             return item.name;
+        } else if (option === 'count') {
+            return this.modules[0].globalChildren.get(item)?.toString() ?? '-';
         }
 
         let count = item.globalPrimitives.get(option);
