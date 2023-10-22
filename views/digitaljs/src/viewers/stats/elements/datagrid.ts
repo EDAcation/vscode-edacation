@@ -201,6 +201,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
             });
 
             root.appendChild(checkbox);
+            root.appendChild(document.createElement('br'));
         }
 
         if (this.getSettings().length !== 0) {

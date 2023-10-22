@@ -90,7 +90,7 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
     }
 
     protected getSettings(): DatagridSetting[] {
-        return [];
+        return [{id: 'count-all', text: 'Count all module occurences', default: false}];
     }
 
     protected getDefaultOptions(): ModuleExplorerOptions[] {
@@ -141,7 +141,7 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
     private getValuePrimitive(item: ModuleExplorerRowPrimitive, option: ModuleExplorerOptions): DataGridCell {
         switch (option) {
             case 'name':
-                return item.primitive;
+                return '$' + item.primitive;
             case 'count':
                 return this.curModule.primitives.get(item.primitive)?.toString() ?? '-';
             default:
@@ -163,7 +163,11 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
             case 'count':
                 return this.curModule.children.get(item.module)?.toString() ?? '-';
             default: {
-                const stat1 = item.module.globalStats[option];
+                let stat1 = item.module.globalStats[option];
+                if (this.getSettingValue('count-all')) {
+                    stat1 *= this.curModule.children.get(item.module) || 1;
+                }
+
                 const stat2 = this.curModule.globalStats[option];
 
                 return `${stat1} (${getPercentage(stat1, stat2)}%)`;

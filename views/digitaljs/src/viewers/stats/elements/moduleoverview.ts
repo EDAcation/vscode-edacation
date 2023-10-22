@@ -19,7 +19,10 @@ export class ModuleOverviewGrid extends InteractiveDataGrid<Module, ModuleOvervi
     }
 
     protected getSettings(): DatagridSetting[] {
-        return [];
+        return [
+            {id: 'count-recursive', text: 'Count submodules recursively', default: true},
+            {id: 'count-all', text: 'Count all module occurences', default: false}
+        ];
     }
 
     protected getDefaultOptions(): ModuleOverviewOptions[] {
@@ -52,7 +55,12 @@ export class ModuleOverviewGrid extends InteractiveDataGrid<Module, ModuleOvervi
             case 'count':
                 return this.modules[0].globalChildren.get(item)?.toString() ?? '-';
             default: {
-                const stat1 = item.globalStats[option];
+                const countVar = this.getSettingValue('count-recursive') ? 'globalStats' : 'stats';
+                let stat1 = item[countVar][option];
+                if (this.getSettingValue('count-all')) {
+                    stat1 *= this.modules[0].globalChildren.get(item) || 1;
+                }
+
                 const stat2 = this.modules[0].globalStats[option];
 
                 return `${stat1}/${stat2} (${getPercentage(stat1, stat2)}%)`;

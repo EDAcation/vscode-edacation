@@ -23,7 +23,10 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
     }
 
     protected getSettings(): DatagridSetting[] {
-        return [{id: 'count-all', text: 'Count all module occurences', default: true}];
+        return [
+            {id: 'count-recursive', text: 'Count submodules recursively', default: true},
+            {id: 'count-all', text: 'Count all module occurences', default: false}
+        ];
     }
 
     protected getDefaultOptions(): PrimitivesOverviewOptions[] {
@@ -54,8 +57,10 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
             return this.modules[0].globalChildren.get(item)?.toString() ?? '-';
         }
 
-        let count = item.globalPrimitives.get(option);
         const totalCount = this.modules[0].globalPrimitives.get(option);
+
+        const countVar = this.getSettingValue('count-recursive') ? 'globalPrimitives' : 'primitives';
+        let count = item[countVar].get(option);
         if (count === undefined || !totalCount) {
             return '-';
         }
