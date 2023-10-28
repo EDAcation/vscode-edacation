@@ -4,11 +4,8 @@ import type {YosysStats} from '../../types';
 import {BaseViewer} from '../base';
 
 import {ModuleExplorerGrid, ModuleOverviewGrid, PrimitivesOverviewGrid, TabsContainer} from './elements';
-import {type Module, type ModuleStatId, buildModuleTree} from './modules';
-
-interface GridColumnSettings {
-    columns: ModuleStatId[];
-}
+import type {InteractiveDataGrid, InteractiveDatagridConfig} from './elements/datagrid';
+import {type Module, buildModuleTree} from './modules';
 
 export class StatsViewer extends BaseViewer<YosysStats> {
     handleForeignViewMessage(message: ForeignViewMessage): void {
@@ -44,34 +41,31 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         }
 
         this.moduleOverview = new ModuleOverviewGrid(this.modules);
-        this.moduleOverview.addEventListener('gridHeadersUpdate', (data) => {
-            this.storeValue('yosys-stats-overview-settings', {columns: data.newHeaders});
-        });
-        this.getValue('yosys-stats-overview-settings').then((value) => {
-            const settings = Object.keys(value).length ? (value as GridColumnSettings) : {columns: []};
-            for (const col of settings.columns) {
-                this.moduleOverview.addCol(col);
-            }
-        });
-
-        this.primitivesOverview = new PrimitivesOverviewGrid(this.modules);
+        this.setupConfigStore(this.moduleOverview);
 
         this.moduleExplorer = new ModuleExplorerGrid(this.modules[0]);
-        this.moduleExplorer.addEventListener('gridHeadersUpdate', (data) => {
-            this.storeValue('yosys-stats-explorer-settings', {columns: data.newHeaders});
-        });
-        this.getValue('yosys-stats-explorer-settings').then((value) => {
-            const settings = Object.keys(value).length ? (value as GridColumnSettings) : {columns: []};
-            for (const col of settings.columns) {
-                this.moduleExplorer.addCol(col);
-            }
-        });
+        this.setupConfigStore(this.moduleExplorer);
+
+        this.primitivesOverview = new PrimitivesOverviewGrid(this.modules);
+        this.setupConfigStore(this.primitivesOverview);
 
         this.tabsContainer = new TabsContainer([
             {title: 'Overview', element: this.moduleOverview},
             {title: 'Explorer', element: this.moduleExplorer},
             {title: 'Primitives', element: this.primitivesOverview}
         ]);
+    }
+
+    private setupConfigStore<K>(element: InteractiveDataGrid<unknown, K>) {
+        const storeId = `yosys.stats.${element.getIdentifier()}.settings`;
+
+        // Register callbacks for config back-up
+        element.addEventListener('gridConfigUpdate', (event) => this.storeValue(storeId, event.config));
+
+        // Restore initial config
+        this.getValue(storeId).then((value) => {
+            element.setConfig(value as InteractiveDatagridConfig<K>);
+        });
     }
 
     private getModule(name: string): Module | null {

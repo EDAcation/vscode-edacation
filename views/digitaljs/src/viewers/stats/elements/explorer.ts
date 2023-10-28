@@ -32,6 +32,10 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
         this.update();
     }
 
+    getIdentifier(): string {
+        return 'module-explorer';
+    }
+
     get curModule(): Module {
         return this.moduleBreadcrumbs[this.moduleBreadcrumbs.length - 1];
     }
@@ -164,7 +168,7 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
                 return this.curModule.children.get(item.module)?.toString() ?? '-';
             default: {
                 let stat1 = item.module.globalStats[option];
-                if (this.getSettingValue('count-all')) {
+                if (this.getSetting('count-all')) {
                     stat1 *= this.curModule.children.get(item.module) || 1;
                 }
 

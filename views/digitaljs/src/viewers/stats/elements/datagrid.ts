@@ -118,11 +118,16 @@ export interface DatagridSetting {
     default: boolean;
 }
 
-interface GridHeadersUpdateEvent<ColumnOption> {
-    newHeaders: ColumnOption[];
+export interface InteractiveDatagridConfig<ColumnOption> {
+    columns: ColumnOption[] | null;
+    settingValues: Record<string, boolean> | null;
+}
+
+interface GridConfigUpdateEvent<ColumnOption> {
+    config: InteractiveDatagridConfig<ColumnOption>;
 }
 interface InteractiveDataGridEvents<ColumnOption> {
-    gridHeadersUpdate: GridHeadersUpdateEvent<ColumnOption>;
+    gridConfigUpdate: GridConfigUpdateEvent<ColumnOption>;
 }
 
 export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGrid<
@@ -133,7 +138,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
 
     private actualRoot: HTMLElement | null;
 
-    private settingValues: Record<string, boolean>;
+    private settingElems: Map<string, HTMLInputElement>;
 
     constructor() {
         super();
@@ -142,9 +147,20 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
         this.cols = [];
         this.actualRoot = null;
 
-        this.settingValues = {};
+        // Create setting checkboxes (store references)
+        this.settingElems = new Map();
         for (const setting of this.getSettings()) {
-            this.settingValues[setting.id] = setting.default;
+            const checkbox = document.createElement('vscode-checkbox') as HTMLInputElement;
+            checkbox.addEventListener('change', (_) => {
+                this.dispatchEvent('gridConfigUpdate', {config: this.getConfig()});
+
+                this.update();
+            });
+            if (setting.default) {
+                checkbox.setAttribute('checked', 'true');
+            }
+            checkbox.textContent = setting.text;
+            this.settingElems.set(setting.id, checkbox);
         }
 
         // The object renders to this.rootElem, but we want elements outside
@@ -162,15 +178,59 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
         return this.actualRoot;
     }
 
+    getConfig(): InteractiveDatagridConfig<ColumnOption> {
+        return {
+            columns: this.cols,
+            settingValues: Object.fromEntries(
+                Array.from(this.settingElems.entries()).map(([id, elem]) => [id, elem.checked])
+            )
+        };
+    }
+
+    setConfig(config?: InteractiveDatagridConfig<ColumnOption>) {
+        if (!config) {
+            return;
+        }
+
+        if (config.columns) {
+            this.reset(true, false);
+
+            for (const col of config.columns) {
+                this.addCol(col);
+            }
+        }
+
+        for (const [key, value] of Object.entries(config.settingValues ?? {})) {
+            this.setSetting(key, value);
+        }
+
+        this.update();
+    }
+
+    protected getSetting(settingId: string): boolean {
+        return this.settingElems.get(settingId)?.checked || false;
+    }
+
+    protected setSetting(settingId: string, value: boolean) {
+        const settingElem = this.settingElems.get(settingId);
+        if (!settingElem) {
+            return;
+        }
+
+        if (value) {
+            settingElem.setAttribute('checked', 'true');
+        } else {
+            settingElem.removeAttribute('checked');
+        }
+    }
+
     // *** Start overrideable methods ***
 
     update() {
         this.render();
     }
 
-    protected getSettingValue(settingId: string): boolean {
-        return this.settingValues[settingId];
-    }
+    abstract getIdentifier(): string;
 
     protected abstract getSettings(): DatagridSetting[];
 
@@ -188,18 +248,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
         const root = document.createElement('div');
 
         // Add settings
-        for (const setting of this.getSettings()) {
-            const checkbox = document.createElement('vscode-checkbox') as HTMLInputElement;
-            if (this.settingValues[setting.id]) {
-                checkbox.setAttribute('checked', 'true');
-            }
-            checkbox.textContent = setting.text;
-            checkbox.addEventListener('change', (_) => {
-                this.settingValues[setting.id] = checkbox.checked;
-
-                this.update();
-            });
-
+        for (const checkbox of this.settingElems.values()) {
             root.appendChild(checkbox);
             root.appendChild(document.createElement('br'));
         }
@@ -215,7 +264,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
         addColBtn.addEventListener('click', (_ev) => {
             this.addCol();
 
-            this.dispatchEvent('gridHeadersUpdate', {newHeaders: this.cols});
+            this.dispatchEvent('gridConfigUpdate', {config: this.getConfig()});
         });
         root.appendChild(addColBtn);
 
@@ -225,7 +274,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
         resetBtn.addEventListener('click', (_ev) => {
             this.reset(true, false);
 
-            this.dispatchEvent('gridHeadersUpdate', {newHeaders: this.cols});
+            this.dispatchEvent('gridConfigUpdate', {config: this.getConfig()});
         });
         root.appendChild(resetBtn);
 
@@ -293,7 +342,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
                 this.delColumn(coli);
                 this.render();
 
-                this.dispatchEvent('gridHeadersUpdate', {newHeaders: this.cols});
+                this.dispatchEvent('gridConfigUpdate', {config: this.getConfig()});
             }
         });
         header.appendChild(delBtn);
@@ -319,7 +368,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
             this.cols.splice(headerIndex - this.getDefaultOptions().length, 1, newOption);
             this.render();
 
-            this.dispatchEvent('gridHeadersUpdate', {newHeaders: this.cols});
+            this.dispatchEvent('gridConfigUpdate', {config: this.getConfig()});
         });
 
         const pos = super.addColumn([header]);

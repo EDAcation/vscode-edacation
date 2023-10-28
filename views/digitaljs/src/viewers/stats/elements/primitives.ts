@@ -1,6 +1,6 @@
 import {type Module} from '../modules';
 
-import {type DataGridCell, type DatagridSetting, InteractiveDataGrid} from './datagrid';
+import {type DataGridCell, type DatagridSetting, InteractiveDataGrid, type InteractiveDatagridConfig} from './datagrid';
 import {getPercentage} from './util';
 
 // TODO: typing for primitives (needs exhaustive list)
@@ -20,6 +20,23 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
         for (let i = 0; i < prims.length && i < 5; i++) {
             this.addCol(prims[i]);
         }
+    }
+
+    getIdentifier(): string {
+        return 'primitives-overview';
+    }
+
+    // Config get/set overrides to prevent column back-ups and restores
+    getConfig(): InteractiveDatagridConfig<PrimitivesOverviewOptions> {
+        const conf = super.getConfig();
+        conf.columns = [];
+        return conf;
+    }
+    setConfig(config?: InteractiveDatagridConfig<PrimitivesOverviewOptions> | undefined): void {
+        if (config) {
+            config.columns = null;
+        }
+        super.setConfig(config);
     }
 
     protected getSettings(): DatagridSetting[] {
@@ -59,13 +76,13 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
 
         const totalCount = this.modules[0].globalPrimitives.get(option);
 
-        const countVar = this.getSettingValue('count-recursive') ? 'globalPrimitives' : 'primitives';
+        const countVar = this.getSetting('count-recursive') ? 'globalPrimitives' : 'primitives';
         let count = item[countVar].get(option);
         if (count === undefined || !totalCount) {
             return '-';
         }
 
-        if (this.getSettingValue('count-all')) {
+        if (this.getSetting('count-all')) {
             count *= this.modules[0].globalChildren.get(item) || 1;
         }
 
