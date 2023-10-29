@@ -8,22 +8,6 @@ import type {InteractiveDataGrid, InteractiveDatagridConfig} from './elements/da
 import {type Module, buildModuleTree} from './modules';
 
 export class StatsViewer extends BaseViewer<YosysStats> {
-    handleForeignViewMessage(message: ForeignViewMessage): void {
-        if (message.type === 'moduleFocus') {
-            // Focus explorer navigator according to breadcrumbs from djs viewer
-            this.moduleExplorer.navigateSplice(1);
-            for (const moduleName of message.breadcrumbs) {
-                const module = this.getModule(moduleName);
-                if (!module) {
-                    throw new Error(`Unknown module: ${moduleName}`);
-                }
-                this.moduleExplorer.navigate(module);
-            }
-
-            this.moduleExplorer.update();
-        }
-    }
-
     private modules: Module[];
 
     private tabsContainer: TabsContainer;
@@ -50,10 +34,28 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         this.setupConfigStore(this.primitivesOverview);
 
         this.tabsContainer = new TabsContainer([
-            {title: 'Overview', element: this.moduleOverview},
-            {title: 'Explorer', element: this.moduleExplorer},
-            {title: 'Primitives', element: this.primitivesOverview}
+            {id: 'overview', title: 'Overview', element: this.moduleOverview},
+            {id: 'explorer', title: 'Explorer', element: this.moduleExplorer},
+            {id: 'primitives', title: 'Primitives', element: this.primitivesOverview}
         ]);
+    }
+
+    handleForeignViewMessage(message: ForeignViewMessage): void {
+        if (message.type === 'moduleFocus') {
+            // Focus explorer navigator according to breadcrumbs from djs viewer
+            this.moduleExplorer.navigateSplice(1);
+            for (const moduleName of message.breadcrumbs) {
+                const module = this.getModule(moduleName);
+                if (!module) {
+                    throw new Error(`Unknown module: ${moduleName}`);
+                }
+                this.moduleExplorer.navigate(module);
+            }
+
+            this.moduleExplorer.update();
+
+            this.tabsContainer.focusTab('explorer');
+        }
     }
 
     private setupConfigStore<K>(element: InteractiveDataGrid<unknown, K>) {

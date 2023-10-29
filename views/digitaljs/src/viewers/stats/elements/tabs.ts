@@ -1,6 +1,7 @@
 import {CustomElement} from './base';
 
 interface Tab<EventsDictionary> {
+    id: string;
     title: string;
     element: CustomElement<EventsDictionary>;
 }
@@ -8,12 +9,17 @@ interface Tab<EventsDictionary> {
 export class TabsContainer extends CustomElement<Record<string, never>> {
     protected rootElem: HTMLElement;
 
-    private tabs: Tab<unknown>[];
+    private tabs: Map<string, Tab<unknown>>;
+    private tabHeaders: Map<string, HTMLElement>;
 
     constructor(tabs: Tab<unknown>[]) {
         super();
 
-        this.tabs = tabs;
+        this.tabs = new Map();
+        for (const tab of tabs) {
+            this.tabs.set(tab.id, tab);
+        }
+        this.tabHeaders = new Map();
 
         this.rootElem = this.createRoot();
     }
@@ -21,24 +27,35 @@ export class TabsContainer extends CustomElement<Record<string, never>> {
     private createRoot(): HTMLElement {
         const root = document.createElement('vscode-panels');
 
-        for (let i = 0; i < this.tabs.length; i++) {
-            const tab = document.createElement('vscode-panel-tab');
-            tab.id = `tab-${i}`;
-            tab.textContent = this.tabs[i].title;
-            root.appendChild(tab);
+        for (const [id, tab] of this.tabs.entries()) {
+            const tabElem = document.createElement('vscode-panel-tab');
+            tabElem.id = `tab-${id}`;
+            tabElem.textContent = tab.title;
+            root.appendChild(tabElem);
+
+            this.tabHeaders.set(id, tabElem);
         }
-        for (let i = 0; i < this.tabs.length; i++) {
+        for (const [id, tab] of this.tabs.entries()) {
             const view = document.createElement('vscode-panel-view');
-            view.id = `view-${i}`;
-            view.appendChild(this.tabs[i].element.element);
+            view.id = `view-${id}`;
+            view.appendChild(tab.element.element);
             root.appendChild(view);
         }
 
         return root;
     }
 
+    focusTab(id: string) {
+        const tabHeader = this.tabHeaders.get(id);
+        if (!tabHeader) {
+            throw new Error('Invalid tab ID to focus!');
+        }
+
+        tabHeader.click();
+    }
+
     render(): void {
-        for (const tab of this.tabs) {
+        for (const tab of this.tabs.values()) {
             tab.element.render();
         }
     }
