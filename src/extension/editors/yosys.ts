@@ -59,6 +59,11 @@ export class YosysEditor extends BaseEditor {
             });
             return true;
         } else if (message.type === 'broadcast') {
+            if (YosysEditor.activeViews.size < 2) {
+                // There are no views to broadcast to...
+                vscode.window.showErrorMessage('You must have more than one tab open for this feature to work!');
+            }
+
             for (const view of YosysEditor.activeViews) {
                 if (view === webview) {
                     continue;
