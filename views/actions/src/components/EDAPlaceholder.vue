@@ -1,7 +1,11 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
-
 import {state as globalState} from '../state';
+import * as vscode from 'vscode';
+import {OpenProjectConfigurationCommand} from '../../../../src/extension/commands/actions';
+import type {Project} from '../../../../src/extension/projects/index.js';
+import type {ProjectEditor} from '../../../../src/extension/editors/index.js';
+
 
 export default defineComponent({
     components: {},
@@ -11,12 +15,29 @@ export default defineComponent({
             state: globalState
         };
     },
-    methods: {}
+    methods: {
+        executeCommand(command: string) {
+            vscode.commands.executeCommand(command);
+        },
+
+        something() {
+            if(globalState.project) {
+                //I wanted to use the OpenProjectCommand that is defined in project.ts but this isn't working out
+                //vscode.commands.executeCommand('vscode.openWith', globalState.project.OpenProjectCommand, ProjectEditor.getViewType());
+
+            }
+        }
+    }
 });
 </script>
 
 <template>
-    <span>This is the actions view.</span>
+    <div style="flex-direction: row; align-items: stretch;">
+        <vscode-button style="margin: 0.5rem" @click="executeCommand('edacation.')">Open Project Configuration</vscode-button>
+        <vscode-button style="margin: 0.5rem" @click="executeCommand('edacation.runRTL')">Show RTL</vscode-button>
+        <vscode-button style="margin: 0.5rem" @click="executeCommand('edacation.runYosys')">Synthesize using Yosys</vscode-button>
+        <vscode-button style="margin: 0.5rem" @click="executeCommand('edacation.runNextpnr')">Place and Route using nextpnr</vscode-button>
+    </div>
 </template>
 
 <style scoped></style>
