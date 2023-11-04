@@ -63,7 +63,7 @@ export default defineComponent({
                 workerName="nextpnr"
                 configId="arguments"
                 configName="arguments"
-                configDescription="Arguments are passed to the nextpnr worker for excecution."
+                configDescription="Arguments are passed to the nextpnr worker for execution."
             />
 
             <vscode-divider style="grid-column: span 2" />

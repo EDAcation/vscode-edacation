@@ -6,13 +6,17 @@ import {state as globalState} from '../state';
 
 import EDATargetGeneral from './EDATargetGeneral.vue';
 import EDATargetNextpnr from './EDATargetNextpnr.vue';
+import EDATargetPlacementAndRouting from './EDATargetPlacementAndRouting.vue';
+import EDATargetSynthesis from './EDATargetSynthesis.vue';
 import EDATargetYosys from './EDATargetYosys.vue';
 
 export default defineComponent({
     components: {
         EDATargetGeneral,
         EDATargetYosys,
-        EDATargetNextpnr
+        EDATargetNextpnr,
+        EDATargetSynthesis,
+        EDATargetPlacementAndRouting
     },
     props: {
         targetIndex: {
@@ -56,11 +60,11 @@ export default defineComponent({
             </vscode-panel-view>
 
             <vscode-panel-view id="view-synthesis">
-                <p>TODO: synthesis options</p>
+                <EDATargetSynthesis :targetIndex="targetIndex" />
             </vscode-panel-view>
 
             <vscode-panel-view id="view-pnr">
-                <p>TODO: placement and routing options</p>
+                <EDATargetPlacementAndRouting :targetIndex="targetIndex" />
             </vscode-panel-view>
 
             <vscode-panel-view id="view-yosys">

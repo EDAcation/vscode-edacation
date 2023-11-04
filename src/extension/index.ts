@@ -6,6 +6,7 @@ import {Projects} from './projects/index.js';
 import * as tasks from './tasks/index.js';
 import type {BaseTreeDataProvider} from './trees/base.js';
 import * as trees from './trees/index.js';
+import * as webviews from './webviews/index.js';
 
 let projects: Projects | undefined;
 
@@ -37,6 +38,15 @@ export const activate = async (context: vscode.ExtensionContext) => {
             vscode.window.registerTreeDataProvider(treeType.getViewID(), tree as BaseTreeDataProvider<unknown>)
         );
     }
+
+    // Register webview providers
+    for (const webviewType of Object.values(webviews)) {
+        const webview = new webviewType(context, projects);
+        context.subscriptions.push(
+            vscode.window.registerWebviewViewProvider(webviewType.getViewID(), webview)
+        );
+    }
+
 
     await projects.load();
 };

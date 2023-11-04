@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 
+import type {GlobalStoreMessage, ViewMessage} from '../types.js';
 import {getWebviewUri} from '../util.js';
 
 import {BaseEditor} from './base.js';
-import type {GlobalStoreMessage, ViewMessage} from './messages.js';
 
 export class NextpnrEditor extends BaseEditor {
     public static getViewType() {

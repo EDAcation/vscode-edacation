@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 
+import type {GlobalStoreMessage, ViewMessage} from '../types.js';
 import * as util from '../util.js';
 
 import {BaseEditor} from './base.js';
-import type {GlobalStoreMessage, ViewMessage} from './messages.js';
 
 export class YosysEditor extends BaseEditor {
     private static activeViews: Set<vscode.Webview> = new Set();

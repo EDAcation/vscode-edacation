@@ -1,16 +1,18 @@
 import * as vscode from 'vscode';
 
 import type {Projects} from '../projects/index.js';
-import {getWebviewUri} from '../util.js';
+import type {GlobalStoreMessage, ViewMessage} from '../types.js';
+import {BaseWebview} from '../webview.js';
 
-import type {GlobalStoreMessage, ViewMessage} from './messages.js';
+export interface EditorWebviewArgs {
+    document: vscode.TextDocument;
+}
 
-export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
-    protected readonly context: vscode.ExtensionContext;
+export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implements vscode.CustomTextEditorProvider {
     protected readonly projects: Projects;
 
     constructor(context: vscode.ExtensionContext, projects: Projects) {
-        this.context = context;
+        super(context);
         this.projects = projects;
     }
 
@@ -30,7 +32,7 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
         webview.options = {
             enableScripts: true
         };
-        webview.html = this.getHtmlForWebview(webview, document);
+        webview.html = this.getHtmlForWebview(webview, {document});
 
         // Add message listener
         webview.onDidReceiveMessage(this.onDidReceiveMessage.bind(this, document, webview));
@@ -71,56 +73,6 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
         this.update(document, webview, false);
     }
 
-    protected getHtmlForWebview(webview: vscode.Webview, document: vscode.TextDocument): string {
-        const initialData = JSON.stringify(JSON.stringify(this.getInitialData(document)));
-
-        return /*html*/ `
-            <!doctype html>
-            <html lang="en">
-                <head>
-                    <meta charset="utf-8" />
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-                    ${this.getHtmlStyles(webview)}
-                </head>
-                <body>
-                    <div id="app">
-                        <vscode-progress-ring></vscode-progress-ring>
-                    </div>
-
-                    ${this.getHtmlScripts(webview)}
-                    ${
-                        initialData
-                            ? /*html*/ `<script type="application/javascript">window.initialData = JSON.parse(${initialData});</script>`
-                            : ''
-                    }
-                </body>
-            </html>
-        `;
-    }
-
-    protected getInitialData(_document: vscode.TextDocument): Record<string, unknown> | undefined {
-        return undefined;
-    }
-
-    protected getHtmlStyles(webview: vscode.Webview): string {
-        const stylePaths = this.getStylePaths();
-        const styleUris = stylePaths.map((stylePath) => getWebviewUri(webview, this.context, stylePath));
-
-        return styleUris
-            .map((styleUri) => /*html*/ `<link rel="stylesheet" type="text/css" href="${styleUri}">`)
-            .join('\n');
-    }
-
-    protected getHtmlScripts(webview: vscode.Webview): string {
-        const scriptPaths = this.getScriptPaths();
-        const scriptUris = scriptPaths.map((scriptPath) => getWebviewUri(webview, this.context, scriptPath));
-
-        return scriptUris
-            .map((scriptUri) => /*html*/ `<script type="module" src="${scriptUri}" defer></script>`)
-            .join('\n');
-    }
-
     protected onDidReceiveMessage(
         _document: vscode.TextDocument,
         webview: vscode.Webview,
@@ -153,10 +105,6 @@ export abstract class BaseEditor implements vscode.CustomTextEditorProvider {
 
         return false;
     }
-
-    protected abstract getStylePaths(): string[][];
-
-    protected abstract getScriptPaths(): string[][];
 
     protected abstract onSave(document: vscode.TextDocument, webview: vscode.Webview): void;
 
