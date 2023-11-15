@@ -1,7 +1,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 import {state as globalState} from '../state';
-import * as vscode from 'vscode';
+import * as vscode from '../vscode';
 import {OpenProjectConfigurationCommand} from '../../../../src/extension/commands/actions';
 import type {Project} from '../../../../src/extension/projects/index.js';
 import type {ProjectEditor} from '../../../../src/extension/editors/index.js';
@@ -17,8 +17,8 @@ export default defineComponent({
     },
     methods: {
         executeCommand(command: string) {
-            vscode.commands.executeCommand(command);
-        },
+            vscode.vscode.postMessage(command)
+        }, 
 
         something() {
             if(globalState.project) {
@@ -33,10 +33,10 @@ export default defineComponent({
 
 <template>
     <div style="flex-direction: row; align-items: stretch;">
-        <vscode-button style="margin: 0.5rem" @click="executeCommand('edacation.')">Open Project Configuration</vscode-button>
-        <vscode-button style="margin: 0.5rem" @click="executeCommand('edacation.runRTL')">Show RTL</vscode-button>
-        <vscode-button style="margin: 0.5rem" @click="executeCommand('edacation.runYosys')">Synthesize using Yosys</vscode-button>
-        <vscode-button style="margin: 0.5rem" @click="executeCommand('edacation.runNextpnr')">Place and Route using nextpnr</vscode-button>
+        <vscode-button style="margin: 0.5rem" @click="executeCommand('openProjectConfiguration')">Open Project Configuration</vscode-button>
+        <vscode-button style="margin: 0.5rem" @click="executeCommand('runRTL')">Show RTL</vscode-button>
+        <vscode-button style="margin: 0.5rem" @click="executeCommand('runYosys')">Synthesize using Yosys</vscode-button>
+        <vscode-button style="margin: 0.5rem" @click="executeCommand('runNextpnr')">Place and Route using nextpnr</vscode-button>
     </div>
 </template>
 

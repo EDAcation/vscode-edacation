@@ -7,6 +7,11 @@ export interface ViewMessageChange {
     document: string;
 }
 
+export interface ViewMessageCommand {
+    type: 'command';
+    command: string;
+}
+
 export interface ViewMessageRequestSave {
     type: 'requestSave';
     data: {
@@ -15,5 +20,6 @@ export interface ViewMessageRequestSave {
         filters?: Record<string, string[]>;
     };
 }
+
 
 export type ViewMessage = ViewMessageReady | ViewMessageChange | ViewMessageRequestSave;
