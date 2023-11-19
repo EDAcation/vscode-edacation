@@ -1,17 +1,10 @@
 {
-    "extends": "@vue/tsconfig/tsconfig.web.json",
-    "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
+    "extends": "@vue/tsconfig/tsconfig.dom.json",
+    "include": ["vue-shim.d.ts", "src/**/*", "src/**/*.vue"],
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {
-            "@/*": ["./src/*"],
-            "path": ["node_modules/path-browserify/index.js"]
+            "@/*": ["./src/*"]
         }
-    },
-
-    "references": [
-        {
-            "path": "./tsconfig.config.json"
-        }
-    ]
+    }
 }

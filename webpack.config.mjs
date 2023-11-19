@@ -140,7 +140,8 @@ const viewsConfig = {
     mode: 'none',
     target: 'webworker',
     entry: {
-        actions: './src/views/actions/src/main.ts'
+        actions: './src/views/actions/src/main.ts',
+        project: './src/views/project/src/main.ts'
     },
     output: {
         filename: '[name].js',
@@ -185,7 +186,12 @@ const viewsConfig = {
             },
             {
                 test: /\.vue$/,
-                loader: 'vue-loader'
+                loader: 'vue-loader',
+                options: {
+                    compilerOptions: {
+                        isCustomElement: (tag) => tag.startsWith('vscode-')
+                    }
+                }
             }
         ]
     },
