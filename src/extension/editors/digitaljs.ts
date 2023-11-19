@@ -11,11 +11,11 @@ export class DigitalJSEditor extends BaseEditor {
     }
 
     protected getStylePaths() {
-        return [['views', 'digitaljs', 'dist', 'assets', 'index.css']];
+        return [['src', 'views', 'digitaljs', 'dist', 'assets', 'index.css']];
     }
 
     protected getScriptPaths() {
-        return [['views', 'digitaljs', 'dist', 'assets', 'index.js']];
+        return [['src', 'views', 'digitaljs', 'dist', 'assets', 'index.js']];
     }
 
     protected getHtmlStyles(webview: vscode.Webview): string {

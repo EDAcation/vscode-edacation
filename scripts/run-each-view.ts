@@ -7,14 +7,14 @@ const command = process.argv.slice(2);
 const commandName = ['npm'].concat(command).join(' ');
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
-const viewsDirectory = path.resolve(currentDirectory, '..', 'views');
+const viewsDirectory = path.resolve(currentDirectory, '..', 'src', 'views');
 const failedDirectories: string[] = [];
 
 console.log(`Executing command "${commandName}" for all views.`);
 console.log();
 
 for (const directory of await readdir(viewsDirectory)) {
-    const directoryName = `./views/${directory}`;
+    const directoryName = `./src/views/${directory}`;
 
     console.log(`Executing command "${commandName}" in views "${directoryName}"`);
 

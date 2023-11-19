@@ -1,9 +1,9 @@
 import type * as vscode from 'vscode';
 
+import {Project} from '../projects/index.js';
 import type {ViewMessage} from '../types.js';
 
 import {BaseWebviewViewProvider} from './base.js';
-import {Project} from '../projects/index.js';
 
 export class ActionsProvider extends BaseWebviewViewProvider {
     public static getViewID() {
@@ -12,12 +12,12 @@ export class ActionsProvider extends BaseWebviewViewProvider {
 
     protected getStylePaths() {
         return [
-            // ['views', 'actions', 'dist', 'assets', 'index.css']
+            // ['src', 'views', 'actions', 'dist', 'assets', 'index.css']
         ];
     }
 
     protected getScriptPaths() {
-        return [['views', 'actions', 'dist', 'assets', 'index.js']];
+        return [['src', 'views', 'actions', 'dist', 'assets', 'index.js']];
     }
 
     protected getInitialData(): Record<string, unknown> {
@@ -26,8 +26,12 @@ export class ActionsProvider extends BaseWebviewViewProvider {
         };
     }
 
-    public resolveWebviewView(webviewView: vscode.WebviewView, context: vscode.WebviewViewResolveContext<unknown>, token: vscode.CancellationToken): void | Thenable<void> {
-        super.resolveWebviewView(webviewView, context, token)
+    public resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext<unknown>,
+        token: vscode.CancellationToken
+    ): void | Thenable<void> {
+        super.resolveWebviewView(webviewView, context, token);
 
         // TODO: subscribe to project change
         // this.projects.getProjectEmitter().event.
@@ -37,9 +41,9 @@ export class ActionsProvider extends BaseWebviewViewProvider {
         console.log('[actions]', message);
 
         if (message.type === 'ready') {
-            const project = this.projects.getCurrent()
+            const project = this.projects.getCurrent();
             if (!project) {
-                return
+                return;
             }
 
             console.log('[actions]', 'ready project', project.getUri());

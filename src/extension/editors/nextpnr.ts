@@ -11,11 +11,11 @@ export class NextpnrEditor extends BaseEditor {
     }
 
     protected getStylePaths() {
-        return [['views', 'nextpnr', 'dist', 'assets', 'index.css']];
+        return [['src', 'views', 'nextpnr', 'dist', 'assets', 'index.css']];
     }
 
     protected getScriptPaths() {
-        return [['views', 'nextpnr', 'dist', 'assets', 'index.js']];
+        return [['src', 'views', 'nextpnr', 'dist', 'assets', 'index.js']];
     }
 
     protected getHtmlStyles(webview: vscode.Webview): string {
