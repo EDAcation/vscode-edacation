@@ -1,4 +1,4 @@
-import type * as vscode from 'vscode';
+import * as vscode from 'vscode';
 
 import {Project} from '../projects/index.js';
 import type {ViewMessage} from '../types.js';
@@ -55,6 +55,8 @@ export class ActionsProvider extends BaseWebviewViewProvider {
                     project: Project.serialize(project)
                 });
             }
+        } else if (message.type === 'command') {
+            await vscode.commands.executeCommand(message.command);
         }
     }
 }

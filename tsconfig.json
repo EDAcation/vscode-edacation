@@ -7,7 +7,7 @@
         "module": "nodenext",
         "moduleResolution": "nodenext",
         "sourceMap": true,
-        "rootDir": "src",
+        "rootDir": ".",
         "strict": true,
         "noFallthroughCasesInSwitch": true,
         "noImplicitReturns": true,

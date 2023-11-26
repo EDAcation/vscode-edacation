@@ -26,6 +26,11 @@ interface ViewMessageChange {
     document: string;
 }
 
+interface ViewMessageCommand {
+    type: 'command';
+    command: string;
+}
+
 interface ViewMessageRequestSave {
     type: 'requestSave';
     data: {
@@ -35,7 +40,12 @@ interface ViewMessageRequestSave {
     };
 }
 
-export type ViewMessage = ViewMessageReady | ViewMessageChange | MessageBroadcast | ViewMessageRequestSave;
+export type ViewMessage =
+    | ViewMessageReady
+    | ViewMessageCommand
+    | ViewMessageChange
+    | MessageBroadcast
+    | ViewMessageRequestSave;
 
 interface GlobalStore {
     type: 'globalStore';
