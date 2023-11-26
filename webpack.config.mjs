@@ -4,6 +4,8 @@ import path from 'path';
 import {fileURLToPath} from 'url';
 import webpack from 'webpack';
 
+import {BundleReplacePlugin} from './webpack-replace-patch.mjs';
+
 // @ts-check
 
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -58,7 +60,9 @@ const webExtensionConfig = {
         })
     ],
     externals: {
-        vscode: 'commonjs vscode' // ignored because it doesn't exist
+        vscode: 'commonjs vscode', // ignored because it doesn't exist
+        child_process: 'child_process',
+        worker_threads: 'worker_threads'
     },
     performance: {
         hints: false
@@ -102,6 +106,16 @@ const workerConfig = {
             path: 'path-browserify'
         }
     },
+    plugins: [
+        // Patch out NODEFS mounts in final Yosys bundle
+        new BundleReplacePlugin([
+            {
+                fileName: 'yosys.js',
+                from: /FS\.mount\(\s*NODEFS.*?\);?/g,
+                to: ''
+            }
+        ])
+    ],
     module: {
         rules: [
             {

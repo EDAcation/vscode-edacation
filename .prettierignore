@@ -1,4 +1,1 @@
 dist/
-
-# TODO: un-ignore this file once we find a solution to the jquery import reordering situation
-views/digitaljs/src/main.ts

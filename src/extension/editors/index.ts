@@ -1,3 +1,3 @@
-export * from './digitaljs.js';
+export * from './yosys.js';
 export * from './nextpnr.js';
 export * from './project.js';

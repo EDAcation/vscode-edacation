@@ -26,11 +26,6 @@ interface ViewMessageChange {
     document: string;
 }
 
-interface ViewMessageCommand {
-    type: 'command';
-    command: string;
-}
-
 interface ViewMessageRequestSave {
     type: 'requestSave';
     data: {
@@ -40,33 +35,26 @@ interface ViewMessageRequestSave {
     };
 }
 
-export type ViewMessage =
-    | ViewMessageReady
-    | ViewMessageCommand
-    | ViewMessageChange
-    | MessageBroadcast
-    | ViewMessageRequestSave;
+export type ViewMessage = ViewMessageReady | ViewMessageChange | MessageBroadcast | ViewMessageRequestSave;
 
 interface GlobalStore {
     type: 'globalStore';
+    transaction: number;
 }
 
 interface GlobalStoreSet extends GlobalStore {
     action: 'set';
-    transaction: string;
     name: string;
     value: object;
 }
 
 interface GlobalStoreGet extends GlobalStore {
     action: 'get';
-    transaction: string;
     name: string;
 }
 
 interface GlobalStoreResult extends GlobalStore {
     action: 'result';
-    transaction: string;
     result?: object;
 }
 

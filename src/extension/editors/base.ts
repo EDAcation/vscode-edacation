@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import type {Projects} from '../projects/index.js';
-import {type ViewMessage} from '../types.js';
+import type {GlobalStoreMessage, ViewMessage} from '../types.js';
 import {BaseWebview} from '../webview.js';
 
 export interface EditorWebviewArgs {
@@ -26,57 +26,89 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         _token: vscode.CancellationToken
     ): void | Thenable<void> {
         const disposables: vscode.Disposable[] = [];
+        const webview = webviewPanel.webview;
 
         // Render webview
-        webviewPanel.webview.options = {
+        webview.options = {
             enableScripts: true
         };
-        webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview, {document});
+        webview.html = this.getHtmlForWebview(webview, {document});
 
         // Add message listener
-        webviewPanel.webview.onDidReceiveMessage(this.onDidReceiveMessage.bind(this, document, webviewPanel.webview));
+        webview.onDidReceiveMessage(this.onDidReceiveMessage.bind(this, document, webview));
 
         // Add text document listener
         disposables.push(
             vscode.workspace.onDidChangeTextDocument((event) => {
                 if (event.document.uri.toString() === document.uri.toString()) {
-                    this.update(document, webviewPanel.webview, true);
+                    this.update(document, webview, true);
                 }
             })
         );
         disposables.push(
             vscode.workspace.onDidSaveTextDocument((event) => {
                 if (event.uri.toString() === document.uri.toString()) {
-                    this.onSave(document, webviewPanel.webview);
+                    this.onSave(document, webview);
                 }
             })
         );
 
         // Create file system watcher
         const watcher = vscode.workspace.createFileSystemWatcher(document.uri.fsPath);
-        watcher.onDidCreate(() => this.update(document, webviewPanel.webview, true));
-        watcher.onDidChange(() => this.update(document, webviewPanel.webview, true));
-        watcher.onDidDelete(() => this.update(document, webviewPanel.webview, true));
+        watcher.onDidCreate(() => this.update(document, webview, true));
+        watcher.onDidChange(() => this.update(document, webview, true));
+        watcher.onDidDelete(() => this.update(document, webview, true));
         disposables.push(watcher);
 
         // Add dispose listener
         webviewPanel.onDidDispose(() => {
+            this.onClose(document, webview);
+
             for (const disposable of disposables) {
                 disposable.dispose();
             }
         });
 
         // Update document
-        this.update(document, webviewPanel.webview, false);
+        this.update(document, webview, false);
     }
 
-    protected abstract onDidReceiveMessage(
-        document: vscode.TextDocument,
+    protected async onDidReceiveMessage(
+        _document: vscode.TextDocument,
         webview: vscode.Webview,
-        message: ViewMessage
-    ): void;
+        message: ViewMessage | GlobalStoreMessage
+    ): Promise<boolean> {
+        if (message.type === 'globalStore') {
+            if (message.action === 'set') {
+                await this.context.globalState.update(message.name, message.value);
+                const response: GlobalStoreMessage = {
+                    type: 'globalStore',
+                    action: 'result',
+                    transaction: message.transaction
+                };
+                await webview.postMessage(response);
+
+                return true;
+            } else if (message.action === 'get') {
+                const value = this.context.globalState.get(message.name) || ({} as object);
+                const response: GlobalStoreMessage = {
+                    type: 'globalStore',
+                    action: 'result',
+                    transaction: message.transaction,
+                    result: value
+                };
+                await webview.postMessage(response);
+
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     protected abstract onSave(document: vscode.TextDocument, webview: vscode.Webview): void;
+
+    protected abstract onClose(document: vscode.TextDocument, webview: vscode.Webview): void;
 
     protected abstract update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean): void;
 }

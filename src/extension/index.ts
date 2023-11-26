@@ -42,11 +42,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
     // Register webview providers
     for (const webviewType of Object.values(webviews)) {
         const webview = new webviewType(context, projects);
-        context.subscriptions.push(
-            vscode.window.registerWebviewViewProvider(webviewType.getViewID(), webview)
-        );
+        context.subscriptions.push(vscode.window.registerWebviewViewProvider(webviewType.getViewID(), webview));
     }
-
 
     await projects.load();
 };

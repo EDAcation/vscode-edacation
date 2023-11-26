@@ -23,7 +23,7 @@ abstract class FilesProvider extends BaseTreeDataProvider<ProjectFile> {
         };
     }
 
-    async getChildren(element?: ProjectFile): Promise<ProjectFile[]> {
+    getChildren(element?: ProjectFile): ProjectFile[] {
         const project = this.projects.getCurrent();
         if (!project) {
             return [];

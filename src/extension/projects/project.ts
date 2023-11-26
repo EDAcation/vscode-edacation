@@ -1,4 +1,4 @@
-import {Project as BaseProject, DEFAULT_CONFIGURATION, type ProjectConfiguration} from 'edacation';
+import {Project as BaseProject, DEFAULT_CONFIGURATION, type ProjectConfiguration, type ProjectState} from 'edacation';
 import path from 'path';
 import * as vscode from 'vscode';
 
@@ -82,7 +82,7 @@ export class Project extends BaseProject {
         for (const fileUri of fileUris) {
             const [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
             if (!workspaceRelativePath) {
-                vscode.window.showErrorMessage(`File must be in the a subfolder of the EDA project root.`, {
+                await vscode.window.showErrorMessage(`File must be in the a subfolder of the EDA project root.`, {
                     detail: `File "${fileUri.path}" is not in folder "${this.getRoot().path}".`,
                     modal: true
                 });
@@ -95,7 +95,7 @@ export class Project extends BaseProject {
             }
         }
 
-        await super.addInputFiles(filePaths);
+        super.addInputFiles(filePaths);
 
         this.projects.emitInputFileChange();
 
@@ -107,7 +107,7 @@ export class Project extends BaseProject {
             this.inputFileUris.delete(filePath);
         }
 
-        await super.removeInputFiles(filePaths);
+        super.removeInputFiles(filePaths);
 
         this.projects.emitInputFileChange();
 
@@ -119,7 +119,7 @@ export class Project extends BaseProject {
         for (const fileUri of fileUris) {
             const [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
             if (!workspaceRelativePath) {
-                vscode.window.showErrorMessage(`File must be in the a subfolder of the EDA project root.`, {
+                await vscode.window.showErrorMessage(`File must be in the a subfolder of the EDA project root.`, {
                     detail: `File "${fileUri.path}" is not in folder "${this.getRoot().path}".`,
                     modal: true
                 });
@@ -132,7 +132,7 @@ export class Project extends BaseProject {
             }
         }
 
-        await super.addOutputFiles(filePaths);
+        super.addOutputFiles(filePaths);
 
         this.projects.emitOutputFileChange();
 
@@ -144,7 +144,7 @@ export class Project extends BaseProject {
             this.outputFileUris.delete(filePath);
         }
 
-        await super.removeOutputFiles(filePaths);
+        super.removeOutputFiles(filePaths);
 
         this.projects.emitOutputFileChange();
 
@@ -155,24 +155,22 @@ export class Project extends BaseProject {
         await Project.store(this);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    static serialize(project: Project): any {
+    static serialize(project: Project): ProjectState {
         return BaseProject.serialize(project);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    static deserialize(data: any, projects: Projects, uri: vscode.Uri): Project {
-        const name: string = data.name;
-        const inputFiles: string[] = data.inputFiles ?? [];
-        const outputFiles: string[] = data.outputFiles ?? [];
-        const configuration: ProjectConfiguration = data.configuration ?? {};
+    static deserialize(data: ProjectState, projects: Projects, uri: vscode.Uri): Project {
+        const name = data.name;
+        const inputFiles = data.inputFiles ?? [];
+        const outputFiles = data.outputFiles ?? [];
+        const configuration = data.configuration ?? ({} as ProjectConfiguration);
 
         return new Project(projects, uri, name, inputFiles, outputFiles, configuration);
     }
 
     static async load(projects: Projects, uri: vscode.Uri): Promise<Project> {
         const data = decodeJSON(await vscode.workspace.fs.readFile(uri));
-        const project = Project.deserialize(data, projects, uri);
+        const project = Project.deserialize(data as ProjectState, projects, uri);
         return project;
     }
 

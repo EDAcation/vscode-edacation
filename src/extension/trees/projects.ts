@@ -28,7 +28,7 @@ export class ProjectProvider extends BaseTreeDataProvider<Project> {
         };
     }
 
-    async getChildren(element?: Project): Promise<Project[]> {
+    getChildren(element?: Project): Project[] {
         if (!element) {
             return this.projects.getAll();
         }

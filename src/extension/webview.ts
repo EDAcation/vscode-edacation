@@ -46,7 +46,7 @@ export abstract class BaseWebview<Args = Record<string, never>> {
         const styleUris = stylePaths.map((stylePath) => getWebviewUri(webview, this.context, stylePath));
 
         return styleUris
-            .map((styleUri) => /*html*/ `<link rel="stylesheet" type="text/css" href="${styleUri}">`)
+            .map((styleUri) => /*html*/ `<link rel="stylesheet" type="text/css" href="${styleUri.toString()}">`)
             .join('\n');
     }
 
@@ -55,7 +55,7 @@ export abstract class BaseWebview<Args = Record<string, never>> {
         const scriptUris = scriptPaths.map((scriptPath) => getWebviewUri(webview, this.context, scriptPath));
 
         return scriptUris
-            .map((scriptUri) => /*html*/ `<script type="module" src="${scriptUri}" defer></script>`)
+            .map((scriptUri) => /*html*/ `<script type="module" src="${scriptUri.toString()}" defer></script>`)
             .join('\n');
     }
 

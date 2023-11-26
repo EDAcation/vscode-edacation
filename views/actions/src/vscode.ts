@@ -34,13 +34,6 @@ class VSCodeWrapper {
             return newState;
         }
     }
-
-    public executeCommand(command: string) {
-        this.postMessage({
-            type: 'command',
-            command
-        });
-    }
 }
 
 export const vscode = new VSCodeWrapper();
