@@ -39,24 +39,22 @@ export type ViewMessage = ViewMessageReady | ViewMessageChange | MessageBroadcas
 
 interface GlobalStore {
     type: 'globalStore';
+    transaction: number;
 }
 
 interface GlobalStoreSet extends GlobalStore {
     action: 'set';
-    transaction: string;
     name: string;
     value: object;
 }
 
 interface GlobalStoreGet extends GlobalStore {
     action: 'get';
-    transaction: string;
     name: string;
 }
 
 interface GlobalStoreResult extends GlobalStore {
     action: 'result';
-    transaction: string;
     result?: object;
 }
 

@@ -29,6 +29,7 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
     constructor() {
         this.toolPromise = this.initialize();
 
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         onEvent('message', this.handleMessage.bind(this));
         onEvent('messageerror', this.handleMessageError.bind(this));
     }
@@ -133,7 +134,9 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
                     // TODO: create output directories
 
                     // Execute Emscripten tool
-                    // @ts-expect-error: TODO
+
+                    // @ts-expect-error TODO
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
                     tool.getModule().callMain(message.args);
 
                     // Read output files

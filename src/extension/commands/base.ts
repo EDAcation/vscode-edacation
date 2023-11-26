@@ -24,7 +24,7 @@ export abstract class CurrentProjectCommand extends BaseCommand {
     async execute(...args: unknown[]) {
         const project = this.projects.getCurrent();
         if (!project) {
-            vscode.window.showWarningMessage('No EDA project selected.');
+            await vscode.window.showWarningMessage('No EDA project selected.');
             return;
         }
 

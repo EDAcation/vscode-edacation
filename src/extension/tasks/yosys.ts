@@ -100,13 +100,13 @@ export class YosysTaskProvider extends TaskProvider {
 
 class YosysTerminalTask extends BaseYosysTerminalTask {
     async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
-        super.handleEnd(project, outputFiles);
+        await super.handleEnd(project, outputFiles);
 
         // Open LUT file in DigitalJS editor
         const lutFile = outputFiles.find((file) => file.path.endsWith('luts.digitaljs.json'));
         if (lutFile) {
             const uri = vscode.Uri.joinPath(project.getRoot(), lutFile.path);
-            vscode.commands.executeCommand('vscode.open', uri);
+            await vscode.commands.executeCommand('vscode.open', uri);
         }
     }
 }

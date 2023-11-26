@@ -13,7 +13,7 @@ export class OpenProjectConfigurationCommand extends CurrentProjectCommand {
 
     async executeForCurrentProject(project: Project) {
         // Open project file
-        vscode.commands.executeCommand('vscode.openWith', project.getUri(), ProjectEditor.getViewType());
+        await vscode.commands.executeCommand('vscode.openWith', project.getUri(), ProjectEditor.getViewType());
     }
 }
 
@@ -31,14 +31,14 @@ abstract class RunTaskCommand extends CurrentProjectCommand {
                 return false;
             }
 
-            const uri = vscode.Uri.joinPath(task.scope.uri, task.definition.project);
+            const uri = vscode.Uri.joinPath(task.scope.uri, task.definition.project as string);
             return uri.toString() === project.getUri().toString();
         });
 
         if (task) {
-            vscode.tasks.executeTask(task);
+            await vscode.tasks.executeTask(task);
         } else {
-            vscode.window.showErrorMessage('No task could be found for the current EDA project.');
+            await vscode.window.showErrorMessage('No task could be found for the current EDA project.');
         }
     }
 }
