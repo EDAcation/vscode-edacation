@@ -1,3 +1,5 @@
+import type {Uri} from 'vscode';
+
 export enum AnsiModifier {
     RESET = '\x1b[0m',
     BOLD = '\x1b[1m',
@@ -8,6 +10,7 @@ export enum AnsiModifier {
 export interface TaskOutputFile {
     path: string;
     data?: Uint8Array;
+    uri?: Uri;
 }
 
 export interface TerminalMessagePrintln {

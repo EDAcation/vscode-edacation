@@ -1,6 +1,7 @@
 import {type YosysWorkerOptions, encodeText, generateYosysRTLCommands} from 'edacation';
 import {basename} from 'path-browserify';
 import * as vscode from 'vscode';
+import type {Uri} from 'vscode';
 
 import type {MessageFile} from '../../common/messages.js';
 import type {Project} from '../projects/index.js';
@@ -74,14 +75,14 @@ class RTLTerminalTask extends BaseYosysTerminalTask {
     }
 
     async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
-        super.handleEnd(project, outputFiles);
+        await super.handleEnd(project, outputFiles);
 
         // Update file contents so our custom editor can handle them
         // TODO: print the message to stderr as an error (red text).
         // This is implemented in https://github.com/EDAcation/vscode-edacation/pull/14.
         await Promise.all(
             outputFiles.map((file) =>
-                this.updateFile(file.uri).catch((_err) =>
+                this.updateFile(file.uri as Uri).catch((_err) =>
                     this.println(`Error while updating "${file.path}"; the file might not be usable!`)
                 )
             )
@@ -91,7 +92,7 @@ class RTLTerminalTask extends BaseYosysTerminalTask {
         const rtlFile = outputFiles.find((file) => file.path.endsWith('rtl.digitaljs.json'));
         if (rtlFile) {
             const uri = vscode.Uri.joinPath(project.getRoot(), rtlFile.path);
-            vscode.commands.executeCommand('vscode.open', uri);
+            await vscode.commands.executeCommand('vscode.open', uri);
         }
     }
 }

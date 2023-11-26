@@ -159,14 +159,13 @@ export class NativeTaskRunner extends TaskRunner {
         proc.on('exit', this.onProcessExit.bind(this, ctx));
         proc.on('error', this.onProcessError.bind(this));
 
-        proc.stdout.on('data', (data) => this.onProcessData(data, 'stdout'));
-        proc.stderr.on('data', (data) => this.onProcessData(data, 'stderr'));
+        proc.stdout.on('data', (data) => this.onProcessData(data as string, 'stdout'));
+        proc.stderr.on('data', (data) => this.onProcessData(data as string, 'stderr'));
     }
 
     private onProcessError(error: unknown) {
         if (error instanceof Error) {
-            // ugly, but it's a nodejs error so there's no typings for the code attribute
-            if (Object(error)?.code === 'ENOENT') {
+            if ((error as Error & {code: string}).code === 'ENOENT') {
                 this.error(
                     'Could not find native runner entrypoint. Are Yosys/Nextpnr installed on your system and available in PATH?'
                 );

@@ -29,22 +29,22 @@ export class NextpnrEditor extends BaseEditor {
                 @font-face {
                     font-family: "codicon";
                     font-display: block;
-                    src: url("${fontUri}") format("truetype");
+                    src: url("${fontUri.toString()}") format("truetype");
                 }
             </style>
         `;
     }
 
-    protected onDidReceiveMessage(
+    protected async onDidReceiveMessage(
         document: vscode.TextDocument,
         webview: vscode.Webview,
         message: ViewMessage | GlobalStoreMessage
-    ): boolean {
-        if (super.onDidReceiveMessage(document, webview, message)) {
+    ): Promise<boolean> {
+        if (await super.onDidReceiveMessage(document, webview, message)) {
             return true;
         }
         if (message.type === 'ready') {
-            webview.postMessage({
+            await webview.postMessage({
                 type: 'document',
                 document: document.getText()
             });
@@ -62,12 +62,12 @@ export class NextpnrEditor extends BaseEditor {
         // Do nothing
     }
 
-    protected update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean) {
+    protected async update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean) {
         if (!isDocumentChange) {
-            vscode.commands.executeCommand('edacation-projects.focus');
+            await vscode.commands.executeCommand('edacation-projects.focus');
         }
 
-        webview.postMessage({
+        await webview.postMessage({
             type: 'document',
             document: document.getText()
         });

@@ -7,8 +7,10 @@ type WorkerThreadsModule = typeof import('worker_threads');
 type WorkerThreadsWorker = import('worker_threads').Worker;
 /* eslint-enable @typescript-eslint/consistent-type-imports */
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 const module: WorkerThreadsModule | undefined =
     typeof Worker === 'undefined' ? __non_webpack_require__('worker_threads') : undefined;
+/* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
 type InternalNodeWorker = {
     type: 'node';
@@ -40,6 +42,7 @@ export const onEvent = <E extends keyof EventCallbacks>(event: E, callback: Even
     if (module) {
         module.parentPort?.on(event, callback);
     } else {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         addEventListener(event, (event) => callback(extractData(event)));
     }
 };
@@ -77,6 +80,7 @@ export class UniversalWorker {
 
     public onEvent<E extends keyof EventCallbacks>(event: E, callback: EventCallbacks[E]): void {
         if (this.worker.type === 'web') {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             this.worker.worker.addEventListener(event, (event) => callback(extractData(event)));
         } else {
             this.worker.worker.on(event, callback);

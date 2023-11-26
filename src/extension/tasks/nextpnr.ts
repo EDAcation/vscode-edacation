@@ -91,7 +91,7 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
         const pnrFile = outputFiles.find((file) => file.path === 'routed.nextpnr.json');
         if (pnrFile) {
             const uri = vscode.Uri.joinPath(project.getRoot(), pnrFile.path);
-            vscode.commands.executeCommand('vscode.open', uri);
+            await vscode.commands.executeCommand('vscode.open', uri);
         }
     }
 }

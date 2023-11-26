@@ -73,21 +73,21 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         this.update(document, webview, false);
     }
 
-    protected onDidReceiveMessage(
+    protected async onDidReceiveMessage(
         _document: vscode.TextDocument,
         webview: vscode.Webview,
         message: ViewMessage | GlobalStoreMessage
-    ): boolean {
+    ): Promise<boolean> {
         if (message.type === 'globalStore') {
             if (message.action === 'set') {
-                this.context.globalState.update(message.name, message.value).then(() => {
-                    const response: GlobalStoreMessage = {
-                        type: 'globalStore',
-                        action: 'result',
-                        transaction: message.transaction
-                    };
-                    webview.postMessage(response);
-                });
+                await this.context.globalState.update(message.name, message.value);
+                const response: GlobalStoreMessage = {
+                    type: 'globalStore',
+                    action: 'result',
+                    transaction: message.transaction
+                };
+                await webview.postMessage(response);
+
                 return true;
             } else if (message.action === 'get') {
                 const value = this.context.globalState.get(message.name) || ({} as object);
@@ -97,7 +97,7 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
                     transaction: message.transaction,
                     result: value
                 };
-                webview.postMessage(response);
+                await webview.postMessage(response);
 
                 return true;
             }

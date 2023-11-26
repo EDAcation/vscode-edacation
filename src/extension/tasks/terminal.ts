@@ -45,8 +45,8 @@ export abstract class TaskProvider extends BaseTaskProvider {
 
         return this.getTask(
             task.scope,
-            task.definition.uri,
-            task.definition.project,
+            task.definition.uri as vscode.Uri,
+            task.definition.project as string,
             task.definition as TaskDefinition
         );
     }
@@ -131,8 +131,8 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
         this.logMessages = [];
     }
 
-    open() {
-        this.execute();
+    async open() {
+        await this.execute();
     }
 
     close() {
@@ -194,10 +194,11 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
                 this.definition.uri || vscode.Uri.joinPath(this.folder.uri, this.definition.project)
             );
         } catch (err) {
-            this.error(err);
+            await this.error(err);
             return;
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         this.task.onMessage(this.handleMessage.bind(this, project));
 
         try {

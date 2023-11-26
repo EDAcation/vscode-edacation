@@ -280,7 +280,7 @@
         "compile-web": "npm run build-views && tsc && webpack",
         "package-web": "npm run build-views && tsc && webpack --mode production --devtool hidden-source-map",
         "vscode:prepublish": "npm run package-web",
-        "lint": "eslint ./src ./workers/src --ext ts",
+        "lint": "eslint ./src --ext ts",
         "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/extension/test/suite/index.js",
         "pretest": "npm run compile-web"
     },
@@ -301,7 +301,7 @@
         "process": "^0.11.10",
         "ts-loader": "^9.5.1",
         "ts-node": "^10.9.1",
-        "typescript": "^5.3.2",
+        "typescript": "5.2.2",
         "webpack": "^5.89.0",
         "webpack-cli": "^5.1.4"
     },
