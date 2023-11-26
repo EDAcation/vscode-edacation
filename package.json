@@ -248,7 +248,8 @@
                 },
                 {
                     "id": "edacation-actions",
-                    "name": "Actions"
+                    "name": "Actions",
+                    "type": "webview"
                 }
             ]
         },
@@ -267,7 +268,7 @@
                 "contents": "No EDA project are open.\n[New Project](command:edacation.newProject)\n[Open Project](command:edacation.openProject)\nTo learn more about how to use EDA projects [read the documentation](https://github.com/EDAcation/vscode-edacation)."
             },
             {
-                "view": "edacation-actions",
+                "view": "edacation-actions-old",
                 "contents": "[Open Configuration](command:edacation.openProjectConfiguration)\n[Show RTL](command:edacation.runRTL)\n[Synthesize using Yosys](command:edacation.runYosys)\n[Place and Route using nextpnr](command:edacation.runNextpnr)\n"
             }
         ]
