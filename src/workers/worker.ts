@@ -2,7 +2,7 @@ import path from 'path';
 import type {TransferListItem} from 'worker_threads';
 
 import type {ExtensionMessage, MessageFile, WorkerMessage} from '../common/messages.js';
-import {onEvent, sendMessage} from '../common/universalworker.js';
+import {onEvent, sendMessage} from '../common/universal-worker.js';
 
 export const run = () => {
     console.log('run');

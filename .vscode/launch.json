@@ -6,11 +6,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Run Web Extension ",
+            "name": "Run Extension ",
             "type": "extensionHost",
             "debugWebWorkerHost": true,
             "request": "launch",
             "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+            "outFiles": ["${workspaceFolder}/dist/extension/**/*.js"],
+            "preLaunchTask": "npm: watch-web"
+        },
+        {
+            "name": "Run Web Extension ",
+            "type": "extensionHost",
+            "debugWebWorkerHost": true,
+            "request": "launch",
+            "args": ["--extensionDevelopmentPath=${workspaceFolder}", "--extensionDevelopmentKind=web"],
             "outFiles": ["${workspaceFolder}/dist/extension/**/*.js"],
             "preLaunchTask": "npm: watch-web"
         },

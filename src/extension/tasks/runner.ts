@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import type {ExtensionMessage, MessageFile} from '../../common/messages.js';
-import {UniversalWorker} from '../../common/universalworker.js';
+import {UniversalWorker} from '../../common/universal-worker.js';
 import {type Project} from '../projects/index.js';
 
 import {type TaskOutputFile, TerminalMessageEmitter} from './messaging.js';

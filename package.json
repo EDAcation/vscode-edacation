@@ -6,7 +6,6 @@
     "repository": "github:EDAcation/vscode-edacation",
     "license": "MIT",
     "version": "0.2.2",
-    "type": "module",
     "contributors": [
         "Danielle Huisman <danielle@huisman.me> (https://github.com/DanielleHuisman)",
         "Daan Middelkoop <daantje676@gmail.com>",
@@ -53,7 +52,7 @@
                 "edacation.useNativeRunners": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Use native Yosys/Nextpnr programs installed on the system instead of the bundled WebAssembly runners."
+                    "description": "Use native Yosys/Nextpnr binaries installed on the system instead of the bundled WebAssembly binaries."
                 }
             }
         },
@@ -249,7 +248,7 @@
                 {
                     "id": "edacation-actions",
                     "name": "Actions",
-                    "type": "webview"
+                    "_todo_type": "webview"
                 }
             ]
         },
@@ -268,7 +267,7 @@
                 "contents": "No EDA project are open.\n[New Project](command:edacation.newProject)\n[Open Project](command:edacation.openProject)\nTo learn more about how to use EDA projects [read the documentation](https://github.com/EDAcation/vscode-edacation)."
             },
             {
-                "view": "edacation-actions-old",
+                "view": "edacation-actions",
                 "contents": "[Open Configuration](command:edacation.openProjectConfiguration)\n[Show RTL](command:edacation.runRTL)\n[Synthesize using Yosys](command:edacation.runYosys)\n[Place and Route using nextpnr](command:edacation.runNextpnr)\n"
             }
         ]
@@ -286,28 +285,28 @@
         "pretest": "npm run compile-web"
     },
     "devDependencies": {
-        "@trivago/prettier-plugin-sort-imports": "^4.1.1",
-        "@types/mocha": "^10.0.1",
-        "@types/path-browserify": "^1.0.0",
-        "@types/vscode": "^1.73.0",
-        "@types/webpack-env": "^1.18.1",
-        "@typescript-eslint/eslint-plugin": "^5.61.0",
-        "@typescript-eslint/parser": "^5.61.0",
-        "@vscode/test-web": "^0.0.44",
-        "@vue/compiler-sfc": "^3.3.4",
-        "assert": "^2.0.0",
-        "eslint": "^8.44.0",
+        "@trivago/prettier-plugin-sort-imports": "^4.3.0",
+        "@types/mocha": "^10.0.6",
+        "@types/path-browserify": "^1.0.2",
+        "@types/vscode": "^1.84.2",
+        "@types/webpack-env": "^1.18.4",
+        "@typescript-eslint/eslint-plugin": "^6.12.0",
+        "@typescript-eslint/parser": "^6.12.0",
+        "@vscode/test-web": "^0.0.48",
+        "@vue/compiler-sfc": "^3.3.9",
+        "assert": "^2.1.0",
+        "eslint": "^8.54.0",
         "mocha": "^10.2.0",
-        "prettier": "^2.8.8",
+        "prettier": "^3.1.0",
         "process": "^0.11.10",
-        "ts-loader": "^9.4.4",
+        "ts-loader": "^9.5.1",
         "ts-node": "^10.9.1",
-        "typescript": "^5.1.6",
-        "webpack": "^5.88.1",
+        "typescript": "^5.3.2",
+        "webpack": "^5.89.0",
         "webpack-cli": "^5.1.4"
     },
     "dependencies": {
-        "edacation": "^0.2.1",
+        "edacation": "^0.2.3",
         "nextpnr": "^0.4.13",
         "path-browserify": "^1.0.1",
         "yosys": "^0.24.1"

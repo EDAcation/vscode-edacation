@@ -14,10 +14,12 @@ type InternalNodeWorker = {
     type: 'node';
     worker: WorkerThreadsWorker;
 };
+
 type InternalWebWorker = {
     type: 'web';
     worker: Worker;
 };
+
 type InternalWorker = InternalNodeWorker | InternalWebWorker;
 
 interface EventCallbacks {
