@@ -4,15 +4,13 @@ import * as vscode from 'vscode';
 import type {MessageFile} from '../../common/messages.js';
 import type {Project} from '../projects/index.js';
 
-import {
-    type WorkerOutputFile,
-    type WorkerTaskDefinition,
-    WorkerTaskProvider,
-    type WorkerTaskTerminal
-} from './worker.js';
-import {BaseYosysTaskTerminal} from './yosys.js';
+import {type TaskOutputFile} from './messaging.js';
+import {getConfiguredRunner} from './runner.js';
+import {type TaskDefinition} from './task.js';
+import {TaskProvider, TaskTerminal} from './terminal.js';
+import {BaseYosysTerminalTask} from './yosys.js';
 
-export class RTLTaskProvider extends WorkerTaskProvider {
+export class RTLTaskProvider extends TaskProvider {
     static getType() {
         return 'rtl';
     }
@@ -23,14 +21,17 @@ export class RTLTaskProvider extends WorkerTaskProvider {
 
     protected createTaskTerminal(
         folder: vscode.WorkspaceFolder,
-        definition: WorkerTaskDefinition
-    ): WorkerTaskTerminal<YosysWorkerOptions> {
-        return new RTLTaskTerminal(this.context, this.projects, folder, definition);
+        definition: TaskDefinition
+    ): TaskTerminal<YosysWorkerOptions> {
+        const runner = getConfiguredRunner(this.context);
+        const task = new RTLTerminalTask(runner);
+
+        return new TaskTerminal(this.projects, folder, definition, task);
     }
 }
 
-class RTLTaskTerminal extends BaseYosysTaskTerminal {
-    protected getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
+class RTLTerminalTask extends BaseYosysTerminalTask {
+    getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
         const commandsGenerated = generateYosysRTLCommands(workerOptions.inputFiles);
 
         return [
@@ -41,17 +42,18 @@ class RTLTaskTerminal extends BaseYosysTaskTerminal {
         ];
     }
 
-    protected getOutputFiles(_workerOptions: YosysWorkerOptions): string[] {
+    getOutputFiles(_workerOptions: YosysWorkerOptions): string[] {
         return ['rtl.digitaljs.json'];
     }
 
-    protected async handleEnd(project: Project, outputFiles: WorkerOutputFile[]) {
+    async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
         super.handleEnd(project, outputFiles);
 
         // Open RTL file in DigitalJS editor
         const rtlFile = outputFiles.find((file) => file.path.endsWith('rtl.digitaljs.json'));
         if (rtlFile) {
-            vscode.commands.executeCommand('vscode.open', rtlFile.uri);
+            const uri = vscode.Uri.joinPath(project.getRoot(), rtlFile.path);
+            vscode.commands.executeCommand('vscode.open', uri);
         }
     }
 }
