@@ -11,17 +11,17 @@ export class NextpnrEditor extends BaseEditor {
     }
 
     protected getStylePaths() {
-        return [['src', 'views', 'nextpnr', 'dist', 'assets', 'index.css']];
+        return [];
     }
 
     protected getScriptPaths() {
-        return [['src', 'views', 'nextpnr', 'dist', 'assets', 'index.js']];
+        return [['dist', 'views', 'nextpnr.js']];
     }
 
     protected getHtmlStyles(webview: vscode.Webview): string {
         const styles = super.getHtmlStyles(webview);
 
-        const fontUri = getWebviewUri(webview, this.context, ['views', 'nextpnr', 'dist', 'assets', 'codicon.ttf']);
+        const fontUri = getWebviewUri(webview, this.context, ['dist', 'views', 'codicon.ttf']);
 
         return `
             ${styles}

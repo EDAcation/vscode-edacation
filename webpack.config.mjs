@@ -141,6 +141,7 @@ const viewsConfig = {
     target: 'webworker',
     entry: {
         actions: './src/views/actions/src/main.ts',
+        nextpnr: './src/views/nextpnr/src/main.ts',
         project: './src/views/project/src/main.ts'
     },
     output: {
@@ -191,6 +192,17 @@ const viewsConfig = {
                     compilerOptions: {
                         isCustomElement: (tag) => tag.startsWith('vscode-')
                     }
+                }
+            },
+            {
+                test: /\.css$/i,
+                use: ['style-loader', 'css-loader']
+            },
+            {
+                test: /\.(ttf|bin)$/,
+                type: 'asset/resource',
+                generator: {
+                    filename: './[name][ext]'
                 }
             }
         ]

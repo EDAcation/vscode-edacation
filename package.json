@@ -300,10 +300,14 @@
         "webpack-cli": "^5.1.4"
     },
     "dependencies": {
+        "@vscode/codicons": "^0.0.35",
         "@vscode/webview-ui-toolkit": "^1.3.1",
+        "css-loader": "^6.8.1",
         "edacation": "^0.2.1",
         "nextpnr": "^0.4.13",
+        "nextpnr-viewer": "^0.5.0",
         "path-browserify": "^1.0.1",
+        "style-loader": "^3.3.3",
         "vue": "^3.3.8",
         "yosys": "^0.24.1"
     }
