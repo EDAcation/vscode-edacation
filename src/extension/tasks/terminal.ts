@@ -225,20 +225,21 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
                 }
                 case 'done': {
                     const outputFiles = message.outputFiles || [];
-                    const uris: vscode.Uri[] = [];
                     for (const file of outputFiles) {
-                        const uri = vscode.Uri.joinPath(project.getRoot(), file.path);
-                        uris.push(uri);
+                        // Construct URI if missing
+                        if (!file.uri) {
+                            file.uri = vscode.Uri.joinPath(project.getRoot(), file.path);
+                        }
 
                         // Save file data (if requested)
                         const data = file.data;
-                        if (!data) {
-                            continue;
+                        if (data) {
+                            await vscode.workspace.fs.writeFile(file.uri, data);
                         }
-                        await vscode.workspace.fs.writeFile(uri, data);
                     }
 
                     // Add output files to project output
+                    const uris = outputFiles.map((outp) => outp.uri).filter((outp): outp is vscode.Uri => !!outp);
                     await project.addOutputFileUris(uris);
 
                     await this.task.handleEnd(project, outputFiles);

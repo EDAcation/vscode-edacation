@@ -1,7 +1,6 @@
 import {type YosysWorkerOptions, encodeText, generateYosysRTLCommands} from 'edacation';
 import {basename} from 'path-browserify';
 import * as vscode from 'vscode';
-import type {Uri} from 'vscode';
 
 import type {MessageFile} from '../../common/messages.js';
 import type {Project} from '../projects/index.js';
@@ -57,11 +56,7 @@ class RTLTerminalTask extends BaseYosysTerminalTask {
         } else if (fileName === 'stats.digitaljs.json') {
             fileType = 'stats';
         } else {
-            // TODO: print the message to stderr as a warning (red text).
-            // This is implemented in https://github.com/EDAcation/vscode-edacation/pull/14.
-            this.println(
-                `WARNING: Output file "${fileName}" not recognized. It might not be compatible with EDAcation.`
-            );
+            this.warn(`Output file "${fileName}" not recognized. It might not be compatible with EDAcation.`);
             return;
         }
 
@@ -77,16 +72,19 @@ class RTLTerminalTask extends BaseYosysTerminalTask {
     async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
         await super.handleEnd(project, outputFiles);
 
-        // Update file contents so our custom editor can handle them
-        // TODO: print the message to stderr as an error (red text).
-        // This is implemented in https://github.com/EDAcation/vscode-edacation/pull/14.
+        this.println('Updating output files...');
         await Promise.all(
-            outputFiles.map((file) =>
-                this.updateFile(file.uri as Uri).catch((_err) =>
-                    this.println(`Error while updating "${file.path}"; the file might not be usable!`)
-                )
-            )
+            outputFiles.map((file) => {
+                if (!file.uri) {
+                    return;
+                }
+                this.updateFile(file.uri).catch((err) => {
+                    this.warn(`Could not update file "${file.path}"; the file might not be usable!`);
+                    console.trace(err);
+                });
+            })
         );
+        this.println('Done.');
 
         // Open RTL file in DigitalJS editor
         const rtlFile = outputFiles.find((file) => file.path.endsWith('rtl.digitaljs.json'));
