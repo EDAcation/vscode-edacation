@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import {Project, type Projects} from '../projects/index.js';
+import type {Project, Projects} from '../projects/index.js';
 import {encodeText} from '../util.js';
 
 import {BaseTaskProvider} from './base.js';
@@ -186,15 +186,9 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
     }
 
     private async execute(): Promise<void> {
-        let project: Project;
-        try {
-            // Load EDA project
-            project = await Project.load(
-                this.projects,
-                this.definition.uri || vscode.Uri.joinPath(this.folder.uri, this.definition.project)
-            );
-        } catch (err) {
-            await this.error(err);
+        const project = this.projects.getCurrent();
+        if (!project) {
+            await this.error(new Error('No current project!'));
             return;
         }
 
