@@ -142,6 +142,7 @@ const viewsConfig = {
     entry: {
         actions: './src/views/actions/src/main.ts',
         nextpnr: './src/views/nextpnr/src/main.ts',
+        digitaljs: './src/views/digitaljs/src/main.ts',
         project: './src/views/project/src/main.ts'
     },
     output: {
@@ -172,7 +173,6 @@ const viewsConfig = {
         rules: [
             {
                 test: /\.ts$/,
-                exclude: /node_modules/,
                 use: [
                     {
                         loader: 'ts-loader',
@@ -210,7 +210,8 @@ const viewsConfig = {
     plugins: [
         new VueLoaderPlugin(),
         new webpack.ProvidePlugin({
-            process: 'process/browser'
+            process: 'process/browser',
+            os: 'os-browserify/browser'
         })
     ],
     externals: {
