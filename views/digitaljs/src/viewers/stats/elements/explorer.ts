@@ -1,4 +1,4 @@
-import {type Module, type ModuleStatId, getModuleStatIds, getModuleStatName} from '../modules';
+import {type Module, type ModuleStatId, getModuleStatIds, getModuleStatName, getTotalPrimCounts} from '../modules';
 
 import {type DataGridCell, type DatagridSetting, InteractiveDataGrid} from './datagrid';
 import {getPercentage} from './util';
@@ -80,10 +80,13 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
             }
         }
 
+        let primNames = this.curModule.primitives.map((prim) => prim.name);
+        primNames = primNames.filter((val, ind) => primNames.indexOf(val) === ind);
+
         // Update grid
         this.reset(false, true);
         this.addRowItem({type: 'current'});
-        for (const prim of this.curModule.primitives.keys()) {
+        for (const prim of primNames) {
             this.addRowItem({type: 'primitive', primitive: prim});
         }
         for (const subCircuit of this.curModule.children.keys()) {
@@ -146,8 +149,10 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
         switch (option) {
             case 'name':
                 return '$' + item.primitive;
-            case 'count':
-                return this.curModule.primitives.get(item.primitive)?.toString() ?? '-';
+            case 'count': {
+                const count = getTotalPrimCounts(this.curModule.findPrimitives({name: item.primitive}, false));
+                return `${count.cells} (${count.bits} total bits)`;
+            }
             default:
                 return '';
         }
