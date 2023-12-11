@@ -1,5 +1,6 @@
 'use strict';
 
+import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import path from 'path';
 import {fileURLToPath} from 'url';
 import {VueLoaderPlugin} from 'vue-loader';
@@ -146,7 +147,7 @@ const viewsConfig = {
         project: './src/views/project/src/main.ts'
     },
     output: {
-        filename: '[name].js',
+        filename: '[name]/index.js',
         path: path.join(currentDirectory, 'dist', 'views'),
         library: {
             name: 'exportVar',
@@ -196,10 +197,10 @@ const viewsConfig = {
             },
             {
                 test: /\.css$/i,
-                use: ['style-loader', 'css-loader']
+                use: [MiniCssExtractPlugin.loader, 'css-loader']
             },
             {
-                test: /\.(ttf|bin)$/,
+                test: /\.ttf$/,
                 type: 'asset/resource',
                 generator: {
                     filename: './[name][ext]'
@@ -209,6 +210,9 @@ const viewsConfig = {
     },
     plugins: [
         new VueLoaderPlugin(),
+        new MiniCssExtractPlugin({
+            filename: '[name]/index.css'
+        }),
         new webpack.ProvidePlugin({
             process: 'process/browser',
             os: 'os-browserify/browser'

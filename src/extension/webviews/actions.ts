@@ -15,7 +15,7 @@ export class ActionsProvider extends BaseWebviewViewProvider {
     }
 
     protected getScriptPaths() {
-        return [['dist', 'views', 'actions.js']];
+        return [['dist', 'views', 'actions', 'index.js']];
     }
 
     protected getInitialData(): Record<string, unknown> {

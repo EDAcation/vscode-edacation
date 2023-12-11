@@ -15,7 +15,7 @@ export class ProjectEditor extends BaseEditor {
     }
 
     protected getScriptPaths() {
-        return [['dist', 'views', 'project.js']];
+        return [['dist', 'views', 'project', 'index.js']];
     }
 
     protected getInitialData(args: EditorWebviewArgs): Record<string, unknown> {
