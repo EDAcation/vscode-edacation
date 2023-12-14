@@ -1,9 +1,10 @@
-import {type Module} from '../modules';
+import {type Module, getTotalPrimCounts} from '../modules';
 
 import {type DataGridCell, type DatagridSetting, InteractiveDataGrid, type InteractiveDatagridConfig} from './datagrid';
 import {getPercentage} from './util';
 
 // TODO: typing for primitives (needs exhaustive list)
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 type PrimitivesOverviewOptions = 'name' | 'count' | string;
 
 export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, PrimitivesOverviewOptions> {
@@ -51,14 +52,14 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
     }
 
     protected getAvailableOptions(): PrimitivesOverviewOptions[] {
-        return Array.from(this.modules[0].globalPrimitives.keys());
+        return this.modules[0].globalPrimitives.map((prim) => prim.name);
     }
 
     protected getNewOption(): PrimitivesOverviewOptions {
         return this.getAvailableOptions()[0];
     }
 
-    protected getOptionName(option: string): string {
+    protected getOptionName(option: PrimitivesOverviewOptions): string {
         if (option === 'name') {
             return 'Module name';
         } else if (option === 'count') {
@@ -74,19 +75,24 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
             return this.modules[0].globalChildren.get(item)?.toString() ?? '-';
         }
 
-        const totalCount = this.modules[0].globalPrimitives.get(option);
+        const totalCount = getTotalPrimCounts(this.modules[0].findPrimitives({name: option}, true));
 
-        const countVar = this.getSetting('count-recursive') ? 'globalPrimitives' : 'primitives';
-        let count = item[countVar].get(option);
-        if (count === undefined || !totalCount) {
+        const isGlobal = this.getSetting('count-recursive');
+        const count = getTotalPrimCounts(item.findPrimitives({name: option}, isGlobal));
+        if (!count || !totalCount) {
             return '-';
         }
 
         if (this.getSetting('count-all')) {
-            count *= this.modules[0].globalChildren.get(item) || 1;
+            const factor = this.modules[0].globalChildren.get(item) || 1;
+            count.cells *= factor;
+            count.bits *= factor;
         }
 
-        return `${count} (${getPercentage(count, totalCount)}%)`;
+        const cellShare = getPercentage(count.cells, totalCount.cells);
+        const bitShare = getPercentage(count.bits, totalCount.bits);
+
+        return `cells: ${count.cells} (${cellShare}%) / bits: ${count.bits} (${bitShare}%)`;
     }
 
     override update() {

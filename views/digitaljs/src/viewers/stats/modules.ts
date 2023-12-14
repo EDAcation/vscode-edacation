@@ -32,13 +32,52 @@ export const getModuleStatName = (stat: ModuleStatId): string => {
     }
 };
 
+export const getTotalPrimCounts = (primitives: Primitive[]): {cells: number; bits: number} => {
+    const counts = {cells: 0, bits: 0};
+
+    for (const prim of primitives) {
+        counts.cells += prim.count;
+        counts.bits += prim.count * prim.bitWidth;
+    }
+
+    return counts;
+};
+
+export class Primitive {
+    public readonly name: string;
+    public readonly bitWidth: number;
+    public count: number;
+
+    constructor(name: string, bitWidth: number, count: number) {
+        this.name = name.toLowerCase();
+        this.bitWidth = bitWidth;
+        this.count = count;
+    }
+
+    static fromFQN(fqn: string, count: number): Primitive {
+        fqn = fqn.replaceAll('$', '');
+        const bitWidthStr = fqn.split('_').at(-1) ?? '';
+        const bitWidth = parseInt(bitWidthStr);
+        if (Number.isNaN(bitWidth)) {
+            throw new Error(`Invalid FQN for primitive: ${fqn}`);
+        }
+        const name = fqn.slice(0, fqn.length - bitWidthStr.length - 1);
+
+        return new Primitive(name, bitWidth, count);
+    }
+
+    get fqn() {
+        return `$${this.name}_${this.bitWidth}`;
+    }
+}
+
 export class Module {
     private parents: Set<Module>;
 
     public readonly name: string;
 
-    private _primitives: Map<string, number>;
-    private _globalPrimitives: Map<string, number>;
+    private _primitives: Primitive[];
+    private _globalPrimitives: Primitive[];
 
     private _children: Map<Module, number>;
     private _globalChildren: Map<Module, number>;
@@ -49,8 +88,8 @@ export class Module {
     constructor(name: string, stats: YosysModuleStats) {
         this.name = name;
 
-        this._primitives = new Map();
-        this._globalPrimitives = new Map();
+        this._primitives = [];
+        this._globalPrimitives = [];
 
         this._children = new Map();
         this._globalChildren = new Map();
@@ -72,11 +111,11 @@ export class Module {
         return this.parents.size === 0;
     }
 
-    get primitives(): Map<string, number> {
+    get primitives(): Primitive[] {
         return this._primitives;
     }
 
-    get globalPrimitives(): Map<string, number> {
+    get globalPrimitives(): Primitive[] {
         return this._globalPrimitives;
     }
 
@@ -96,9 +135,32 @@ export class Module {
         return this._globalStats;
     }
 
-    addPrimitive(prim: string, count: number) {
-        this._primitives.set(prim, (this._primitives.get(prim) ?? 0) + count);
-        this._globalPrimitives.set(prim, (this._globalPrimitives.get(prim) ?? 0) + count);
+    findPrimitives({name, width}: {name?: string; width?: number}, isGlobal: boolean): Primitive[] {
+        const arr = isGlobal ? this._globalPrimitives : this._primitives;
+
+        const results = [];
+        for (const prim of arr) {
+            if ((name && prim.name === name) || (width && prim.bitWidth === width)) {
+                results.push(prim);
+            }
+        }
+        return results;
+    }
+
+    addPrimitive(prim: Primitive) {
+        const oldPrim = this.findPrimitives({name: prim.name, width: prim.bitWidth}, false).at(0);
+        if (oldPrim) {
+            oldPrim.count += prim.count;
+        } else {
+            this._primitives.push(prim);
+        }
+
+        const oldGloPrim = this.findPrimitives({name: prim.name, width: prim.bitWidth}, true).at(0);
+        if (oldGloPrim) {
+            oldGloPrim.count += prim.count;
+        } else {
+            this._globalPrimitives.push(prim);
+        }
     }
 
     addChild(module: Module, count: number) {
@@ -117,8 +179,13 @@ export class Module {
         }
 
         // Update global primitives
-        for (const [gloPrim, gloCount] of module.globalPrimitives.entries()) {
-            this._globalPrimitives.set(gloPrim, (this._globalPrimitives.get(gloPrim) ?? 0) + count * gloCount);
+        for (const gloPrim of module.globalPrimitives) {
+            const prim = this.findPrimitives({name: gloPrim.name, width: gloPrim.bitWidth}, true).at(0);
+            if (prim) {
+                prim.count += count * gloPrim.count;
+            } else {
+                this._globalPrimitives.push(new Primitive(gloPrim.name, gloPrim.bitWidth, count * gloPrim.count));
+            }
         }
     }
 
@@ -131,7 +198,7 @@ const resolveModuleDeps = (name: string, stats: YosysModuleStats, resolved: Map<
     const module = new Module(name, stats);
     for (const [depName, count] of Object.entries(stats.num_cells_by_type)) {
         if (depName.startsWith('$')) {
-            module.addPrimitive(depName.slice(1), count);
+            module.addPrimitive(Primitive.fromFQN(depName, count));
             continue;
         }
 
