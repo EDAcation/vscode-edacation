@@ -5,7 +5,7 @@
         "baseUrl": ".",
         "paths": {
             "@/*": ["./src/*"],
-            "topsort": ["dep-sink.d.ts"]
+            "tmp": ["src/aliases/tmp.ts"]
         }
     }
 }

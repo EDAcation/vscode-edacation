@@ -162,7 +162,8 @@ const viewsConfig = {
         },
         alias: {
             fs: false,
-            child_process: false
+            child_process: false,
+            tmp: path.join(currentDirectory, 'src/views/digitaljs/src/aliases/tmp.ts')
         },
         fallback: {
             crypto: false,
