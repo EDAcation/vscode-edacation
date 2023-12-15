@@ -263,8 +263,6 @@
         ]
     },
     "scripts": {
-        "postinstall": "node --loader ts-node/esm ./scripts/run-each-view.ts install",
-        "build-views": "node --loader ts-node/esm ./scripts/run-each-view.ts run build",
         "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. .",
         "watch-web": "webpack --watch",
         "compile-web": "npm run build-views && tsc && webpack",

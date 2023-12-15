@@ -13,16 +13,32 @@ import webpack from 'webpack';
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type WebpackConfig */
-const extensionConfig = {
+const baseConfig = {
     mode: 'none',
     target: 'webworker',
+    entry: {},
+
+    externals: {
+        vscode: 'commonjs vscode' // ignored because it doesn't exist
+    },
+    performance: {
+        hints: false
+    },
+    devtool: 'nosources-source-map',
+    infrastructureLogging: {
+        level: 'log'
+    }
+};
+
+/** @type WebpackConfig */
+const extensionConfig = Object.assign({}, baseConfig, {
     entry: {
         extension: './src/extension/index.ts',
         'test/suite/index': './src/extension/test/suite/index.ts'
     },
     output: {
         filename: '[name].js',
-        path: path.join(currentDirectory, './dist/extension'),
+        path: path.join(currentDirectory, 'dist', 'extension'),
         libraryTarget: 'commonjs',
         devtoolModuleFilenameTemplate: '../../[resource-path]'
     },
@@ -58,24 +74,11 @@ const extensionConfig = {
         new webpack.ProvidePlugin({
             process: 'process/browser'
         })
-    ],
-    externals: {
-        vscode: 'commonjs vscode' // ignored because it doesn't exist
-    },
-    performance: {
-        hints: false
-    },
-    devtool: 'nosources-source-map',
-    infrastructureLogging: {
-        level: 'log'
-    }
-};
+    ]
+});
 
 /** @type WebpackConfig */
-const workerConfig = {
-    // context: path.join(currentDirectory, 'workers'),
-    mode: 'none',
-    target: 'webworker',
+const workerConfig = Object.assign({}, baseConfig, {
     entry: {
         yosys: './src/workers/yosys.ts',
         'nextpnr-ecp5': './src/workers/nextpnr-ecp5.ts',
@@ -121,25 +124,13 @@ const workerConfig = {
             }
         ]
     },
-    externals: {
-        vscode: 'commonjs vscode' // ignored because it doesn't exist
-    },
-    performance: {
-        hints: false
-    },
-    devtool: 'nosources-source-map',
-    infrastructureLogging: {
-        level: 'log'
-    },
     optimization: {
         minimize: false
     }
-};
+});
 
 /** @type WebpackConfig */
-const viewsConfig = {
-    mode: 'none',
-    target: 'webworker',
+const viewsConfig = Object.assign({}, baseConfig, {
     entry: {
         actions: './src/views/actions/src/main.ts',
         nextpnr: './src/views/nextpnr/src/main.ts',
@@ -218,17 +209,7 @@ const viewsConfig = {
             process: 'process/browser',
             os: 'os-browserify/browser'
         })
-    ],
-    externals: {
-        vscode: 'commonjs vscode' // ignored because it doesn't exist
-    },
-    performance: {
-        hints: false
-    },
-    devtool: 'nosources-source-map',
-    infrastructureLogging: {
-        level: 'log'
-    }
-};
+    ]
+});
 
 export default [extensionConfig, workerConfig, viewsConfig];
