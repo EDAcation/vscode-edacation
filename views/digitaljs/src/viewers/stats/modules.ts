@@ -140,7 +140,7 @@ export class Module {
 
         const results = [];
         for (const prim of arr) {
-            if ((name && prim.name === name) || (width && prim.bitWidth === width)) {
+            if ((!name || prim.name === name) && (!width || prim.bitWidth === width)) {
                 results.push(prim);
             }
         }
