@@ -154,7 +154,8 @@ const viewsConfig = Object.assign({}, baseConfig, {
         alias: {
             fs: false,
             child_process: false,
-            tmp: path.join(currentDirectory, 'src/views/digitaljs/src/aliases/tmp.ts')
+            tmp: path.join(currentDirectory, 'src/views/digitaljs/src/aliases/tmp.ts'),
+            topsort: path.join(currentDirectory, 'src/views/digitaljs/src/aliases/topsort.ts')
         },
         fallback: {
             crypto: false,
