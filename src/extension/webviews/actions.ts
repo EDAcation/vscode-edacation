@@ -1,4 +1,4 @@
-import type * as vscode from 'vscode';
+import * as vscode from 'vscode';
 
 import {Project} from '../projects/index.js';
 import type {ViewMessage} from '../types.js';
@@ -29,13 +29,14 @@ export class ActionsProvider extends BaseWebviewViewProvider {
         context: vscode.WebviewViewResolveContext<unknown>,
         token: vscode.CancellationToken
     ): void | Thenable<void> {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         super.resolveWebviewView(webviewView, context, token);
 
         // TODO: subscribe to project change
         // this.projects.getProjectEmitter().event.
     }
 
-    protected onDidReceiveMessage(webview: vscode.Webview, message: ViewMessage): void {
+    protected async onDidReceiveMessage(webview: vscode.Webview, message: ViewMessage): Promise<void> {
         console.log('[actions]', message);
 
         if (message.type === 'ready') {
@@ -47,11 +48,13 @@ export class ActionsProvider extends BaseWebviewViewProvider {
             console.log('[actions]', 'ready project', project.getUri());
 
             if (project) {
-                webview.postMessage({
+                await webview.postMessage({
                     type: 'project',
                     project: Project.serialize(project)
                 });
             }
+        } else if (message.type === 'command') {
+            await vscode.commands.executeCommand(message.command);
         }
     }
 }

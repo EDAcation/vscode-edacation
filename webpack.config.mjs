@@ -6,6 +6,8 @@ import {fileURLToPath} from 'url';
 import {VueLoaderPlugin} from 'vue-loader';
 import webpack from 'webpack';
 
+import {BundleReplacePlugin} from './webpack-replace-patch.mjs';
+
 // @ts-check
 
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -41,6 +43,10 @@ const extensionConfig = Object.assign({}, baseConfig, {
         path: path.join(currentDirectory, 'dist', 'extension'),
         libraryTarget: 'commonjs',
         devtoolModuleFilenameTemplate: '../../[resource-path]'
+    },
+    externals: {
+        vscode: 'commonjs vscode', // ignored because it doesn't exist
+        child_process: 'child_process'
     },
     resolve: {
         mainFields: ['browser', 'module', 'main'],
@@ -107,6 +113,16 @@ const workerConfig = Object.assign({}, baseConfig, {
             path: 'path-browserify'
         }
     },
+    plugins: [
+        // Patch out NODEFS mounts in final Yosys bundle
+        new BundleReplacePlugin([
+            {
+                fileName: 'yosys.js',
+                from: /FS\.mount\(\s*NODEFS.*?\);?/g,
+                to: ''
+            }
+        ])
+    ],
     module: {
         rules: [
             {
@@ -184,6 +200,7 @@ const viewsConfig = Object.assign({}, baseConfig, {
                 loader: 'vue-loader',
                 options: {
                     compilerOptions: {
+                        // eslint-disable-next-line
                         isCustomElement: (tag) => tag.startsWith('vscode-')
                     }
                 }

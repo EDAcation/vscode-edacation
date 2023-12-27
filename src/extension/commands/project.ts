@@ -112,10 +112,13 @@ export class NewProjectCommand extends BaseCommand {
         // Check if the project is within the workspace folder
         const [workspaceRelativePath] = getWorkspaceRelativePath(projectWorkspace, projectUri);
         if (!workspaceRelativePath) {
-            vscode.window.showErrorMessage('Selected project location must be within the selected workspace folder.', {
-                detail: `File "${projectUri.path}" is not in folder "${projectWorkspace.path}".`,
-                modal: true
-            });
+            await vscode.window.showErrorMessage(
+                'Selected project location must be within the selected workspace folder.',
+                {
+                    detail: `File "${projectUri.path}" is not in folder "${projectWorkspace.path}".`,
+                    modal: true
+                }
+            );
             return;
         }
 
@@ -126,7 +129,7 @@ export class NewProjectCommand extends BaseCommand {
         await this.projects.add(projectUri, true, true);
 
         // Open project file
-        vscode.commands.executeCommand('vscode.openWith', projectUri, ProjectEditor.getViewType());
+        await vscode.commands.executeCommand('vscode.openWith', projectUri, ProjectEditor.getViewType());
     }
 }
 
@@ -187,10 +190,13 @@ export class OpenProjectCommand extends BaseCommand {
         // Check if the project is within the workspace folder
         const [workspaceRelativePath] = getWorkspaceRelativePath(projectWorkspace, projectUri);
         if (!workspaceRelativePath) {
-            vscode.window.showErrorMessage('Selected project location must be within the selected workspace folder.', {
-                detail: `File "${projectUri.path}" is not in folder "${projectWorkspace.path}".`,
-                modal: true
-            });
+            await vscode.window.showErrorMessage(
+                'Selected project location must be within the selected workspace folder.',
+                {
+                    detail: `File "${projectUri.path}" is not in folder "${projectWorkspace.path}".`,
+                    modal: true
+                }
+            );
             return;
         }
 
@@ -198,7 +204,7 @@ export class OpenProjectCommand extends BaseCommand {
         await this.projects.add(projectUri, true, false);
 
         // Open project file
-        vscode.commands.executeCommand('vscode.openWith', projectUri, ProjectEditor.getViewType());
+        await vscode.commands.executeCommand('vscode.openWith', projectUri, ProjectEditor.getViewType());
     }
 }
 
@@ -218,6 +224,6 @@ export class SelectProject extends BaseCommand {
     }
 
     async execute(project: Project) {
-        await this.projects.setCurrent(project);
+        this.projects.setCurrent(project);
     }
 }

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import {type ViewMessage} from '../types.js';
+import type {GlobalStoreMessage, ViewMessage} from '../types.js';
 import {getWebviewUri} from '../util.js';
 
 import {BaseEditor} from './base.js';
@@ -29,31 +29,45 @@ export class NextpnrEditor extends BaseEditor {
                 @font-face {
                     font-family: "codicon";
                     font-display: block;
-                    src: url("${fontUri}") format("truetype");
+                    src: url("${fontUri.toString()}") format("truetype");
                 }
             </style>
         `;
     }
 
-    protected onDidReceiveMessage(document: vscode.TextDocument, webview: vscode.Webview, message: ViewMessage): void {
+    protected async onDidReceiveMessage(
+        document: vscode.TextDocument,
+        webview: vscode.Webview,
+        message: ViewMessage | GlobalStoreMessage
+    ): Promise<boolean> {
+        if (await super.onDidReceiveMessage(document, webview, message)) {
+            return true;
+        }
         if (message.type === 'ready') {
-            webview.postMessage({
+            await webview.postMessage({
                 type: 'document',
                 document: document.getText()
             });
+            return true;
         }
+
+        return false;
     }
 
     protected onSave(_document: vscode.TextDocument, _webview: vscode.Webview): void {
         // Do nothing
     }
 
-    protected update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean) {
+    protected onClose(_document: vscode.TextDocument, _webview: vscode.Webview): void {
+        // Do nothing
+    }
+
+    protected async update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean) {
         if (!isDocumentChange) {
-            vscode.commands.executeCommand('edacation-projects.focus');
+            await vscode.commands.executeCommand('edacation-projects.focus');
         }
 
-        webview.postMessage({
+        await webview.postMessage({
             type: 'document',
             document: document.getText()
         });

@@ -29,7 +29,7 @@ export const ensureFile = async (uri: vscode.Uri, exists: boolean): Promise<void
     } catch (err) {
         if (err instanceof vscode.FileSystemError && err.code === 'FileNotFound') {
             if (exists) {
-                await vscode.window.showErrorMessage(`File "${uri}" does not exist.`, {
+                await vscode.window.showErrorMessage(`File "${uri.toString()}" does not exist.`, {
                     modal: true
                 });
             }
@@ -49,8 +49,8 @@ export const encodeText = (input: string) => textEncoder.encode(input.endsWith('
 export const encodeJSON = (input: unknown, pretty = false) =>
     encodeText(JSON.stringify(input, undefined, pretty ? 4 : undefined));
 
-export const decodeText = (input: BufferSource) => textDecoder.decode(input);
-export const decodeJSON = (input: BufferSource) => JSON.parse(decodeText(input));
+export const decodeText = (input: BufferSource): string => textDecoder.decode(input);
+export const decodeJSON = (input: BufferSource): unknown => JSON.parse(decodeText(input));
 
 export const FILE_EXTENSIONS_VERILOG = ['v', 'vh', 'sv', 'svh'];
 export const FILE_EXTENSIONS_VHDL = ['vhd'];

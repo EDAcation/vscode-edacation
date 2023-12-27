@@ -120,7 +120,7 @@ export class Projects {
                 this.projects.push(project);
             }
         } catch (err) {
-            this.context.workspaceState.update('projects', undefined);
+            await this.context.workspaceState.update('projects', undefined);
 
             throw err;
         }
@@ -170,7 +170,7 @@ export class Projects {
         return this.currentProject;
     }
 
-    async setCurrent(project: Project) {
+    setCurrent(project: Project) {
         const previousProject = this.currentProject;
         this.currentProject = project;
 
@@ -188,7 +188,7 @@ export class Projects {
         this.emitOutputFileChange();
     }
 
-    handleTaskEnd(event: vscode.TaskEndEvent) {
+    async handleTaskEnd(event: vscode.TaskEndEvent) {
         const task = event.execution.task;
 
         if (['yosys-rtl', 'yosys-synth', 'nextpnr'].includes(task.definition.type)) {
@@ -200,8 +200,8 @@ export class Projects {
                 return;
             }
 
-            const uri = vscode.Uri.joinPath(task.scope.uri, task.definition.project);
-            this.reload(uri);
+            const uri = vscode.Uri.joinPath(task.scope.uri, task.definition.project as string);
+            await this.reload(uri);
         }
     }
 }
