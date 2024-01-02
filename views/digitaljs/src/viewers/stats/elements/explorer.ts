@@ -1,6 +1,6 @@
 import {type Module, type ModuleStatId, getModuleStatIds, getModuleStatName, getTotalPrimCounts} from '../modules';
 
-import {type DataGridCell, type DatagridSetting, InteractiveDataGrid} from './datagrid';
+import {type DataGridCell, type DataGridCellElem, type DatagridSetting, InteractiveDataGrid} from './datagrid';
 import {getPercentage} from './util';
 
 interface ModuleExplorerRowCurrent {
@@ -126,15 +126,15 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
     protected getValue(item: ModuleExplorerRowItems, option: ModuleExplorerOptions): DataGridCell {
         switch (item.type) {
             case 'current':
-                return this.getValueCurrent(item, option);
+                return {elem: this.getValueCurrent(item, option)};
             case 'primitive':
-                return this.getValuePrimitive(item, option);
+                return {elem: this.getValuePrimitive(item, option)};
             case 'child':
-                return this.getValueChild(item, option);
+                return {elem: this.getValueChild(item, option)};
         }
     }
 
-    private getValueCurrent(_item: ModuleExplorerRowCurrent, option: ModuleExplorerOptions): DataGridCell {
+    private getValueCurrent(_item: ModuleExplorerRowCurrent, option: ModuleExplorerOptions): DataGridCellElem {
         switch (option) {
             case 'name':
                 return '< Current Module >';
@@ -145,7 +145,7 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
         }
     }
 
-    private getValuePrimitive(item: ModuleExplorerRowPrimitive, option: ModuleExplorerOptions): DataGridCell {
+    private getValuePrimitive(item: ModuleExplorerRowPrimitive, option: ModuleExplorerOptions): DataGridCellElem {
         switch (option) {
             case 'name':
                 return '$' + item.primitive;
@@ -158,7 +158,7 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
         }
     }
 
-    private getValueChild(item: ModuleExplorerRowChild, option: ModuleExplorerOptions): DataGridCell {
+    private getValueChild(item: ModuleExplorerRowChild, option: ModuleExplorerOptions): DataGridCellElem {
         switch (option) {
             case 'name': {
                 const link = document.createElement('vscode-link');
