@@ -96,8 +96,13 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
         const bitShare = getPercentage(count.bits, totalCount.bits);
 
         const val = `cells: ${count.cells} (${cellShare}%) / bits: ${count.bits} (${bitShare}%)`;
-        const color = getElementGroup(option)?.color;
-        return {elem: val, borderColor: color};
+
+        // Detect whether this is the first row. Bit hacky, but it works fine.
+        if (item === this.modules[0]) {
+            const color = getElementGroup(option)?.color;
+            return {elem: val, borderColor: color, borders: ['top']};
+        }
+        return {elem: val};
     }
 
     override update() {

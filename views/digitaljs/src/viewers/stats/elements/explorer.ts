@@ -2,7 +2,7 @@ import {getElementGroup} from 'edacation';
 
 import {type Module, type ModuleStatId, getModuleStatIds, getModuleStatName, getTotalPrimCounts} from '../modules';
 
-import {type DataGridCell, type DataGridCellElem, type DatagridSetting, InteractiveDataGrid} from './datagrid';
+import {type DataGridCell, type DatagridSetting, InteractiveDataGrid} from './datagrid';
 import {getPercentage} from './util';
 
 interface ModuleExplorerRowCurrent {
@@ -134,41 +134,43 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
     protected getValue(item: ModuleExplorerRowItems, option: ModuleExplorerOptions): DataGridCell {
         switch (item.type) {
             case 'current':
-                return {elem: this.getValueCurrent(item, option)};
+                return this.getValueCurrent(item, option);
             case 'primitive': {
-                const color = getElementGroup(item.primitive)?.color;
-                return {elem: this.getValuePrimitive(item, option), borderColor: color};
+                return this.getValuePrimitive(item, option);
             }
             case 'child':
-                return {elem: this.getValueChild(item, option)};
+                return this.getValueChild(item, option);
         }
     }
 
-    private getValueCurrent(_item: ModuleExplorerRowCurrent, option: ModuleExplorerOptions): DataGridCellElem {
+    private getValueCurrent(_item: ModuleExplorerRowCurrent, option: ModuleExplorerOptions): DataGridCell {
         switch (option) {
             case 'name':
-                return '< Current Module >';
+                return {elem: '< Current Module >'};
             case 'count':
-                return '-';
+                return {elem: '-'};
             default:
-                return this.curModule.globalStats[option].toString();
+                return {elem: this.curModule.globalStats[option].toString()};
         }
     }
 
-    private getValuePrimitive(item: ModuleExplorerRowPrimitive, option: ModuleExplorerOptions): DataGridCellElem {
+    private getValuePrimitive(item: ModuleExplorerRowPrimitive, option: ModuleExplorerOptions): DataGridCell {
         switch (option) {
-            case 'name':
-                return '$' + item.primitive;
+            case 'name': {
+                // Only color left border of primitive's name cell (first column)
+                const color = getElementGroup(item.primitive)?.color;
+                return {elem: '$' + item.primitive, borderColor: color, borders: ['left']};
+            }
             case 'count': {
                 const count = getTotalPrimCounts(this.curModule.findPrimitives({name: item.primitive}, false));
-                return `${count.cells} (${count.bits} total bits)`;
+                return {elem: `${count.cells} (${count.bits} total bits)`};
             }
             default:
-                return '';
+                return {elem: ''};
         }
     }
 
-    private getValueChild(item: ModuleExplorerRowChild, option: ModuleExplorerOptions): DataGridCellElem {
+    private getValueChild(item: ModuleExplorerRowChild, option: ModuleExplorerOptions): DataGridCell {
         switch (option) {
             case 'name': {
                 const link = document.createElement('vscode-link');
@@ -177,10 +179,10 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
                     this.navigate(item.module);
                     this.update();
                 });
-                return link;
+                return {elem: link};
             }
             case 'count':
-                return this.curModule.children.get(item.module)?.toString() ?? '-';
+                return {elem: this.curModule.children.get(item.module)?.toString() ?? '-'};
             default: {
                 let stat1 = item.module.globalStats[option];
                 if (this.getSetting('count-all')) {
@@ -189,7 +191,7 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
 
                 const stat2 = this.curModule.globalStats[option];
 
-                return `${stat1} (${getPercentage(stat1, stat2)}%)`;
+                return {elem: `${stat1} (${getPercentage(stat1, stat2)}%)`};
             }
         }
     }

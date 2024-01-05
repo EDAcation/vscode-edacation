@@ -2,9 +2,14 @@ import {CustomElement} from './base';
 
 export type DataGridCellElem = Node | string;
 
+type CellBorder = 'top' | 'left' | 'right' | 'bottom';
+type BorderWidth = 'thin' | 'medium' | 'thick';
+
 export interface DataGridCell {
     elem: DataGridCellElem;
-    borderColor?: string;
+    borderColor?: string; // Default: no color (= disable)
+    borderWidth?: BorderWidth; // Default: medium
+    borders?: CellBorder[]; // Default: no borders
 }
 
 class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
@@ -28,21 +33,24 @@ class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
     }
 
     private setCellColor(x: number, y: number, gridCell: HTMLElement) {
-        const cellColor = this.cells[y][x].borderColor;
+        const cell = this.cells[y][x];
+        const cellColor = cell?.borderColor;
+        const cellBorders = cell?.borders ?? [];
+
+        gridCell.style.borderWidth = cell?.borderWidth ?? 'medium';
         gridCell.style.borderColor = cellColor ?? 'none';
 
-        // Color a certain border only if it's on the edge of the data grid
-        // or its neighbouring cell has a different color.
-        const doTop = y === 0 || this.cells[y - 1][x]?.borderColor !== cellColor;
-        const doLeft = x === 0 || this.cells[y][x - 1]?.borderColor !== cellColor;
-        const doRight = x === this.width - 1 || this.cells[y][x + 1]?.borderColor !== cellColor;
-        const doBottom = y === this.height - 1 || this.cells[y + 1][x]?.borderColor !== cellColor;
+        // Color a certain border only if it is specified and there is a color
+        const doTop = cellBorders.indexOf('top') !== -1 && cellColor;
+        const doLeft = cellBorders.indexOf('left') !== -1 && cellColor;
+        const doRight = cellBorders.indexOf('right') !== -1 && cellColor;
+        const doBottom = cellBorders.indexOf('bottom') !== -1 && cellColor;
 
         // Set border styles, hide border if cell color is undefined
-        gridCell.style.borderTopStyle = cellColor && doTop ? 'dashed' : 'none';
-        gridCell.style.borderLeftStyle = cellColor && doLeft ? 'dashed' : 'none';
-        gridCell.style.borderRightStyle = cellColor && doRight ? 'dashed' : 'none';
-        gridCell.style.borderBottomStyle = cellColor && doBottom ? 'dashed' : 'none';
+        gridCell.style.borderTopStyle = doTop ? 'solid' : 'none';
+        gridCell.style.borderLeftStyle = doLeft ? 'solid' : 'none';
+        gridCell.style.borderRightStyle = doRight ? 'solid' : 'none';
+        gridCell.style.borderBottomStyle = doBottom ? 'solid' : 'none';
     }
 
     addColumn(contents: DataGridCell[], pos?: number): number {
