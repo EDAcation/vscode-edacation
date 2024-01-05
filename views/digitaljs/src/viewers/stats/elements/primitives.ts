@@ -1,3 +1,5 @@
+import {getElementGroup} from 'edacation';
+
 import {type Module, getTotalPrimCounts} from '../modules';
 
 import {type DataGridCell, type DatagridSetting, InteractiveDataGrid, type InteractiveDatagridConfig} from './datagrid';
@@ -94,7 +96,8 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
         const bitShare = getPercentage(count.bits, totalCount.bits);
 
         const val = `cells: ${count.cells} (${cellShare}%) / bits: ${count.bits} (${bitShare}%)`;
-        return {elem: val};
+        const color = getElementGroup(option)?.color;
+        return {elem: val, borderColor: color};
     }
 
     override update() {

@@ -1,3 +1,5 @@
+import {getElementGroup} from 'edacation';
+
 import {type Module, type ModuleStatId, getModuleStatIds, getModuleStatName, getTotalPrimCounts} from '../modules';
 
 import {type DataGridCell, type DataGridCellElem, type DatagridSetting, InteractiveDataGrid} from './datagrid';
@@ -80,17 +82,23 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
             }
         }
 
+        // Get unique primitive names (so no diff bit widths) and sort by their element group
         let primNames = this.curModule.primitives.map((prim) => prim.name);
         primNames = primNames.filter((val, ind) => primNames.indexOf(val) === ind);
+        primNames.sort((p1, p2) => {
+            const order1 = getElementGroup(p1)?.sorting ?? Infinity;
+            const order2 = getElementGroup(p2)?.sorting ?? Infinity;
+            return [order1, p1] > [order2, p2] ? 1 : -1;
+        });
 
         // Update grid
         this.reset(false, true);
         this.addRowItem({type: 'current'});
-        for (const prim of primNames) {
-            this.addRowItem({type: 'primitive', primitive: prim});
-        }
         for (const subCircuit of this.curModule.children.keys()) {
             this.addRowItem({type: 'child', module: subCircuit});
+        }
+        for (const prim of primNames) {
+            this.addRowItem({type: 'primitive', primitive: prim});
         }
 
         super.update();
@@ -127,8 +135,10 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
         switch (item.type) {
             case 'current':
                 return {elem: this.getValueCurrent(item, option)};
-            case 'primitive':
-                return {elem: this.getValuePrimitive(item, option)};
+            case 'primitive': {
+                const color = getElementGroup(item.primitive)?.color;
+                return {elem: this.getValuePrimitive(item, option), borderColor: color};
+            }
             case 'child':
                 return {elem: this.getValueChild(item, option)};
         }
