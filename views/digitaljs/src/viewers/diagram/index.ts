@@ -84,6 +84,9 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
         const cellAttrs: Record<string, CellAttrDef> = {};
         for (const [name, group] of getElementGroups().entries()) {
             const cellName = getCellTypeStr('$' + name);
+            if (!cellName) {
+                continue; // Not supported
+            }
             cellAttrs[cellName] = {body: {fill: group.color}};
         }
 
