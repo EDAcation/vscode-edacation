@@ -1,5 +1,17 @@
+// TODO: Fix digitaljs typing so we can re-enable all these rules
+
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 // @ts-expect-error: TODO: add module declaration (digitaljs.d.ts)
-import {Circuit} from 'digitaljs';
+import {Circuit, getCellTypeStr} from 'digitaljs';
+import {getElementGroups} from 'edacation';
 import {yosys2digitaljs} from 'yosys2digitaljs';
 
 import type {ForeignViewMessage} from '../../messages';
@@ -14,6 +26,11 @@ interface ButtonCallback {
     model: Model;
     paper: any; // eslint-disable-line @typescript-eslint/no-explicit-any
     navHistory: Model[];
+}
+
+// type CellAttrDef = Record<string, CellAttrDef>;
+interface CellAttrDef {
+    [key: string]: CellAttrDef | string;
 }
 
 const getSvg = (svgElem: Element, width: number, height: number): string => {
@@ -63,8 +80,15 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
         // Convert from Yosys netlist to DigitalJS format
         const digitalJs = yosys2digitaljs(this.data);
 
+        // Generate table for custom cell colors
+        const cellAttrs: Record<string, CellAttrDef> = {};
+        for (const [name, group] of getElementGroups().entries()) {
+            const cellName = getCellTypeStr('$' + name);
+            cellAttrs[cellName] = {body: {fill: group.color}};
+        }
+
         // Initialize circuit
-        const circuit = new Circuit(digitalJs, {subcircuitButtons: this.subCircuitButtons});
+        const circuit = new Circuit(digitalJs, {subcircuitButtons: this.subCircuitButtons, cellAttributes: cellAttrs});
 
         // Clear
         this.root.replaceChildren();
