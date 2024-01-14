@@ -267,10 +267,11 @@
         "pretest": "npm run compile-web"
     },
     "dependencies": {
+        "@yowasp/nextpnr-ecp5": "^0.7.176-dev.507",
+        "@yowasp/nextpnr-ice40": "^0.7.176-dev.507",
+        "@yowasp/yosys": "^0.37.67-dev.640",
         "edacation": "^0.2.5",
-        "nextpnr": "^0.4.15",
-        "path-browserify": "^1.0.1",
-        "yosys": "^0.24.3"
+        "path-browserify": "^1.0.1"
     },
     "devDependencies": {
         "@trivago/prettier-plugin-sort-imports": "^4.3.0",

@@ -81,8 +81,6 @@ export class WebAssemblyTaskRunner extends TaskRunner {
     }
 
     private handleMessage(message: ExtensionMessage) {
-        console.log('Worker -> runner:');
-        console.log(message);
         try {
             switch (message.type) {
                 case 'terminal': {
