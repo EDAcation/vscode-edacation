@@ -19,7 +19,8 @@
     "dependencies": {
         "@vscode/codicons": "^0.0.32",
         "@vscode/webview-ui-toolkit": "^1.2.2",
-        "digitaljs": "github:EDAcation/digitaljs",
+        "digitaljs": "github:EDAcation/digitaljs#customize-cell-attrs",
+        "edacation": "github:EDAcation/edacation#add-element-colors",
         "jquery": "^3.7.0",
         "jquery-ui": "^1.13.2",
         "yosys2digitaljs": "github:tilk/yosys2digitaljs"
