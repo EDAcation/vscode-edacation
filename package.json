@@ -267,9 +267,9 @@
         "pretest": "npm run compile-web"
     },
     "dependencies": {
-        "@yowasp/nextpnr-ecp5": "^0.7.176-dev.507",
-        "@yowasp/nextpnr-ice40": "^0.7.176-dev.507",
-        "@yowasp/yosys": "^0.37.67-dev.640",
+        "@yowasp/nextpnr-ecp5": "^0.7.187-dev.514",
+        "@yowasp/nextpnr-ice40": "^0.7.187-dev.514",
+        "@yowasp/yosys": "^0.38.21-dev.654",
         "edacation": "^0.2.5",
         "path-browserify": "^1.0.1"
     },
