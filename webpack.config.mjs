@@ -1,6 +1,5 @@
 'use strict';
 
-import {readFileSync, writeFileSync} from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
 import webpack from 'webpack';
@@ -110,6 +109,11 @@ const workerConfig = {
         })
     ],
     module: {
+        parser: {
+            javascript: {
+                dynamicImportMode: 'eager'
+            }
+        },
         rules: [
             {
                 test: /\.ts$/,
@@ -149,22 +153,5 @@ const workerConfig = {
         minimize: false
     }
 };
-
-// Replace dynamic import with a static import, so Webpack can bundle the resources
-for (const workerName of Object.keys(workerConfig.entry)) {
-    const bundlePath = path.join('node_modules', '@yowasp', workerName, 'gen', 'bundle.js');
-    let bundleContent = readFileSync(bundlePath, {
-        encoding: 'utf-8'
-    });
-
-    bundleContent = bundleContent.replaceAll(
-        'import(this.resourceFileURL)',
-        `import(/* webpackMode: "eager" */ './resources-${workerName}.js')`
-    );
-
-    writeFileSync(bundlePath, bundleContent, {
-        encoding: 'utf-8'
-    });
-}
 
 export default [webExtensionConfig, workerConfig];
