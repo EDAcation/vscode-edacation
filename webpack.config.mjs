@@ -4,6 +4,8 @@ import path from 'path';
 import {fileURLToPath} from 'url';
 import webpack from 'webpack';
 
+import {BundleReplacePlugin} from './webpack-replace-patch.mjs';
+
 // @ts-check
 
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -106,7 +108,19 @@ const workerConfig = {
     plugins: [
         new webpack.optimize.LimitChunkCountPlugin({
             maxChunks: 1
-        })
+        }),
+
+        // Patch final bundles (Webpack doesn't really use self.location for anything useful, but crashes without a valid URL)
+        ...['yosys.js', 'nextpnr-ecp5.js', 'nextpnr-ice40.js'].map(
+            (fileName) =>
+                new BundleReplacePlugin([
+                    {
+                        fileName,
+                        from: /self.location \+ "";/g,
+                        to: 'globalThis.location ? globalThis.location + "" : "blob:vscode-file://vscode-app/bogus"'
+                    }
+                ])
+        )
     ],
     module: {
         parser: {
