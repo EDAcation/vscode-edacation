@@ -4,8 +4,6 @@ import path from 'path';
 import {fileURLToPath} from 'url';
 import webpack from 'webpack';
 
-import {BundleReplacePlugin} from './webpack-replace-patch.mjs';
-
 // @ts-check
 
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -78,9 +76,18 @@ const workerConfig = {
     mode: 'none',
     target: 'webworker',
     entry: {
-        yosys: './src/workers/yosys.ts',
-        'nextpnr-ecp5': './src/workers/nextpnr-ecp5.ts',
-        'nextpnr-ice40': './src/workers/nextpnr-ice40.ts'
+        yosys: {
+            import: './src/workers/yosys.ts',
+            baseUri: 'blob:vscode-file://vscode-app/bogus'
+        },
+        'nextpnr-ecp5': {
+            import: './src/workers/nextpnr-ecp5.ts',
+            baseUri: 'blob:vscode-file://vscode-app/bogus'
+        },
+        'nextpnr-ice40': {
+            import: './src/workers/nextpnr-ice40.ts',
+            baseUri: 'blob:vscode-file://vscode-app/bogus'
+        }
     },
     output: {
         filename: '[name].js',
@@ -108,19 +115,7 @@ const workerConfig = {
     plugins: [
         new webpack.optimize.LimitChunkCountPlugin({
             maxChunks: 1
-        }),
-
-        // Patch final bundles (Webpack doesn't really use self.location for anything useful, but crashes without a valid URL)
-        ...['yosys.js', 'nextpnr-ecp5.js', 'nextpnr-ice40.js'].map(
-            (fileName) =>
-                new BundleReplacePlugin([
-                    {
-                        fileName,
-                        from: /self.location \+ "";/g,
-                        to: 'globalThis.location ? globalThis.location + "" : "blob:vscode-file://vscode-app/bogus"'
-                    }
-                ])
-        )
+        })
     ],
     module: {
         parser: {
