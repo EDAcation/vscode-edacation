@@ -1,4 +1,3 @@
-// @ts-expect-error: TODO: add module declaration (digitaljs.d.ts)
 import {Circuit} from 'digitaljs';
 import {yosys2digitaljs} from 'yosys2digitaljs';
 
@@ -10,7 +9,7 @@ import {BaseViewer} from '../base';
 type Model = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 interface ButtonCallback {
-    circuit: Circuit;
+    circuit: typeof Circuit;
     model: Model;
     paper: any; // eslint-disable-line @typescript-eslint/no-explicit-any
     navHistory: Model[];

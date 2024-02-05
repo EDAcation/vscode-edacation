@@ -1,10 +1,10 @@
 {
     "extends": "@vue/tsconfig/tsconfig.dom.json",
-    "include": ["vue-shim.d.ts", "src/**/*", "src/**/*.vue"],
+    "include": ["**/*", "**/*.vue"],
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {
-            "@/*": ["./src/*"]
+            "@/*": ["./*"]
         }
     }
 }
