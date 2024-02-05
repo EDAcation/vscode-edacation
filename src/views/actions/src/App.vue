@@ -1,9 +1,10 @@
 <script lang="ts">
 import {provideVSCodeDesignSystem, vsCodeButton, vsCodeDropdown, vsCodeOption} from '@vscode/webview-ui-toolkit';
 
+import {vscode} from '../../vscode';
+
 import EDAPlaceholder from './components/EDAPlaceholder.vue';
 import {state} from './state';
-import {vscode} from './vscode';
 
 provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeDropdown(), vsCodeOption());
 

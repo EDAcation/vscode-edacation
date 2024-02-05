@@ -1,8 +1,8 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 
+import * as vscode from '../../../vscode';
 import {state as globalState} from '../state';
-import * as vscode from '../vscode';
 
 export default defineComponent({
     components: {},

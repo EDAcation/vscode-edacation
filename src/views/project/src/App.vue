@@ -13,9 +13,10 @@ import {
     vsCodeTextField
 } from '@vscode/webview-ui-toolkit';
 
+import {vscode} from '../../vscode';
+
 import EDAProject from './components/EDAProject.vue';
 import {state} from './state';
-import {vscode} from './vscode';
 
 provideVSCodeDesignSystem().register(
     vsCodeButton(),

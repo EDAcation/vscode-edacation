@@ -1,5 +1,6 @@
+import {vscode} from '../../vscode';
+
 import type {GlobalStoreMessage} from './messages';
-import {vscode} from './vscode';
 
 interface TransactionSet {
     type: 'set';

@@ -2,8 +2,9 @@ import '@vscode/codicons/dist/codicon.css';
 import {allComponents} from '@vscode/webview-ui-toolkit/dist/toolkit.js';
 import nextpnrViewer from 'nextpnr-viewer';
 
+import {vscode} from '../../vscode';
+
 import './main.css';
-import {vscode} from './vscode';
 
 // Force bundler to include VS Code Webview UI Toolkit
 allComponents;
