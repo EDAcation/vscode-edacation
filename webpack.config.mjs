@@ -4,8 +4,6 @@ import path from 'path';
 import {fileURLToPath} from 'url';
 import webpack from 'webpack';
 
-import {BundleReplacePlugin} from './webpack-replace-patch.mjs';
-
 // @ts-check
 
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -75,13 +73,21 @@ const webExtensionConfig = {
 
 /** @type WebpackConfig */
 const workerConfig = {
-    // context: path.join(currentDirectory, 'workers'),
     mode: 'none',
     target: 'webworker',
     entry: {
-        yosys: './src/workers/yosys.ts',
-        'nextpnr-ecp5': './src/workers/nextpnr-ecp5.ts',
-        'nextpnr-ice40': './src/workers/nextpnr-ice40.ts'
+        yosys: {
+            import: './src/workers/yosys.ts',
+            baseUri: 'blob:vscode-file://vscode-app/bogus'
+        },
+        'nextpnr-ecp5': {
+            import: './src/workers/nextpnr-ecp5.ts',
+            baseUri: 'blob:vscode-file://vscode-app/bogus'
+        },
+        'nextpnr-ice40': {
+            import: './src/workers/nextpnr-ice40.ts',
+            baseUri: 'blob:vscode-file://vscode-app/bogus'
+        }
     },
     output: {
         filename: '[name].js',
@@ -107,16 +113,16 @@ const workerConfig = {
         }
     },
     plugins: [
-        // Patch out NODEFS mounts in final Yosys bundle
-        new BundleReplacePlugin([
-            {
-                fileName: 'yosys.js',
-                from: /FS\.mount\(\s*NODEFS.*?\);?/g,
-                to: ''
-            }
-        ])
+        new webpack.optimize.LimitChunkCountPlugin({
+            maxChunks: 1
+        })
     ],
     module: {
+        parser: {
+            javascript: {
+                dynamicImportMode: 'eager'
+            }
+        },
         rules: [
             {
                 test: /\.ts$/,
@@ -130,6 +136,15 @@ const workerConfig = {
             {
                 test: /\.wasm$/,
                 type: 'asset/inline'
+            },
+            {
+                test: /\.(bin|json|v)$/,
+                type: 'asset/inline',
+                generator: {
+                    dataUrl: {
+                        mimetype: 'text/plain'
+                    }
+                }
             }
         ]
     },
