@@ -1,4 +1,9 @@
-import {type YosysWorkerOptions, getYosysWorkerOptions} from 'edacation';
+import {
+    type YosysWorkerOptions,
+    generateYosysSynthCommands,
+    generateYosysSynthPrepareCommands,
+    getYosysWorkerOptions
+} from 'edacation';
 import * as vscode from 'vscode';
 
 import type {MessageFile} from '../../common/messages.js';
@@ -35,19 +40,6 @@ export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOpti
 
     getInputFiles(workerOptions: YosysWorkerOptions): string[] {
         return workerOptions.inputFiles;
-    }
-
-    getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
-        return [
-            {
-                path: 'design.ys',
-                data: encodeText(workerOptions.commands.join('\r\n'))
-            }
-        ];
-    }
-
-    getOutputFiles(workerOptions: YosysWorkerOptions): string[] {
-        return workerOptions.outputFiles;
     }
 
     protected println(line?: string, stream: 'stdout' | 'stderr' = 'stdout', modifier?: AnsiModifier) {
@@ -92,13 +84,57 @@ export class YosysTaskProvider extends TaskProvider {
         definition: TaskDefinition
     ): TaskTerminal<YosysWorkerOptions> {
         const runner = getConfiguredRunner(this.context);
-        const task = new YosysTerminalTask(runner);
+        const prepareTask = new YosysPrepareTerminalTask(runner);
+        const synthesisTask = new YosysSynthTerminalTask(runner);
 
-        return new TaskTerminal(this.projects, folder, definition, task);
+        return new TaskTerminal(this.projects, folder, definition, [prepareTask, synthesisTask]);
     }
 }
 
-class YosysTerminalTask extends BaseYosysTerminalTask {
+class YosysPrepareTerminalTask extends BaseYosysTerminalTask {
+    getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
+        const commandsGenerated = generateYosysSynthPrepareCommands(workerOptions.inputFiles);
+
+        return [
+            {
+                path: 'design.ys',
+                data: encodeText(commandsGenerated.join('\r\n'))
+            }
+        ];
+    }
+
+    getOutputFiles(_workerOptions: YosysWorkerOptions): string[] {
+        return ['presynth.digitaljs.json'];
+    }
+
+    async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
+        await super.handleEnd(project, outputFiles);
+
+        // TODO: modify output file to add cell types
+        console.log(outputFiles);
+    }
+}
+
+class YosysSynthTerminalTask extends BaseYosysTerminalTask {
+    getGeneratedInputFiles(_workerOptions: YosysWorkerOptions): MessageFile[] {
+        const commandsGenerated = generateYosysSynthCommands();
+
+        return [
+            {
+                path: 'design.ys',
+                data: encodeText(commandsGenerated.join('\r\n'))
+            }
+        ];
+    }
+
+    getInputFiles(_workerOptions: YosysWorkerOptions): string[] {
+        return ['presynth.digitaljs.json'];
+    }
+
+    getOutputFiles(workerOptions: YosysWorkerOptions): string[] {
+        return workerOptions.outputFiles;
+    }
+
     async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
         await super.handleEnd(project, outputFiles);
 

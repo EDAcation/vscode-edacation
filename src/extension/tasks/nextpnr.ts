@@ -25,7 +25,7 @@ export class NextpnrTaskProvider extends TaskProvider {
         const runner = getConfiguredRunner(this.context);
         const task = new NextpnrTerminalTask(runner);
 
-        return new TaskTerminal(this.projects, folder, definition, task);
+        return new TaskTerminal(this.projects, folder, definition, [task]);
     }
 }
 
