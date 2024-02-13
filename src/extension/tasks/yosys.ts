@@ -8,12 +8,14 @@ import * as vscode from 'vscode';
 
 import type {MessageFile} from '../../common/messages.js';
 import type {Project} from '../projects/index.js';
-import {encodeText} from '../util.js';
+import {decodeJSON, encodeJSON, encodeText} from '../util.js';
 
 import {AnsiModifier, type TaskOutputFile} from './messaging.js';
 import {getConfiguredRunner} from './runner.js';
 import {type TaskDefinition, TerminalTask} from './task.js';
 import {TaskProvider, TaskTerminal} from './terminal.js';
+
+type JSONValue = string | number | boolean | {[x: string]: JSONValue} | Array<JSONValue>;
 
 export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOptions> {
     private lastLogMessage?: string;
@@ -107,11 +109,34 @@ class YosysPrepareTerminalTask extends BaseYosysTerminalTask {
         return ['presynth.digitaljs.json'];
     }
 
+    private addCellTypes(record: JSONValue): JSONValue {
+        if (Array.isArray(record)) {
+            return record.map((v) => this.addCellTypes(v));
+        } else if (typeof record === 'object') {
+            const res: JSONValue = {};
+            for (const [key, val] of Object.entries(record)) {
+                res[key] = this.addCellTypes(val);
+            }
+
+            if (res.type && typeof res['attributes'] === 'object' && !Array.isArray(res['attributes'])) {
+                res['attributes']['cellType'] = res.type;
+            }
+
+            return res;
+        }
+
+        return record;
+    }
+
     async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
         await super.handleEnd(project, outputFiles);
 
-        // TODO: modify output file to add cell types
-        console.log(outputFiles);
+        const presynthFile = outputFiles.find((file) => file.path.endsWith('presynth.digitaljs.json'));
+        if (!presynthFile || !presynthFile.uri) return;
+
+        const oldContent = decodeJSON(await vscode.workspace.fs.readFile(presynthFile.uri)) as JSONValue;
+        const newContent = encodeJSON(this.addCellTypes(oldContent));
+        await vscode.workspace.fs.writeFile(presynthFile.uri, newContent);
     }
 }
 
