@@ -58,6 +58,12 @@
                 "icon": "$(close)"
             },
             {
+                "command": "edacation.selectProject",
+                "category": "EDAcation",
+                "title": "Select Project",
+                "icon": "$(check)"
+            },
+            {
                 "command": "edacation.addInputFile",
                 "category": "EDAcation",
                 "title": "Add Existing Input File",

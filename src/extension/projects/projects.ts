@@ -171,10 +171,9 @@ export class Projects {
     }
 
     setCurrent(project: Project) {
-        const previousProject = this.currentProject;
         this.currentProject = project;
 
-        this.emitProjectChange(previousProject ? [previousProject, this.currentProject] : this.currentProject);
+        this.emitProjectChange();
         this.emitInputFileChange();
         this.emitOutputFileChange();
     }
