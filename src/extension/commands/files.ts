@@ -72,3 +72,19 @@ export class RemoveOutputFileCommand extends CurrentProjectCommand {
         await project.removeOutputFiles([file.path]);
     }
 }
+
+export class TrashOutputFileCommand extends CurrentProjectCommand {
+    static getID() {
+        return 'edacation.trashOutputFile';
+    }
+
+    async executeForCurrentProject(project: Project, file: ProjectFile) {
+        await project.removeOutputFiles([file.path]);
+
+        try {
+            await vscode.workspace.fs.delete(file.uri);
+        } catch {
+            return;
+        }
+    }
+}

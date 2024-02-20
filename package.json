@@ -88,6 +88,12 @@
                 "icon": "$(remove)"
             },
             {
+                "command": "edacation.trashOutputFile",
+                "category": "EDAcation",
+                "title": "Trash Output File",
+                "icon": "$(trash)"
+            },
+            {
                 "command": "edacation.openProjectConfiguration",
                 "category": "EDAcation",
                 "title": "Open Project Configuration"
@@ -176,6 +182,11 @@
                 },
                 {
                     "command": "edacation.removeOutputFile",
+                    "when": "view == edacation-outputFiles",
+                    "group": "inline"
+                },
+                {
+                    "command": "edacation.trashOutputFile",
                     "when": "view == edacation-outputFiles",
                     "group": "inline"
                 }
