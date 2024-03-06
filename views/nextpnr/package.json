@@ -16,6 +16,7 @@
     "dependencies": {
         "@vscode/codicons": "^0.0.32",
         "@vscode/webview-ui-toolkit": "^1.2.2",
+        "edacation": "github:EDAcation/edacation#add-element-colors",
         "nextpnr-viewer": "^0.4.0"
     }
 }
