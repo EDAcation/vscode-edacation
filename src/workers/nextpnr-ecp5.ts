@@ -1,23 +1,16 @@
-import {Nextpnr} from 'nextpnr';
-import wasmBinaryUrl from 'nextpnr/dist/nextpnr-ecp5.wasm';
+import {type RunOptions, type Tree, WorkerTool} from './worker.js';
 
-import {WorkerTool} from './worker.js';
+// ESM imports are not possible in CJS modules
+const importPromise = import(
+    /* webpackMode: "eager" */
+    '@yowasp/nextpnr-ecp5'
+);
 
-export class WorkerNextpnr extends WorkerTool<Nextpnr> {
-    async initialize(): Promise<Nextpnr> {
-        // Fetch WebAssembly binary from data URL
-        const wasmBinary = await this.fetchBinary(wasmBinaryUrl);
-
-        // Initialize nextpnr
-        const nextpnr = await Nextpnr.initialize({
-            // architecture: command.split('-')[1],
-            wasmBinary,
-            print: this.print.bind(this, 'stdout'),
-            printErr: this.print.bind(this, 'stderr')
-        });
-
-        return nextpnr;
+export class WorkerNextpnrEcp5 extends WorkerTool {
+    async run(args: string[], inputFileTree: Tree, options: RunOptions): Promise<Tree> {
+        const {runNextpnrEcp5} = await importPromise;
+        return await runNextpnrEcp5(args, inputFileTree, options);
     }
 }
 
-export const worker = new WorkerNextpnr();
+export const worker = new WorkerNextpnrEcp5();
