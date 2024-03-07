@@ -288,7 +288,7 @@
         "webpack-cli": "^5.1.4"
     },
     "dependencies": {
-        "edacation": "github:EDAcation/edacation#add-element-colors",
+        "edacation": "^0.3.0",
         "nextpnr": "^0.4.13",
         "path-browserify": "^1.0.1",
         "yosys": "^0.24.1"
