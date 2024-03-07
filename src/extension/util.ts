@@ -130,3 +130,12 @@ export const findProjectRoot = (fileUri: vscode.Uri): vscode.Uri | undefined => 
     }
     return path;
 };
+
+export const ensureEndOfLine = (input: string) => {
+    if (input.at(-1) !== '\n') {
+        return `${input}\r\n`;
+    } else if (input.at(-1) === '\n' && input.at(-2) !== '\r') {
+        return `${input.slice(0, input.length - 1)}\r\n`;
+    }
+    return input;
+};

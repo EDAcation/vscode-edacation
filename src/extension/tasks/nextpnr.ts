@@ -72,9 +72,7 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
 
     async handleStart(project: Project) {
         this.println(`Placing and routing EDA project "${project.getName()}" using nextpnr...`);
-        this.println(
-            'NOTE: nextpnr startup may take a while. This will be improved in future versions of this extension.'
-        );
+        this.println('NOTE: nextpnr startup may take a while.');
         this.println();
     }
 

@@ -1,18 +1,9 @@
+import {decodeText, encodeText} from 'edacation';
 import path from 'path';
 import type {TransferListItem} from 'worker_threads';
 
 import type {ExtensionMessage, MessageFile, WorkerMessage} from '../common/messages.js';
 import {onEvent, sendMessage} from '../common/universal-worker.js';
-
-export const run = () => {
-    console.log('run');
-};
-
-export type EmscriptenFS = typeof FS;
-
-export interface EmscriptenWrapper {
-    getFS(): EmscriptenFS;
-}
 
 try {
     process.on('unhandledRejection', (err) => {
@@ -22,57 +13,100 @@ try {
     /* ignore */
 }
 
-export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
-    private toolPromise: Promise<Tool>;
-    private tool?: Tool;
+export type OutputStream = (bytes: Uint8Array | null) => void;
 
+export interface RunOptions {
+    stdout?: OutputStream | null;
+    stderr?: OutputStream | null;
+    decodeASCII?: boolean;
+}
+
+export type Tree = {
+    [name: string]: Tree | string | Uint8Array;
+};
+
+const sanatizePaths = (array: MessageFile[]) =>
+    array.map((file) => {
+        if (file.path.startsWith('/')) {
+            throw new Error('Absolute paths are not supported.');
+        } else if (file.path.startsWith('../')) {
+            throw new Error('Some relative paths are not supported.');
+        }
+
+        return {
+            ...file,
+            path: file.path.startsWith('./') ? file.path.substring(2) : file.path
+        };
+    });
+
+const arrayToTree = (array: MessageFile[]): Tree => {
+    const tree: Tree = {};
+    for (const file of array) {
+        if (file.path.startsWith('/')) {
+            throw new Error('Absolute paths are not supported.');
+        } else if (file.path.startsWith('../')) {
+            throw new Error('Some relative paths are not supported.');
+        }
+
+        const sanitizedPath = file.path.startsWith('./') ? file.path.substring(2) : file.path;
+        const directories = sanitizedPath.includes('/') ? path.dirname(sanitizedPath).split('/') : [];
+        const name = path.basename(sanitizedPath);
+
+        let lastDirectory: Tree = tree;
+        for (const directory of directories) {
+            console.log('creating', directory);
+            const newDirectory: Tree = {};
+            lastDirectory[directory] = newDirectory;
+            lastDirectory = newDirectory;
+        }
+
+        lastDirectory[name] = file.data;
+    }
+    return tree;
+};
+
+const arrayToList = (tree: Tree, path: string[] = []): MessageFile[] => {
+    let array: MessageFile[] = [];
+    for (const [name, data] of Object.entries(tree)) {
+        if (typeof data === 'string' || data instanceof Uint8Array) {
+            array.push({
+                path: [...path, name].join('/'),
+                data: typeof data === 'string' ? encodeText(data) : data
+            });
+        } else {
+            array = array.concat(arrayToList(data, [...path, name]));
+        }
+    }
+    return array;
+};
+
+export abstract class WorkerTool {
     constructor() {
-        this.toolPromise = this.initialize();
-
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
         onEvent('message', this.handleMessage.bind(this));
         onEvent('messageerror', this.handleMessageError.bind(this));
     }
 
-    async getTool(): Promise<Tool> {
-        if (!this.tool) {
-            this.tool = await this.toolPromise;
-        }
-        return this.tool;
-    }
-
-    async getFS(): Promise<EmscriptenFS> {
-        const tool = await this.getTool();
-        return tool.getFS();
-    }
-
-    abstract initialize(): Promise<Tool>;
-
-    protected async fetchBinary(dataUrl: string): Promise<ArrayBuffer> {
-        if (typeof Worker === 'undefined') {
-            // Node.js - warning: only works for data URLs
-            return Buffer.from(dataUrl.split(',')[1], 'base64');
-        } else {
-            // Web worker
-            const response = await fetch(dataUrl);
-            return await response.arrayBuffer();
-        }
-    }
+    abstract run(args: string[], inputFileTree: Tree, options: RunOptions): Promise<Tree>;
 
     protected send(message: ExtensionMessage, transferables: readonly TransferListItem[] & Transferable[] = []) {
         sendMessage(message, transferables);
     }
 
     protected print(stream: 'stdout' | 'stderr', data: string) {
-        if (data.startsWith('warning: unsupported syscall:')) {
-            return;
-        }
-
         this.send({
             type: 'terminal',
             stream,
             data
         });
+    }
+
+    protected printBytes(stream: 'stdout' | 'stderr', data: Uint8Array | null) {
+        if (!data) {
+            return;
+        }
+
+        this.print(stream, decodeText(data));
     }
 
     protected error(error: unknown) {
@@ -84,77 +118,36 @@ export abstract class WorkerTool<Tool extends EmscriptenWrapper> {
     }
 
     private async handleMessage(message: WorkerMessage) {
-        console.log('runner -> worker:');
         console.log(message);
         try {
             switch (message.type) {
                 case 'input': {
-                    console.log('We have input!');
-
-                    // Obtain Emscripten tool and its FS
-                    const tool = await this.getTool();
-                    const fs = await this.getFS();
-
-                    // Write input files
-                    for (const file of message.inputFiles) {
-                        console.log(file);
-                        if (file.path.startsWith('/')) {
-                            throw new Error('Absolute file paths are currently not supported.');
-                        }
-
-                        const dirname = path.dirname(file.path);
-                        console.log(dirname);
-
-                        let position = 0;
-                        while (position < dirname.length) {
-                            position = dirname.indexOf('/', position + 1);
-                            console.log(position);
-                            if (position === -1) {
-                                break;
-                            }
-
-                            const directoryPath = dirname.substring(0, position);
-                            console.log('checking', directoryPath);
-
-                            try {
-                                fs.stat(directoryPath);
-                            } catch (err) {
-                                fs.mkdir(directoryPath);
-                            }
-
-                            console.log(fs.readdir(directoryPath));
-                        }
-
-                        console.log('dirs exist');
-
-                        fs.writeFile(file.path, file.data);
-                        console.log('file written');
-                    }
-
-                    // TODO: create output directories
+                    // Convert input file array to a tree
+                    const inputFiles = sanatizePaths(message.inputFiles);
+                    const inputFileTree = arrayToTree(inputFiles);
+                    console.log('input file tree', inputFileTree);
 
                     // Execute Emscripten tool
+                    const outputFileTree = await this.run(message.args, inputFileTree, {
+                        stdout: this.printBytes.bind(this, 'stdout'),
+                        stderr: this.printBytes.bind(this, 'stderr'),
+                        decodeASCII: false
+                    });
 
-                    // @ts-expect-error TODO
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-                    tool.getModule().callMain(message.args);
-
-                    // Read output files
-                    const files: MessageFile[] = [];
-                    for (const outputFilePath of message.outputFiles) {
-                        files.push({
-                            path: outputFilePath,
-                            data: fs.readFile(outputFilePath)
-                        });
-                    }
+                    // Convert output file tree to an array
+                    console.log('output file tree', outputFileTree);
+                    const outputFiles = arrayToList(outputFileTree).filter(
+                        (outputFile) => !inputFiles.some((inputFile) => inputFile.path === outputFile.path)
+                    );
+                    console.log('output files', outputFiles);
 
                     // Send output to extension
                     this.send(
                         {
                             type: 'output',
-                            files
+                            files: outputFiles
                         },
-                        files.map((file) => file.data.buffer)
+                        outputFiles.map((file) => file.data.buffer)
                     );
 
                     break;

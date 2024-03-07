@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import type {Project, Projects} from '../projects/index.js';
-import {encodeText} from '../util.js';
+import {encodeText, ensureEndOfLine} from '../util.js';
 
 import {BaseTaskProvider} from './base.js';
 import {AnsiModifier, type TerminalMessage} from './messaging.js';
@@ -153,14 +153,15 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
     protected println(line = '', stream: 'stdout' | 'stderr' = 'stdout', modifier?: AnsiModifier) {
         let message = line;
         if (modifier) {
-            message = modifier + message + AnsiModifier.RESET;
+            message = `${modifier}${message}${AnsiModifier.RESET}`;
         } else if (stream === 'stderr') {
             // Make line red
-            message = AnsiModifier.RED + message + AnsiModifier.RESET;
+            message = `${AnsiModifier.RED}${message}${AnsiModifier.RESET}`;
         }
-        this.writeEmitter.fire(`${message}\r\n`);
 
-        const logMessage = `${new Date().toISOString()} - ${stream.toUpperCase()}: ${line}\r\n`;
+        this.writeEmitter.fire(ensureEndOfLine(message));
+
+        const logMessage = `${new Date().toISOString()} - ${stream.toUpperCase()}: ${ensureEndOfLine(line)}`;
         this.logMessages.push(logMessage);
     }
 
