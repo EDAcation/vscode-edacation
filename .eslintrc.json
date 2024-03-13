@@ -1,6 +1,10 @@
 {
     "root": true,
-    "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended-type-checked"],
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended-type-checked",
+        "plugin:vue/vue3-essential"
+    ],
     "parser": "@typescript-eslint/parser",
     "plugins": ["@typescript-eslint"],
     "parserOptions": {

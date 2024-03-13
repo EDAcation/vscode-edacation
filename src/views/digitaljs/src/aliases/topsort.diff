@@ -1,0 +1,139 @@
+2,7c2,10
+< * @author Samuel Neff (https://github.com/samuelneff)
+< *
+< * based almost entirely on gist from
+< *
+< * @author SHIN Suzuki (shinout310@gmail.com)
+< *
+---
+>  * @author Samuel Neff (https://github.com/samuelneff)
+>  *
+>  * based almost entirely on gist from
+>  *
+>  * @author SHIN Suzuki (shinout310@gmail.com)
+>  *
+>  * Modified by EDAcation. Licensed under Apache v2.0: https://github.com/samuelneff/topsort/blob/master/LICENSE
+>  * Changes in topsort.diff
+>  *
+9,11c12
+< */
+< 
+< /// <reference path="../typings/node/node.d.ts" />
+---
+>  */
+14,15c15,16
+<     public afters:T[] = [];
+<     constructor(public id:T) {}
+---
+>     public afters: T[] = [];
+>     constructor(public id: T) {}
+18,22c19,21
+< function sortDesc(a, b) {
+<     if (a<b)
+<     return 1;
+<     if (a>b)
+<     return -1;
+---
+> function sortDesc<T = string | number>(a: T, b: T) {
+>     if (a < b) return 1;
+>     if (a > b) return -1;
+26a26,29
+> abstract class Stringable {
+>     abstract toString(): string;
+> }
+> 
+34,35c37,41
+< function topsort<T>(edges:T[][], options?:{continueOnCircularDependency: boolean}):T[] {
+<     var nodes: {[key:string]: EdgeNode<T> }   = {};
+---
+> function topsort<T extends Stringable>(edges: T[][], options?: {continueOnCircularDependency: boolean}): T[] {
+>     const nodes: {[key: string]: EdgeNode<T>} = {};
+>     if (!options) {
+>         options = {continueOnCircularDependency: false};
+>     }
+38c44
+<     var sorted:T[]  = [];
+---
+>     const sorted: T[] = [];
+41c47
+<     var visited: {[key: string]: boolean } = {};
+---
+>     const visited: {[key: string]: boolean} = {};
+44,48c50,53
+<     edges.forEach(function(edge:T[]) {
+< 
+<         var fromEdge:T = edge[0];
+<         var fromStr:string = fromEdge.toString();
+<         var fromNode:EdgeNode<T>;
+---
+>     edges.forEach(function (edge: T[]) {
+>         const fromEdge: T = edge[0];
+>         const fromStr: string = fromEdge.toString();
+>         let fromNode: EdgeNode<T>;
+54,55c59
+<         edge.forEach(function(toEdge:T) {
+< 
+---
+>         edge.forEach(function (toEdge: T) {
+57,58c61
+<             if (toEdge == fromEdge)
+<             {
+---
+>             if (toEdge == fromEdge) {
+62c65
+<             var toEdgeStr:string = toEdge.toString();
+---
+>             const toEdgeStr: string = toEdge.toString();
+72c75
+<     var keys:string[] = Object.keys(nodes);
+---
+>     const keys: string[] = Object.keys(nodes);
+74,76c77,79
+<     keys.forEach(function visit(idstr:string, ancestorsIn:any) {
+<         var node:EdgeNode<T> = nodes[idstr];
+<         var id:T = node.id;
+---
+>     keys.forEach(function visit(idstr: string, ancestorsIn: any) {
+>         const node: EdgeNode<T> = nodes[idstr];
+>         const id: T = node.id;
+83c86
+<         var ancestors:T[] = Array.isArray(ancestorsIn) ? ancestorsIn : [];
+---
+>         const ancestors: T[] = Array.isArray(ancestorsIn) ? ancestorsIn : [];
+89c92
+<         node.afters.forEach(function(afterID:T) {
+---
+>         node.afters.forEach(function (afterID: T) {
+92,93c95
+<                 if (options.continueOnCircularDependency)
+<                 {
+---
+>                 if (options?.continueOnCircularDependency) {
+96c98,108
+<                 throw new Error('Circular chain found: ' + id + ' must be before ' + afterID + ' due to a direct order specification, but ' + afterID + ' must be before ' + id + ' based on other specifications.');
+---
+>                 throw new Error(
+>                     'Circular chain found: ' +
+>                         id +
+>                         ' must be before ' +
+>                         afterID +
+>                         ' due to a direct order specification, but ' +
+>                         afterID +
+>                         ' must be before ' +
+>                         id +
+>                         ' based on other specifications.'
+>                 );
+100c112,117
+<             visit(afterID.toString(), ancestors.map(function(v) { return v; }));
+---
+>             visit(
+>                 afterID.toString(),
+>                 ancestors.map(function (v) {
+>                     return v;
+>                 })
+>             );
+109,110c126
+< export = topsort;
+< 
+---
+> export default topsort;

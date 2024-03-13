@@ -11,13 +11,11 @@ export class ProjectEditor extends BaseEditor {
     }
 
     protected getStylePaths() {
-        return [
-            // ['views', 'project', 'dist', 'assets', 'index.css']
-        ];
+        return [];
     }
 
     protected getScriptPaths() {
-        return [['views', 'project', 'dist', 'assets', 'index.js']];
+        return [['dist', 'views', 'project', 'index.js']];
     }
 
     protected getInitialData(args: EditorWebviewArgs): Record<string, unknown> {

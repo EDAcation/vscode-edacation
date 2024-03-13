@@ -1,7 +1,9 @@
 'use strict';
 
+import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import path from 'path';
 import {fileURLToPath} from 'url';
+import {VueLoaderPlugin} from 'vue-loader';
 import webpack from 'webpack';
 
 // @ts-check
@@ -11,18 +13,38 @@ import webpack from 'webpack';
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type WebpackConfig */
-const webExtensionConfig = {
+const baseConfig = {
     mode: 'none',
     target: 'webworker',
+    entry: {},
+
+    externals: {
+        vscode: 'commonjs vscode' // ignored because it doesn't exist
+    },
+    performance: {
+        hints: false
+    },
+    devtool: 'nosources-source-map',
+    infrastructureLogging: {
+        level: 'log'
+    }
+};
+
+/** @type WebpackConfig */
+const extensionConfig = Object.assign({}, baseConfig, {
     entry: {
         extension: './src/extension/index.ts',
         'test/suite/index': './src/extension/test/suite/index.ts'
     },
     output: {
         filename: '[name].js',
-        path: path.join(currentDirectory, './dist/extension'),
+        path: path.join(currentDirectory, 'dist', 'extension'),
         libraryTarget: 'commonjs',
         devtoolModuleFilenameTemplate: '../../[resource-path]'
+    },
+    externals: {
+        vscode: 'commonjs vscode', // ignored because it doesn't exist
+        child_process: 'child_process'
     },
     resolve: {
         mainFields: ['browser', 'module', 'main'],
@@ -56,25 +78,11 @@ const webExtensionConfig = {
         new webpack.ProvidePlugin({
             process: 'process/browser'
         })
-    ],
-    externals: {
-        vscode: 'commonjs vscode', // ignored because it doesn't exist
-        child_process: 'child_process',
-        worker_threads: 'worker_threads'
-    },
-    performance: {
-        hints: false
-    },
-    devtool: 'nosources-source-map',
-    infrastructureLogging: {
-        level: 'log'
-    }
-};
+    ]
+});
 
 /** @type WebpackConfig */
-const workerConfig = {
-    mode: 'none',
-    target: 'webworker',
+const workerConfig = Object.assign({}, baseConfig, {
     entry: {
         yosys: {
             import: './src/workers/yosys.ts',
@@ -148,19 +156,94 @@ const workerConfig = {
             }
         ]
     },
-    externals: {
-        vscode: 'commonjs vscode' // ignored because it doesn't exist
-    },
-    performance: {
-        hints: false
-    },
-    devtool: 'nosources-source-map',
-    infrastructureLogging: {
-        level: 'log'
-    },
     optimization: {
         minimize: false
     }
-};
+});
 
-export default [webExtensionConfig, workerConfig];
+/** @type WebpackConfig */
+const viewsConfig = Object.assign({}, baseConfig, {
+    entry: {
+        actions: './src/views/actions/src/main.ts',
+        nextpnr: './src/views/nextpnr/src/main.ts',
+        digitaljs: './src/views/digitaljs/src/main.ts',
+        project: './src/views/project/src/main.ts'
+    },
+    output: {
+        filename: '[name]/index.js',
+        path: path.join(currentDirectory, 'dist', 'views'),
+        library: {
+            name: 'exportVar',
+            type: 'var'
+        }
+    },
+    resolve: {
+        mainFields: ['browser', 'module', 'main'],
+        extensions: ['.ts', '.js'],
+        extensionAlias: {
+            '.js': ['.ts', '.js']
+        },
+        alias: {
+            fs: false,
+            child_process: false,
+            tmp: path.join(currentDirectory, 'src/views/digitaljs/src/aliases/tmp.ts'),
+            topsort: path.join(currentDirectory, 'src/views/digitaljs/src/aliases/topsort.ts')
+        },
+        fallback: {
+            crypto: false,
+            path: 'path-browserify',
+            os: 'os-browserify'
+        }
+    },
+    module: {
+        rules: [
+            {
+                test: /\.ts$/,
+                use: [
+                    {
+                        loader: 'ts-loader',
+                        options: {
+                            appendTsSuffixTo: [/\.vue$/],
+                            compilerOptions: {
+                                noEmit: false
+                            }
+                        }
+                    }
+                ]
+            },
+            {
+                test: /\.vue$/,
+                loader: 'vue-loader',
+                options: {
+                    compilerOptions: {
+                        // eslint-disable-next-line
+                        isCustomElement: (tag) => tag.startsWith('vscode-')
+                    }
+                }
+            },
+            {
+                test: /\.css$/i,
+                use: [MiniCssExtractPlugin.loader, 'css-loader']
+            },
+            {
+                test: /\.ttf$/,
+                type: 'asset/resource',
+                generator: {
+                    filename: './[name][ext]'
+                }
+            }
+        ]
+    },
+    plugins: [
+        new VueLoaderPlugin(),
+        new MiniCssExtractPlugin({
+            filename: '[name]/index.css'
+        }),
+        new webpack.ProvidePlugin({
+            process: 'process/browser',
+            os: 'os-browserify/browser'
+        })
+    ]
+});
+
+export default [extensionConfig, workerConfig, viewsConfig];

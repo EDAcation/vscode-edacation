@@ -14,5 +14,5 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true
     },
-    "exclude": ["node_modules", "views"]
+    "exclude": ["node_modules", "src/views"]
 }
