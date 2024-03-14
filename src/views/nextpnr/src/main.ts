@@ -1,5 +1,6 @@
 import '@vscode/codicons/dist/codicon.css';
 import {allComponents} from '@vscode/webview-ui-toolkit/dist/toolkit.js';
+import {getElementGroups} from 'edacation';
 import nextpnrViewer from 'nextpnr-viewer';
 
 import {vscode} from '../../vscode';
@@ -26,6 +27,8 @@ class View {
 
     private viewer?: ReturnType<typeof nextpnrViewer>;
 
+    private cellColors: Record<string, string> = {};
+
     constructor(root: HTMLDivElement, state: State) {
         this.root = root;
         this.state = state;
@@ -33,6 +36,13 @@ class View {
         addEventListener('message', this.handleMessage.bind(this));
         addEventListener('messageerror', this.handleMessageError.bind(this));
         addEventListener('resize', this.handleResize.bind(this));
+
+        // Populate cell colors from EDAcation library
+        for (const elemGroup of getElementGroups().values()) {
+            for (const elem of elemGroup.elements) {
+                this.cellColors[elem] = elemGroup.color;
+            }
+        }
 
         if (this.state.document) {
             this.renderDocument();
@@ -110,7 +120,8 @@ class View {
                 this.root.appendChild(elementViewer);
                 this.viewer = nextpnrViewer(elementViewer, {
                     width,
-                    height
+                    height,
+                    cellColors: this.cellColors
                 });
             }
 

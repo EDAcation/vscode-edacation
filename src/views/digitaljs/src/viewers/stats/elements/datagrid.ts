@@ -1,6 +1,16 @@
 import {CustomElement} from './base';
 
-export type DataGridCell = Node | string;
+export type DataGridCellElem = Node | string;
+
+type CellBorder = 'top' | 'left' | 'right' | 'bottom';
+type BorderWidth = 'thin' | 'medium' | 'thick';
+
+export interface DataGridCell {
+    elem: DataGridCellElem;
+    borderColor?: string; // Default: no color (= disable)
+    borderWidth?: BorderWidth; // Default: medium
+    borders?: CellBorder[]; // Default: no borders
+}
 
 class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
     protected rootElem: HTMLElement;
@@ -10,7 +20,7 @@ class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
     constructor(headers: string[] = []) {
         super();
 
-        this.cells = [headers];
+        this.cells = [headers.map((h) => ({elem: h}))];
         this.rootElem = document.createElement('vscode-data-grid');
     }
 
@@ -20,6 +30,27 @@ class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
 
     get height() {
         return this.cells.length;
+    }
+
+    private setCellColor(x: number, y: number, gridCell: HTMLElement) {
+        const cell = this.cells[y][x];
+        const cellColor = cell?.borderColor;
+        const cellBorders = cell?.borders ?? [];
+
+        gridCell.style.borderWidth = cell?.borderWidth ?? 'medium';
+        gridCell.style.borderColor = cellColor ?? 'none';
+
+        // Color a certain border only if it is specified and there is a color
+        const doTop = cellBorders.indexOf('top') !== -1 && cellColor;
+        const doLeft = cellBorders.indexOf('left') !== -1 && cellColor;
+        const doRight = cellBorders.indexOf('right') !== -1 && cellColor;
+        const doBottom = cellBorders.indexOf('bottom') !== -1 && cellColor;
+
+        // Set border styles, hide border if cell color is undefined
+        gridCell.style.borderTopStyle = doTop ? 'solid' : 'none';
+        gridCell.style.borderLeftStyle = doLeft ? 'solid' : 'none';
+        gridCell.style.borderRightStyle = doRight ? 'solid' : 'none';
+        gridCell.style.borderBottomStyle = doBottom ? 'solid' : 'none';
     }
 
     addColumn(contents: DataGridCell[], pos?: number): number {
@@ -67,12 +98,14 @@ class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
         if (!row) {
             return;
         }
-        const cell = row.querySelectorAll('vscode-data-grid-cell')[x];
+        const cell = row.querySelectorAll('vscode-data-grid-cell')[x] as HTMLElement;
         if (!cell) {
             return;
         }
         cell.replaceChildren();
-        cell.append(value);
+        cell.append(value.elem);
+
+        this.setCellColor(x, y, cell);
     }
 
     clearRows() {
@@ -92,8 +125,9 @@ class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
             const cell = document.createElement('vscode-data-grid-cell');
             cell.setAttribute('cell-type', 'columnheader');
             cell.setAttribute('grid-column', (i + 1).toString());
-            cell.append(this.cells[0][i]);
+            cell.append(this.cells[0][i].elem);
             headerElem.appendChild(cell);
+            this.setCellColor(i, 0, cell);
         }
         this.rootElem.appendChild(headerElem);
 
@@ -104,8 +138,9 @@ class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
             for (let coli = 0; coli < this.width; coli++) {
                 const cell = document.createElement('vscode-data-grid-cell');
                 cell.setAttribute('grid-column', (coli + 1).toString());
-                cell.append(this.cells[rowi][coli]);
+                cell.append(this.cells[rowi][coli].elem);
                 row.appendChild(cell);
+                this.setCellColor(coli, rowi, cell);
             }
             this.rootElem.appendChild(row);
         }
@@ -335,7 +370,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
         const delBtn = document.createElement('vscode-button');
         delBtn.innerHTML = /* html */ `<span class="codicon codicon-close"></span>`;
         delBtn.addEventListener('click', (_ev) => {
-            const coli = this.cells[0].indexOf(header);
+            const coli = this.cells[0].map((cell) => cell.elem).indexOf(header);
             const defColCount = this.getDefaultOptions().length;
             if (coli >= defColCount) {
                 this.cols.splice(coli - defColCount, 1);
@@ -359,7 +394,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
         header.appendChild(dropdown);
 
         dropdown.addEventListener('change', (_ev) => {
-            const headerIndex = this.cells[0].indexOf(header);
+            const headerIndex = this.cells[0].map((cell) => cell.elem).indexOf(header);
             if (headerIndex === -1) return;
 
             const newOption = this.getAvailableOptions()[dropdown.selectedIndex];
@@ -371,7 +406,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
             this.dispatchEvent('gridConfigUpdate', {config: this.getConfig()});
         });
 
-        const pos = super.addColumn([header]);
+        const pos = super.addColumn([{elem: header}]);
 
         this.render();
 
@@ -394,7 +429,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
 
         // Restore them again
         for (const option of this.getDefaultOptions()) {
-            super.addColumn([this.getOptionName(option)]);
+            super.addColumn([{elem: this.getOptionName(option)}]);
         }
         for (const col of this.cols) {
             this.addCol(col, true);

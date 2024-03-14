@@ -28,7 +28,7 @@ export class RTLTaskProvider extends TaskProvider {
         const runner = getConfiguredRunner(this.context);
         const task = new RTLTerminalTask(runner);
 
-        return new TaskTerminal(this.projects, folder, definition, task);
+        return new TaskTerminal(this.projects, folder, definition, [task]);
     }
 }
 

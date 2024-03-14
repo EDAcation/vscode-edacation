@@ -1,4 +1,4 @@
-import type {Uri} from 'vscode';
+import * as vscode from 'vscode';
 
 export enum AnsiModifier {
     RESET = '\x1b[0m',
@@ -11,7 +11,7 @@ export enum AnsiModifier {
 export interface TaskOutputFile {
     path: string;
     data?: Uint8Array;
-    uri?: Uri;
+    uri?: vscode.Uri;
 }
 
 export interface TerminalMessagePrintln {
@@ -36,20 +36,14 @@ export type TerminalMessage = TerminalMessagePrintln | TerminalMessageError | Te
 type MessageCallback = (m: TerminalMessage) => void;
 
 export abstract class TerminalMessageEmitter {
-    private messageCallbacks: MessageCallback[];
-
-    constructor() {
-        this.messageCallbacks = [];
-    }
+    private messageEvent: vscode.EventEmitter<TerminalMessage> = new vscode.EventEmitter();
 
     public onMessage(callback: MessageCallback) {
-        this.messageCallbacks.push(callback);
+        this.messageEvent.event(callback);
     }
 
     private fire(message: TerminalMessage) {
-        for (const callback of this.messageCallbacks) {
-            callback(message);
-        }
+        this.messageEvent.fire(message);
     }
 
     protected println(line = '', stream: 'stdout' | 'stderr' = 'stdout', modifier?: AnsiModifier) {

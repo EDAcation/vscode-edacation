@@ -55,9 +55,11 @@ export class ModuleOverviewGrid extends InteractiveDataGrid<Module, ModuleOvervi
     protected getValue(item: Module, option: ModuleOverviewOptions): DataGridCell {
         switch (option) {
             case 'name':
-                return item.name;
-            case 'count':
-                return this.modules[0].globalChildren.get(item)?.toString() ?? '-';
+                return {elem: item.name};
+            case 'count': {
+                const val = this.modules[0].globalChildren.get(item)?.toString() ?? '-';
+                return {elem: val};
+            }
             default: {
                 const countVar = this.getSetting('count-recursive') ? 'globalStats' : 'stats';
                 let stat1 = item[countVar][option];
@@ -67,7 +69,8 @@ export class ModuleOverviewGrid extends InteractiveDataGrid<Module, ModuleOvervi
 
                 const stat2 = this.modules[0].globalStats[option];
 
-                return `${stat1}/${stat2} (${getPercentage(stat1, stat2)}%)`;
+                const val = `${stat1}/${stat2} (${getPercentage(stat1, stat2)}%)`;
+                return {elem: val};
             }
         }
     }

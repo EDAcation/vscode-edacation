@@ -1,3 +1,5 @@
+import {getElementGroup} from 'edacation';
+
 import {type Module, getTotalPrimCounts} from '../modules';
 
 import {type DataGridCell, type DatagridSetting, InteractiveDataGrid, type InteractiveDatagridConfig} from './datagrid';
@@ -70,9 +72,10 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
 
     protected getValue(item: Module, option: PrimitivesOverviewOptions): DataGridCell {
         if (option === 'name') {
-            return item.name;
+            return {elem: item.name};
         } else if (option === 'count') {
-            return this.modules[0].globalChildren.get(item)?.toString() ?? '-';
+            const val = this.modules[0].globalChildren.get(item)?.toString() ?? '-';
+            return {elem: val};
         }
 
         const totalCount = getTotalPrimCounts(this.modules[0].findPrimitives({name: option}, true));
@@ -80,7 +83,7 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
         const isGlobal = this.getSetting('count-recursive');
         const count = getTotalPrimCounts(item.findPrimitives({name: option}, isGlobal));
         if (!count || !totalCount) {
-            return '-';
+            return {elem: '-'};
         }
 
         if (this.getSetting('count-all')) {
@@ -92,7 +95,14 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
         const cellShare = getPercentage(count.cells, totalCount.cells);
         const bitShare = getPercentage(count.bits, totalCount.bits);
 
-        return `cells: ${count.cells} (${cellShare}%) / bits: ${count.bits} (${bitShare}%)`;
+        const val = `cells: ${count.cells} (${cellShare}%) / bits: ${count.bits} (${bitShare}%)`;
+
+        // Detect whether this is the first row. Bit hacky, but it works fine.
+        if (item === this.modules[0]) {
+            const color = getElementGroup(option)?.color;
+            return {elem: val, borderColor: color, borders: ['top']};
+        }
+        return {elem: val};
     }
 
     override update() {

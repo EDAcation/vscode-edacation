@@ -1,4 +1,5 @@
-import {Circuit} from 'digitaljs';
+import {Circuit, getCellTypeStr} from 'digitaljs';
+import {getElementGroups} from 'edacation';
 import {yosys2digitaljs} from 'yosys2digitaljs';
 
 import type {ForeignViewMessage} from '../../messages';
@@ -13,6 +14,11 @@ interface ButtonCallback {
     model: Model;
     paper: any; // eslint-disable-line @typescript-eslint/no-explicit-any
     navHistory: Model[];
+}
+
+// type CellAttrDef = Record<string, CellAttrDef>;
+interface CellAttrDef {
+    [key: string]: CellAttrDef | string;
 }
 
 const getSvg = (svgElem: Element, width: number, height: number): string => {
@@ -62,8 +68,18 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
         // Convert from Yosys netlist to DigitalJS format
         const digitalJs = yosys2digitaljs(this.data);
 
+        // Generate table for custom cell colors
+        const cellAttrs: Record<string, CellAttrDef> = {};
+        for (const [name, group] of getElementGroups().entries()) {
+            const cellName = getCellTypeStr('$' + name);
+            if (!cellName) {
+                continue; // Not supported
+            }
+            cellAttrs[cellName] = {body: {fill: group.color}};
+        }
+
         // Initialize circuit
-        const circuit = new Circuit(digitalJs, {subcircuitButtons: this.subCircuitButtons});
+        const circuit = new Circuit(digitalJs, {subcircuitButtons: this.subCircuitButtons, cellAttributes: cellAttrs});
 
         // Clear
         this.root.replaceChildren();

@@ -16,12 +16,16 @@ export interface TaskDefinition extends vscode.TaskDefinition {
 export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter {
     private readonly runner: TaskRunner;
 
+    private isDisabled: boolean;
+
     constructor(runner: TaskRunner) {
         super();
 
         this.runner = runner;
         // proxy all runner messages to terminal
         this.runner.onMessage(this.onRunnerMessage.bind(this));
+
+        this.isDisabled = false;
     }
 
     abstract getName(): string;
@@ -45,6 +49,8 @@ export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter
     abstract handleEnd(project: Project, outputFiles: TaskOutputFile[]): Promise<void>;
 
     private onRunnerMessage(message: TerminalMessage) {
+        if (this.isDisabled) return;
+
         switch (message.type) {
             case 'println': {
                 this.println(message.line, message.stream);
@@ -103,5 +109,9 @@ export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter
             outputFiles
         };
         await this.runner.run(ctx);
+    }
+
+    cleanup() {
+        this.isDisabled = true;
     }
 }

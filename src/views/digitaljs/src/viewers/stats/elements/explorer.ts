@@ -1,3 +1,5 @@
+import {getElementGroup} from 'edacation';
+
 import {type Module, type ModuleStatId, getModuleStatIds, getModuleStatName, getTotalPrimCounts} from '../modules';
 
 import {type DataGridCell, type DatagridSetting, InteractiveDataGrid} from './datagrid';
@@ -80,17 +82,23 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
             }
         }
 
+        // Get unique primitive names (so no diff bit widths) and sort by their element group
         let primNames = this.curModule.primitives.map((prim) => prim.name);
         primNames = primNames.filter((val, ind) => primNames.indexOf(val) === ind);
+        primNames.sort((p1, p2) => {
+            const order1 = getElementGroup(p1)?.sorting ?? Infinity;
+            const order2 = getElementGroup(p2)?.sorting ?? Infinity;
+            return [order1, p1] > [order2, p2] ? 1 : -1;
+        });
 
         // Update grid
         this.reset(false, true);
         this.addRowItem({type: 'current'});
-        for (const prim of primNames) {
-            this.addRowItem({type: 'primitive', primitive: prim});
-        }
         for (const subCircuit of this.curModule.children.keys()) {
             this.addRowItem({type: 'child', module: subCircuit});
+        }
+        for (const prim of primNames) {
+            this.addRowItem({type: 'primitive', primitive: prim});
         }
 
         super.update();
@@ -127,8 +135,9 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
         switch (item.type) {
             case 'current':
                 return this.getValueCurrent(item, option);
-            case 'primitive':
+            case 'primitive': {
                 return this.getValuePrimitive(item, option);
+            }
             case 'child':
                 return this.getValueChild(item, option);
         }
@@ -137,24 +146,27 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
     private getValueCurrent(_item: ModuleExplorerRowCurrent, option: ModuleExplorerOptions): DataGridCell {
         switch (option) {
             case 'name':
-                return '< Current Module >';
+                return {elem: '< Current Module >'};
             case 'count':
-                return '-';
+                return {elem: '-'};
             default:
-                return this.curModule.globalStats[option].toString();
+                return {elem: this.curModule.globalStats[option].toString()};
         }
     }
 
     private getValuePrimitive(item: ModuleExplorerRowPrimitive, option: ModuleExplorerOptions): DataGridCell {
         switch (option) {
-            case 'name':
-                return '$' + item.primitive;
+            case 'name': {
+                // Only color left border of primitive's name cell (first column)
+                const color = getElementGroup(item.primitive)?.color;
+                return {elem: '$' + item.primitive, borderColor: color, borders: ['left']};
+            }
             case 'count': {
                 const count = getTotalPrimCounts(this.curModule.findPrimitives({name: item.primitive}, false));
-                return `${count.cells} (${count.bits} total bits)`;
+                return {elem: `${count.cells} (${count.bits} total bits)`};
             }
             default:
-                return '';
+                return {elem: ''};
         }
     }
 
@@ -167,10 +179,10 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
                     this.navigate(item.module);
                     this.update();
                 });
-                return link;
+                return {elem: link};
             }
             case 'count':
-                return this.curModule.children.get(item.module)?.toString() ?? '-';
+                return {elem: this.curModule.children.get(item.module)?.toString() ?? '-'};
             default: {
                 let stat1 = item.module.globalStats[option];
                 if (this.getSetting('count-all')) {
@@ -179,7 +191,7 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
 
                 const stat2 = this.curModule.globalStats[option];
 
-                return `${stat1} (${getPercentage(stat1, stat2)}%)`;
+                return {elem: `${stat1} (${getPercentage(stat1, stat2)}%)`};
             }
         }
     }
