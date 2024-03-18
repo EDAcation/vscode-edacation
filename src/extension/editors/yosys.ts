@@ -13,23 +13,17 @@ export class YosysEditor extends BaseEditor {
     }
 
     protected getStylePaths() {
-        return [['views', 'digitaljs', 'dist', 'assets', 'index.css']];
+        return [['dist', 'views', 'digitaljs', 'index.css']];
     }
 
     protected getScriptPaths() {
-        return [['views', 'digitaljs', 'dist', 'assets', 'index.js']];
+        return [['dist', 'views', 'digitaljs', 'index.js']];
     }
 
     protected getHtmlStyles(webview: vscode.Webview): string {
         const styles = super.getHtmlStyles(webview);
 
-        const fontUri = util.getWebviewUri(webview, this.context, [
-            'views',
-            'digitaljs',
-            'dist',
-            'assets',
-            'codicon.ttf'
-        ]);
+        const fontUri = util.getWebviewUri(webview, this.context, ['dist', 'views', 'codicon.ttf']);
 
         return `
             ${styles}

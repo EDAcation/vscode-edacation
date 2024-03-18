@@ -107,10 +107,15 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
     protected projects: Projects;
     private folder: vscode.WorkspaceFolder;
     private definition: TaskDefinition;
-    private task: TerminalTask<WorkerOptions>;
+
+    private tasks: TerminalTask<WorkerOptions>[];
+    private curTask: TerminalTask<WorkerOptions> | null;
+
+    private curProject: Project | null;
 
     private logMessages: string[];
 
+    private taskFinishEmitter = new vscode.EventEmitter<number>();
     private writeEmitter = new vscode.EventEmitter<string>();
     private closeEmitter = new vscode.EventEmitter<number>();
 
@@ -121,18 +126,24 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
         projects: Projects,
         folder: vscode.WorkspaceFolder,
         definition: TaskDefinition,
-        task: TerminalTask<WorkerOptions>
+        tasks: TerminalTask<WorkerOptions>[]
     ) {
         this.projects = projects;
         this.folder = folder;
         this.definition = definition;
-        this.task = task;
+
+        this.tasks = tasks;
+        this.curTask = null;
+
+        this.curProject = null;
 
         this.logMessages = [];
+
+        this.taskFinishEmitter.event(this.executeNextTask.bind(this));
     }
 
     async open() {
-        await this.execute();
+        await this.executeNextTask();
     }
 
     close() {
@@ -154,27 +165,29 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
         this.logMessages.push(logMessage);
     }
 
-    protected async exit(code: number, project?: Project) {
+    protected async exit(code: number) {
+        if (!this.curTask) return;
+
         try {
             // Write logs
             const uri = vscode.Uri.joinPath(
-                project ? project.getRoot() : this.folder.uri,
-                `${this.task.getName()}.log`
+                this.curProject ? this.curProject.getRoot() : this.folder.uri,
+                `${this.curTask?.getName()}.log`
             );
             await vscode.workspace.fs.writeFile(uri, encodeText(this.logMessages.join('')));
 
-            if (project) {
+            if (this.curProject) {
                 // Add log to output files
-                await project.addOutputFileUris([uri]);
+                await this.curProject.addOutputFileUris([uri]);
             }
         } catch (err) {
             console.error(err);
         }
 
-        this.closeEmitter.fire(code);
+        this.taskFinishEmitter.fire(code);
     }
 
-    protected async error(error: unknown, project?: Project) {
+    protected async error(error: unknown) {
         if (error instanceof Error) {
             const messageLines = (error.stack || error.message).split('\n');
             for (const line of messageLines) {
@@ -183,29 +196,48 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
         } else if (typeof error === 'string') {
             this.println(error, 'stderr');
         }
-        await this.exit(1, project);
+        await this.exit(1);
     }
 
-    private async execute(): Promise<void> {
-        const project = this.projects.getCurrent();
-        if (!project) {
-            await this.error(new Error('No current project!'));
+    private async executeNextTask(prevExitCode: number = 0): Promise<void> {
+        // Set current project once
+        if (!this.curProject) {
+            this.curProject = this.projects.getCurrent() ?? null;
+            if (!this.curProject) {
+                await this.error(new Error('No current project!'));
+                return;
+            }
+        }
+
+        if (this.tasks.length === 0 || prevExitCode !== 0) {
+            this.curTask = null;
+            this.curProject = null;
+
+            this.closeEmitter.fire(prevExitCode);
             return;
         }
 
+        this.curTask = this.tasks[0];
+        this.tasks.splice(0, 1);
+
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        this.task.onMessage(this.handleMessage.bind(this, project));
+        this.curTask.onMessage(this.handleMessage.bind(this, this.curTask));
 
         try {
-            await this.task.handleStart(project);
+            await this.curTask.handleStart(this.curProject);
 
-            await this.task.execute(project, this.definition);
+            await this.curTask.execute(this.curProject, this.definition);
         } catch (err) {
-            await this.error(err, project);
+            await this.error(err);
         }
     }
 
-    private async handleMessage(project: Project, message: TerminalMessage) {
+    private async handleMessage(task: TerminalTask<WorkerOptions>, message: TerminalMessage) {
+        if (!this.curProject) {
+            console.warn(`Received message but no project active! ${JSON.stringify(message)}`);
+            return;
+        }
+
         try {
             switch (message.type) {
                 case 'println': {
@@ -214,7 +246,7 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
                     break;
                 }
                 case 'error': {
-                    await this.error(message.error, project);
+                    await this.error(message.error);
 
                     break;
                 }
@@ -223,7 +255,7 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
                     for (const file of outputFiles) {
                         // Construct URI if missing
                         if (!file.uri) {
-                            file.uri = vscode.Uri.joinPath(project.getRoot(), file.path);
+                            file.uri = vscode.Uri.joinPath(this.curProject.getRoot(), file.path);
                         }
 
                         // Save file data (if requested)
@@ -235,17 +267,18 @@ export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
 
                     // Add output files to project output
                     const uris = outputFiles.map((outp) => outp.uri).filter((outp): outp is vscode.Uri => !!outp);
-                    await project.addOutputFileUris(uris);
+                    await this.curProject.addOutputFileUris(uris);
 
-                    await this.task.handleEnd(project, outputFiles);
+                    await task.handleEnd(this.curProject, outputFiles);
+                    task.cleanup();
 
-                    await this.exit(0, project);
+                    await this.exit(0);
 
                     break;
                 }
             }
         } catch (err) {
-            await this.error(err, project);
+            await this.error(err);
         }
     }
 }

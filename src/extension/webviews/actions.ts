@@ -11,13 +11,11 @@ export class ActionsProvider extends BaseWebviewViewProvider {
     }
 
     protected getStylePaths() {
-        return [
-            // ['views', 'actions', 'dist', 'assets', 'index.css']
-        ];
+        return [];
     }
 
     protected getScriptPaths() {
-        return [['views', 'actions', 'dist', 'assets', 'index.js']];
+        return [['dist', 'views', 'actions', 'index.js']];
     }
 
     protected getInitialData(): Record<string, unknown> {
