@@ -4,6 +4,7 @@ import {
     generateYosysSynthPrepareCommands,
     getYosysWorkerOptions
 } from 'edacation';
+import path from 'path-browserify';
 import * as vscode from 'vscode';
 
 import type {MessageFile} from '../../common/messages.js';
@@ -36,8 +37,8 @@ export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOpti
         return workerOptions.tool;
     }
 
-    getInputArgs(_workerOptions: YosysWorkerOptions): string[] {
-        return ['design.ys'];
+    getInputArgs(workerOptions: YosysWorkerOptions): string[] {
+        return [path.join(workerOptions.target.directory ?? '.', 'design.ys')];
     }
 
     getInputFiles(workerOptions: YosysWorkerOptions): string[] {
@@ -95,7 +96,7 @@ export class YosysTaskProvider extends TaskProvider {
 
 class YosysPrepareTerminalTask extends BaseYosysTerminalTask {
     getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
-        const commandsGenerated = generateYosysSynthPrepareCommands(workerOptions.inputFiles);
+        const commandsGenerated = generateYosysSynthPrepareCommands(workerOptions);
 
         return [
             {
@@ -106,7 +107,7 @@ class YosysPrepareTerminalTask extends BaseYosysTerminalTask {
     }
 
     getOutputFiles(_workerOptions: YosysWorkerOptions): string[] {
-        return ['presynth.digitaljs.json'];
+        return ['presynth.yosys.json'];
     }
 
     private addCellTypes(record: JSONValue): JSONValue {
@@ -131,7 +132,7 @@ class YosysPrepareTerminalTask extends BaseYosysTerminalTask {
     async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
         await super.handleEnd(project, outputFiles);
 
-        const presynthFile = outputFiles.find((file) => file.path.endsWith('presynth.digitaljs.json'));
+        const presynthFile = outputFiles.find((file) => file.path.endsWith('presynth.yosys.json'));
         if (!presynthFile || !presynthFile.uri) return;
 
         const oldContent = decodeJSON(await vscode.workspace.fs.readFile(presynthFile.uri)) as JSONValue;
@@ -141,8 +142,8 @@ class YosysPrepareTerminalTask extends BaseYosysTerminalTask {
 }
 
 class YosysSynthTerminalTask extends BaseYosysTerminalTask {
-    getGeneratedInputFiles(_workerOptions: YosysWorkerOptions): MessageFile[] {
-        const commandsGenerated = generateYosysSynthCommands();
+    getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
+        const commandsGenerated = generateYosysSynthCommands(workerOptions);
 
         return [
             {
@@ -153,7 +154,7 @@ class YosysSynthTerminalTask extends BaseYosysTerminalTask {
     }
 
     getInputFiles(_workerOptions: YosysWorkerOptions): string[] {
-        return ['presynth.digitaljs.json'];
+        return ['presynth.yosys.json'];
     }
 
     getOutputFiles(workerOptions: YosysWorkerOptions): string[] {
@@ -164,7 +165,7 @@ class YosysSynthTerminalTask extends BaseYosysTerminalTask {
         await super.handleEnd(project, outputFiles);
 
         // Open LUT file in DigitalJS editor
-        const lutFile = outputFiles.find((file) => file.path.endsWith('luts.digitaljs.json'));
+        const lutFile = outputFiles.find((file) => file.path.endsWith('luts.yosys.json'));
         if (lutFile) {
             const uri = vscode.Uri.joinPath(project.getRoot(), lutFile.path);
             await vscode.commands.executeCommand('vscode.open', uri);

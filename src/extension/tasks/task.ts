@@ -1,4 +1,5 @@
-import {decodeText} from 'edacation';
+import {type WorkerOptions as _WorkerOptions, decodeText} from 'edacation';
+import path from 'path-browserify';
 import type * as vscode from 'vscode';
 
 import type {MessageFile} from '../../common/messages.js';
@@ -13,7 +14,20 @@ export interface TaskDefinition extends vscode.TaskDefinition {
     uri?: vscode.Uri;
 }
 
-export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter {
+const _updateTaskFilePath = (p: string, relDir: string): string => {
+    if (p.startsWith(relDir)) return p;
+    return path.join(relDir, p);
+};
+
+const getTaskFilePaths = (paths: string[], relDir: string = '.'): string[] => {
+    return paths.map((p) => _updateTaskFilePath(p, relDir));
+};
+
+const getGeneratedTaskFilePaths = (paths: MessageFile[], relDir: string = '.'): MessageFile[] => {
+    return paths.map((p) => ({path: _updateTaskFilePath(p.path, relDir), data: p.data}));
+};
+
+export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends TerminalMessageEmitter {
     private readonly runner: TaskRunner;
 
     private isDisabled: boolean;
@@ -75,9 +89,12 @@ export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter
 
         const command = this.getInputCommand(workerOptions);
         const args = this.getInputArgs(workerOptions);
-        const inputFiles = this.getInputFiles(workerOptions);
-        const generatedInputFiles = this.getGeneratedInputFiles(workerOptions);
-        const outputFiles = this.getOutputFiles(workerOptions);
+        const inputFiles = getTaskFilePaths(this.getInputFiles(workerOptions), workerOptions.target.directory);
+        const generatedInputFiles = getGeneratedTaskFilePaths(
+            this.getGeneratedInputFiles(workerOptions),
+            workerOptions.target.directory
+        );
+        const outputFiles = getTaskFilePaths(this.getOutputFiles(workerOptions), workerOptions.target.directory);
         const workerFilename = this.getWorkerFileName(workerOptions);
 
         // Pretty-print input files and their contents

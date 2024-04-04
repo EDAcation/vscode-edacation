@@ -34,7 +34,7 @@ export class RTLTaskProvider extends TaskProvider {
 
 class RTLTerminalTask extends BaseYosysTerminalTask {
     getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
-        const commandsGenerated = generateYosysRTLCommands(workerOptions.inputFiles);
+        const commandsGenerated = generateYosysRTLCommands(workerOptions);
 
         return [
             {
@@ -45,15 +45,15 @@ class RTLTerminalTask extends BaseYosysTerminalTask {
     }
 
     getOutputFiles(_workerOptions: YosysWorkerOptions): string[] {
-        return ['rtl.digitaljs.json', 'stats.digitaljs.json'];
+        return ['rtl.yosys.json', 'stats.yosys.json'];
     }
 
     private async updateFile(uri: vscode.Uri) {
         const fileName = basename(uri.path);
         let fileType: string;
-        if (fileName === 'rtl.digitaljs.json') {
+        if (fileName === 'rtl.yosys.json') {
             fileType = 'rtl';
-        } else if (fileName === 'stats.digitaljs.json') {
+        } else if (fileName === 'stats.yosys.json') {
             fileType = 'stats';
         } else {
             this.warn(`Output file "${fileName}" not recognized. It might not be compatible with EDAcation.`);
@@ -87,7 +87,7 @@ class RTLTerminalTask extends BaseYosysTerminalTask {
         this.println('Done.');
 
         // Open RTL file in DigitalJS editor
-        const rtlFile = outputFiles.find((file) => file.path.endsWith('rtl.digitaljs.json'));
+        const rtlFile = outputFiles.find((file) => file.path.endsWith('rtl.yosys.json'));
         if (rtlFile) {
             const uri = vscode.Uri.joinPath(project.getRoot(), rtlFile.path);
             await vscode.commands.executeCommand('vscode.open', uri);

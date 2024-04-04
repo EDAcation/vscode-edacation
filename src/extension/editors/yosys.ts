@@ -9,7 +9,7 @@ export class YosysEditor extends BaseEditor {
     private static activeViews: Set<vscode.Webview> = new Set();
 
     public static getViewType() {
-        return 'edacation.digitaljs';
+        return 'edacation.yosys';
     }
 
     protected getStylePaths() {

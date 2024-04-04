@@ -1,3 +1,4 @@
+import {type WorkerOptions as _WorkerOptions} from 'edacation';
 import * as vscode from 'vscode';
 
 import type {Project, Projects} from '../projects/index.js';
@@ -60,7 +61,7 @@ export abstract class TaskProvider extends BaseTaskProvider {
     protected abstract createTaskTerminal(
         folder: vscode.WorkspaceFolder,
         definition: TaskDefinition
-    ): TaskTerminal<unknown>;
+    ): TaskTerminal<_WorkerOptions>;
 
     private async findTasks(): Promise<vscode.Task[]> {
         const tasks: vscode.Task[] = [];
@@ -103,7 +104,7 @@ export abstract class TaskProvider extends BaseTaskProvider {
     }
 }
 
-export class TaskTerminal<WorkerOptions> implements vscode.Pseudoterminal {
+export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscode.Pseudoterminal {
     protected projects: Projects;
     private folder: vscode.WorkspaceFolder;
     private definition: TaskDefinition;
