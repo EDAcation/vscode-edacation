@@ -7,13 +7,12 @@ import {
 import path from 'path-browserify';
 import * as vscode from 'vscode';
 
-import type {MessageFile} from '../../common/messages.js';
 import type {Project} from '../projects/index.js';
 import {decodeJSON, encodeJSON, encodeText} from '../util.js';
 
 import {AnsiModifier, type TaskOutputFile} from './messaging.js';
 import {getConfiguredRunner} from './runner.js';
-import {type TaskDefinition, TerminalTask} from './task.js';
+import {type TaskDefinition, type TaskIOFile, TerminalTask} from './task.js';
 import {TaskProvider, TaskTerminal} from './terminal.js';
 
 type JSONValue = string | number | boolean | {[x: string]: JSONValue} | Array<JSONValue>;
@@ -41,8 +40,8 @@ export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOpti
         return [path.join(workerOptions.target.directory ?? '.', 'design.ys')];
     }
 
-    getInputFiles(workerOptions: YosysWorkerOptions): string[] {
-        return workerOptions.inputFiles;
+    getInputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
+        return workerOptions.inputFiles.map((path) => ({type: 'user', path}));
     }
 
     protected println(line?: string, stream: 'stdout' | 'stderr' = 'stdout', modifier?: AnsiModifier) {
@@ -95,19 +94,22 @@ export class YosysTaskProvider extends TaskProvider {
 }
 
 class YosysPrepareTerminalTask extends BaseYosysTerminalTask {
-    getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
-        const commandsGenerated = generateYosysSynthPrepareCommands(workerOptions);
+    getInputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
+        const files = super.getInputFiles(workerOptions);
 
+        const commandsGenerated = generateYosysSynthPrepareCommands(workerOptions);
         return [
+            ...files,
             {
+                type: 'temp',
                 path: 'design.ys',
                 data: encodeText(commandsGenerated.join('\r\n'))
             }
         ];
     }
 
-    getOutputFiles(_workerOptions: YosysWorkerOptions): string[] {
-        return ['presynth.yosys.json'];
+    getOutputFiles(_workerOptions: YosysWorkerOptions): TaskIOFile[] {
+        return [{type: 'temp', path: 'presynth.yosys.json'}];
     }
 
     private addCellTypes(record: JSONValue): JSONValue {
@@ -142,23 +144,23 @@ class YosysPrepareTerminalTask extends BaseYosysTerminalTask {
 }
 
 class YosysSynthTerminalTask extends BaseYosysTerminalTask {
-    getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
+    getInputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
         const commandsGenerated = generateYosysSynthCommands(workerOptions);
-
         return [
             {
+                type: 'temp',
+                path: 'presynth.yosys.json'
+            },
+            {
+                type: 'temp',
                 path: 'design.ys',
                 data: encodeText(commandsGenerated.join('\r\n'))
             }
         ];
     }
 
-    getInputFiles(_workerOptions: YosysWorkerOptions): string[] {
-        return ['presynth.yosys.json'];
-    }
-
-    getOutputFiles(workerOptions: YosysWorkerOptions): string[] {
-        return workerOptions.outputFiles;
+    getOutputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
+        return workerOptions.outputFiles.map((path) => ({type: 'artifact', path}));
     }
 
     async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {

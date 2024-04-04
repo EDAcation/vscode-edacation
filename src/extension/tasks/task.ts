@@ -2,7 +2,6 @@ import {type WorkerOptions as _WorkerOptions, decodeText} from 'edacation';
 import path from 'path-browserify';
 import type * as vscode from 'vscode';
 
-import type {MessageFile} from '../../common/messages.js';
 import {type Project} from '../projects/index.js';
 
 import {AnsiModifier, type TaskOutputFile, type TerminalMessage, TerminalMessageEmitter} from './messaging.js';
@@ -14,17 +13,17 @@ export interface TaskDefinition extends vscode.TaskDefinition {
     uri?: vscode.Uri;
 }
 
-const _updateTaskFilePath = (p: string, relDir: string): string => {
-    if (p.startsWith(relDir)) return p;
-    return path.join(relDir, p);
-};
+export interface TaskIOFile {
+    type: 'user' | 'artifact' | 'temp';
+    path: string;
+    data?: Uint8Array;
+}
 
-const getTaskFilePaths = (paths: string[], relDir: string = '.'): string[] => {
-    return paths.map((p) => _updateTaskFilePath(p, relDir));
-};
-
-const getGeneratedTaskFilePaths = (paths: MessageFile[], relDir: string = '.'): MessageFile[] => {
-    return paths.map((p) => ({path: _updateTaskFilePath(p.path, relDir), data: p.data}));
+const getTaskFilePaths = (files: TaskIOFile[], relDir: string = '.'): TaskIOFile[] => {
+    return files.map((file) => {
+        if (file.type === 'user' || file.path.startsWith(relDir)) return file;
+        return {...file, path: path.join(relDir, file.path)};
+    });
 };
 
 export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends TerminalMessageEmitter {
@@ -52,11 +51,9 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
 
     abstract getInputArgs(workerOptions: WorkerOptions): string[];
 
-    abstract getInputFiles(workerOptions: WorkerOptions): string[];
+    abstract getInputFiles(workerOptions: WorkerOptions): TaskIOFile[];
 
-    abstract getGeneratedInputFiles(workerOptions: WorkerOptions): MessageFile[];
-
-    abstract getOutputFiles(workerOptions: WorkerOptions): string[];
+    abstract getOutputFiles(workerOptions: WorkerOptions): TaskIOFile[];
 
     abstract handleStart(project: Project): Promise<void>;
 
@@ -90,16 +87,13 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
         const command = this.getInputCommand(workerOptions);
         const args = this.getInputArgs(workerOptions);
         const inputFiles = getTaskFilePaths(this.getInputFiles(workerOptions), workerOptions.target.directory);
-        const generatedInputFiles = getGeneratedTaskFilePaths(
-            this.getGeneratedInputFiles(workerOptions),
-            workerOptions.target.directory
-        );
         const outputFiles = getTaskFilePaths(this.getOutputFiles(workerOptions), workerOptions.target.directory);
         const workerFilename = this.getWorkerFileName(workerOptions);
 
-        // Pretty-print input files and their contents
-        for (const inputFile of generatedInputFiles) {
-            this.println(inputFile.path + ':', undefined, AnsiModifier.BOLD);
+        // Pretty-print input files and their contents (if generated)
+        for (const inputFile of inputFiles) {
+            this.println(inputFile.path + (inputFile.data ? ':' : ''), undefined, AnsiModifier.BOLD);
+            if (!inputFile.data) continue;
 
             const indented = decodeText(inputFile.data)
                 .split('\n')
@@ -122,7 +116,6 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
             args,
 
             inputFiles,
-            generatedInputFiles,
             outputFiles
         };
         await this.runner.run(ctx);

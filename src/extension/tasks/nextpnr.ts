@@ -1,12 +1,11 @@
 import {type NextpnrWorkerOptions, getNextpnrWorkerOptions} from 'edacation';
 import * as vscode from 'vscode';
 
-import type {MessageFile} from '../../common/messages.js';
 import type {Project} from '../projects/index.js';
 
 import {AnsiModifier, type TaskOutputFile} from './messaging.js';
 import {getConfiguredRunner} from './runner.js';
-import {type TaskDefinition, TerminalTask} from './task.js';
+import {type TaskDefinition, type TaskIOFile, TerminalTask} from './task.js';
 import {TaskProvider, TaskTerminal} from './terminal.js';
 
 export class NextpnrTaskProvider extends TaskProvider {
@@ -50,16 +49,12 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
         return workerOptions.arguments;
     }
 
-    getInputFiles(workerOptions: NextpnrWorkerOptions): string[] {
-        return workerOptions.inputFiles;
+    getInputFiles(workerOptions: NextpnrWorkerOptions): TaskIOFile[] {
+        return workerOptions.inputFiles.map((path) => ({type: 'artifact', path}));
     }
 
-    getGeneratedInputFiles(_workerOptions: NextpnrWorkerOptions): MessageFile[] {
-        return [];
-    }
-
-    getOutputFiles(workerOptions: NextpnrWorkerOptions): string[] {
-        return workerOptions.outputFiles;
+    getOutputFiles(workerOptions: NextpnrWorkerOptions): TaskIOFile[] {
+        return workerOptions.outputFiles.map((path) => ({type: 'artifact', path}));
     }
 
     protected println(line = '', stream: 'stdout' | 'stderr' = 'stdout', modifier?: AnsiModifier) {

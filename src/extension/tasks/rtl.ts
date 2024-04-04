@@ -2,13 +2,12 @@ import {type YosysWorkerOptions, encodeText, generateYosysRTLCommands} from 'eda
 import {basename} from 'path-browserify';
 import * as vscode from 'vscode';
 
-import type {MessageFile} from '../../common/messages.js';
 import type {Project} from '../projects/index.js';
 import {decodeJSON, encodeJSON} from '../util.js';
 
-import {type TaskOutputFile} from './messaging.js';
+import type {TaskOutputFile} from './messaging.js';
 import {getConfiguredRunner} from './runner.js';
-import {type TaskDefinition} from './task.js';
+import type {TaskDefinition, TaskIOFile} from './task.js';
 import {TaskProvider, TaskTerminal} from './terminal.js';
 import {BaseYosysTerminalTask} from './yosys.js';
 
@@ -33,19 +32,31 @@ export class RTLTaskProvider extends TaskProvider {
 }
 
 class RTLTerminalTask extends BaseYosysTerminalTask {
-    getGeneratedInputFiles(workerOptions: YosysWorkerOptions): MessageFile[] {
-        const commandsGenerated = generateYosysRTLCommands(workerOptions);
+    getInputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
+        const files = super.getInputFiles(workerOptions);
 
+        const commandsGenerated = generateYosysRTLCommands(workerOptions);
         return [
+            ...files,
             {
+                type: 'temp',
                 path: 'design.ys',
                 data: encodeText(commandsGenerated.join('\r\n'))
             }
         ];
     }
 
-    getOutputFiles(_workerOptions: YosysWorkerOptions): string[] {
-        return ['rtl.yosys.json', 'stats.yosys.json'];
+    getOutputFiles(_workerOptions: YosysWorkerOptions): TaskIOFile[] {
+        return [
+            {
+                type: 'artifact',
+                path: 'rtl.yosys.json'
+            },
+            {
+                type: 'artifact',
+                path: 'stats.yosys.json'
+            }
+        ];
     }
 
     private async updateFile(uri: vscode.Uri) {

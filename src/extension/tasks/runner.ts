@@ -5,6 +5,7 @@ import {UniversalWorker} from '../../common/universal-worker.js';
 import {type Project} from '../projects/index.js';
 
 import {type TaskOutputFile, TerminalMessageEmitter} from './messaging.js';
+import type {TaskIOFile} from './task.js';
 
 export interface RunnerContext {
     project: Project;
@@ -13,9 +14,8 @@ export interface RunnerContext {
     command: string;
     args: string[];
 
-    inputFiles: string[];
-    generatedInputFiles: MessageFile[];
-    outputFiles: string[];
+    inputFiles: TaskIOFile[];
+    outputFiles: TaskIOFile[];
 }
 
 export abstract class TaskRunner extends TerminalMessageEmitter {
@@ -38,7 +38,8 @@ export class WebAssemblyTaskRunner extends TaskRunner {
     }
 
     async run(ctx: RunnerContext): Promise<void> {
-        const files = await this.readFiles(ctx.project, ctx.inputFiles);
+        const inFiles = await this.readFiles(ctx.project, ctx.inputFiles);
+        const outFiles = ctx.outputFiles.map((file) => file.path);
 
         // Create & start worker
         const worker = this.createWorker(ctx.workerFilename);
@@ -47,22 +48,26 @@ export class WebAssemblyTaskRunner extends TaskRunner {
                 type: 'input',
                 command: ctx.command,
                 args: ctx.args,
-                inputFiles: files.concat(ctx.generatedInputFiles),
-                outputFiles: ctx.outputFiles
+                inputFiles: inFiles,
+                outputFiles: outFiles
             },
-            files.map(({data}) => data.buffer)
+            inFiles.map(({data}) => data.buffer)
         );
     }
 
-    private async readFiles(project: Project, inputFiles: string[]): Promise<MessageFile[]> {
+    private async readFiles(project: Project, inputFiles: TaskIOFile[]): Promise<MessageFile[]> {
         const files: MessageFile[] = [];
         for (const file of inputFiles) {
-            const data = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(project.getRoot(), file));
+            if (file.data) {
+                files.push({path: file.path, data: file.data});
+            } else {
+                const data = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(project.getRoot(), file.path));
 
-            files.push({
-                path: file,
-                data
-            });
+                files.push({
+                    path: file.path,
+                    data
+                });
+            }
         }
 
         return files;
@@ -137,7 +142,9 @@ export class NativeTaskRunner extends TaskRunner {
 
     async run(ctx: RunnerContext): Promise<void> {
         // Write generated input files so the native process can load them
-        for (const file of ctx.generatedInputFiles) {
+        for (const file of ctx.inputFiles) {
+            if (!file.data) continue;
+
             const destUri = vscode.Uri.joinPath(ctx.project.getRoot(), file.path);
             await vscode.workspace.fs.writeFile(destUri, file.data);
         }
@@ -195,10 +202,10 @@ export class NativeTaskRunner extends TaskRunner {
         }
 
         if (code === 0) {
-            const outputFiles = ctx.outputFiles.map((file) => ({path: file}));
-            const writtenInputFiles = ctx.generatedInputFiles.map((file) => ({path: file.path}));
+            const outputFiles = ctx.outputFiles;
+            const writtenInputFiles = ctx.inputFiles.filter((file) => file.data);
 
-            this.done(outputFiles.concat(writtenInputFiles));
+            this.done(outputFiles.concat(writtenInputFiles).map((file) => ({path: file.path})));
         } else if (code !== null) {
             this.error(new Error(`Process exited with code ${code}`));
         } else {
