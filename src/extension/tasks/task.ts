@@ -21,8 +21,16 @@ export interface TaskIOFile {
 
 const getTaskFilePaths = (files: TaskIOFile[], relDir: string = '.'): TaskIOFile[] => {
     return files.map((file) => {
+        // user files should not be touched
         if (file.type === 'user' || file.path.startsWith(relDir)) return file;
-        return {...file, path: path.join(relDir, file.path)};
+
+        if (file.type === 'temp') {
+            // temporary file
+            return {...file, path: path.join(relDir, 'temp', file.path)};
+        } else {
+            // artifact
+            return {...file, path: path.join(relDir, file.path)};
+        }
     });
 };
 

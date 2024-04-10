@@ -37,7 +37,7 @@ export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOpti
     }
 
     getInputArgs(workerOptions: YosysWorkerOptions): string[] {
-        return [path.join(workerOptions.target.directory ?? '.', 'design.ys')];
+        return [path.join(workerOptions.target.directory ?? '.', 'temp', 'design.ys')];
     }
 
     getInputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
@@ -109,7 +109,7 @@ class YosysPrepareTerminalTask extends BaseYosysTerminalTask {
     }
 
     getOutputFiles(_workerOptions: YosysWorkerOptions): TaskIOFile[] {
-        return [{type: 'temp', path: 'presynth.yosys.json'}];
+        return [{type: 'artifact', path: 'presynth.yosys.json'}];
     }
 
     private addCellTypes(record: JSONValue): JSONValue {
@@ -148,7 +148,7 @@ class YosysSynthTerminalTask extends BaseYosysTerminalTask {
         const commandsGenerated = generateYosysSynthCommands(workerOptions);
         return [
             {
-                type: 'temp',
+                type: 'artifact',
                 path: 'presynth.yosys.json'
             },
             {

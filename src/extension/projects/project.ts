@@ -77,6 +77,22 @@ export class Project extends BaseProject {
         return this.outputFileUris.get(outputFile);
     }
 
+    getTargetDirectory(targetId: string): string {
+        const target = this.getConfiguration().targets.find((target) => target.id === targetId);
+        if (!target) return '.';
+
+        return `./out/${this.getName()}/${target.id}/`;
+    }
+
+    async updateTargetDirectories() {
+        const targets = this.getConfiguration()['targets'].map((target) => ({
+            ...target,
+            directory: this.getTargetDirectory(target.id)
+        }));
+        this.updateConfiguration({targets: targets});
+        await this.save();
+    }
+
     async addInputFileUris(fileUris: vscode.Uri[]): Promise<void> {
         const filePaths = [];
         for (const fileUri of fileUris) {

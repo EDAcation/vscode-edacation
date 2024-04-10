@@ -225,6 +225,9 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
         this.curTask.onMessage(this.handleMessage.bind(this, this.curTask));
 
         try {
+            // Ensure that target dirs are set correctly BEFORE running the task
+            await this.curProject.updateTargetDirectories();
+
             await this.curTask.handleStart(this.curProject);
 
             await this.curTask.execute(this.curProject, this.definition);
