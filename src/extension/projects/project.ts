@@ -95,15 +95,17 @@ export class Project extends BaseProject {
 
     async addInputFileUris(fileUris: vscode.Uri[]): Promise<void> {
         const filePaths = [];
-        for (const fileUri of fileUris) {
-            const [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
+        for (let fileUri of fileUris) {
+            // eslint-disable-next-line prefer-const
+            let [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
             if (!workspaceRelativePath) {
-                await vscode.window.showErrorMessage(`File must be in the a subfolder of the EDA project root.`, {
-                    detail: `File "${fileUri.path}" is not in folder "${this.getRoot().path}".`,
-                    modal: true
-                });
-                continue;
+                const copiedFileUri = await this.tryCopyFileIntoWorkspace(fileUri);
+                if (!copiedFileUri) continue;
+
+                fileUri = copiedFileUri;
+                folderRelativePath = vscode.workspace.asRelativePath(fileUri);
             }
+            if (!folderRelativePath) continue;
 
             if (!this.hasInputFile(folderRelativePath)) {
                 filePaths.push(folderRelativePath);
@@ -130,17 +132,54 @@ export class Project extends BaseProject {
         await this.save();
     }
 
+    private async tryCopyFileIntoWorkspace(uri: vscode.Uri): Promise<vscode.Uri | undefined> {
+        const fs = await import('fs');
+
+        if (!fs || !fs.copyFile) {
+            await vscode.window.showErrorMessage(`File must be in the a subfolder of the EDA project root.`, {
+                detail: `File "${uri.path}" is not in folder "${this.getRoot().path}".`,
+                modal: true
+            });
+            return;
+        }
+
+        const answer = await vscode.window.showErrorMessage(
+            `Copy file into EDA project root?`,
+            {
+                detail: `File "${uri.path}" is not in folder "${
+                    this.getRoot().path
+                }". Do you want to copy it into the project root?`,
+                modal: true
+            },
+            'Yes',
+            'No'
+        );
+        if (answer === 'Yes') {
+            const target = vscode.Uri.joinPath(this.getRoot(), path.basename(uri.path));
+
+            return new Promise((resolve, _reject) => {
+                fs.copyFile(uri.fsPath, target.fsPath, () => {
+                    resolve(target);
+                });
+            });
+        }
+
+        return;
+    }
+
     async addOutputFileUris(fileUris: vscode.Uri[]): Promise<void> {
         const filePaths = [];
-        for (const fileUri of fileUris) {
-            const [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
+        for (let fileUri of fileUris) {
+            // eslint-disable-next-line prefer-const
+            let [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
             if (!workspaceRelativePath) {
-                await vscode.window.showErrorMessage(`File must be in the a subfolder of the EDA project root.`, {
-                    detail: `File "${fileUri.path}" is not in folder "${this.getRoot().path}".`,
-                    modal: true
-                });
-                continue;
+                const copiedFileUri = await this.tryCopyFileIntoWorkspace(fileUri);
+                if (!copiedFileUri) continue;
+
+                fileUri = copiedFileUri;
+                folderRelativePath = vscode.workspace.asRelativePath(fileUri);
             }
+            if (!folderRelativePath) continue;
 
             if (!this.hasOutputFile(folderRelativePath)) {
                 filePaths.push(folderRelativePath);
