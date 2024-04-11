@@ -173,6 +173,7 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
             // Write logs
             const uri = vscode.Uri.joinPath(
                 this.curProject ? this.curProject.getRoot() : this.folder.uri,
+                'logs',
                 `${this.curTask?.getName()}.log`
             );
             await vscode.workspace.fs.writeFile(uri, encodeText(this.logMessages.join('')));
