@@ -38,6 +38,21 @@
                 }
             }
         },
+        "languages": [
+            {
+                "id": "edacation-config",
+                "extensions": [
+                    ".edaproject"
+                ],
+                "aliases": [
+                    "EDAcation Project Configuration"
+                ],
+                "icon": {
+                    "light": "./resources/icons/edacation.svg",
+                    "dark": "./resources/icons/edacation-light.svg"
+                }
+            }
+        ],
         "commands": [
             {
                 "command": "edacation.newProject",
