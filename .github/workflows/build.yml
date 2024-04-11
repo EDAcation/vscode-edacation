@@ -63,6 +63,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 16
+      - name: Install Dependencies
+        run: npm ci
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
@@ -71,15 +73,12 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           generate_release_notes: true
-          body: |
-            # Summary
-            See [changelog](https://github.com/HaaLeo/vscode-timing/blob/master/CHANGELOG.md#changelog)
           name: ${{ github.ref_name }}
           fail_on_unmatched_files: true
-          files: ${{ needs.build-lint-test.outputs.vsixPath }}
+          files: ${{ needs.build.outputs.vsixPath }}
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v1
         with:
           pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
-          extensionFile: ${{ needs.build-lint-test.outputs.vsixPath }}
+          extensionFile: ${{ needs.build.outputs.vsixPath }}
           registryUrl: https://marketplace.visualstudio.com
