@@ -38,6 +38,21 @@
                 }
             }
         },
+        "languages": [
+            {
+                "id": "edacation-config",
+                "extensions": [
+                    ".edaproject"
+                ],
+                "aliases": [
+                    "EDAcation Project Configuration"
+                ],
+                "icon": {
+                    "light": "./resources/icons/edacation.svg",
+                    "dark": "./resources/icons/edacation-light.svg"
+                }
+            }
+        ],
         "commands": [
             {
                 "command": "edacation.newProject",
@@ -56,6 +71,12 @@
                 "category": "EDAcation",
                 "title": "Close Project",
                 "icon": "$(close)"
+            },
+            {
+                "command": "edacation.selectProject",
+                "category": "EDAcation",
+                "title": "Select Project",
+                "icon": "$(check)"
             },
             {
                 "command": "edacation.addInputFile",
@@ -80,6 +101,12 @@
                 "category": "EDAcation",
                 "title": "Remove Output File",
                 "icon": "$(remove)"
+            },
+            {
+                "command": "edacation.trashOutputFile",
+                "category": "EDAcation",
+                "title": "Trash Output File",
+                "icon": "$(trash)"
             },
             {
                 "command": "edacation.openProjectConfiguration",
@@ -114,18 +141,18 @@
                 "priority": "default"
             },
             {
-                "viewType": "edacation.digitaljs",
-                "displayName": "DigitalJS",
+                "viewType": "edacation.yosys",
+                "displayName": "Yosys",
                 "selector": [
                     {
-                        "filenamePattern": "*.digitaljs.json"
+                        "filenamePattern": "*.yosys.json"
                     }
                 ],
                 "priority": "default"
             },
             {
                 "viewType": "edacation.nextpnr",
-                "displayName": "Nextpnr Viewer",
+                "displayName": "Nextpnr",
                 "selector": [
                     {
                         "filenamePattern": "*.nextpnr.json"
@@ -170,6 +197,11 @@
                 },
                 {
                     "command": "edacation.removeOutputFile",
+                    "when": "view == edacation-outputFiles",
+                    "group": "inline"
+                },
+                {
+                    "command": "edacation.trashOutputFile",
                     "when": "view == edacation-outputFiles",
                     "group": "inline"
                 }
@@ -302,7 +334,7 @@
         "@yowasp/nextpnr-ice40": "^0.7.187-dev.514",
         "@yowasp/yosys": "^0.38.21-dev.654",
         "digitaljs": "github:EDAcation/digitaljs#next",
-        "edacation": "^0.3.0",
+        "edacation": "github:EDAcation/edacation#feat/output-file-config",
         "nextpnr": "^0.4.15",
         "nextpnr-viewer": "^0.6.1",
         "os-browserify": "^0.3.0",

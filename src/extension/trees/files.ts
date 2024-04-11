@@ -12,8 +12,7 @@ abstract class FilesProvider extends BaseTreeDataProvider<ProjectFile> {
         }
 
         return {
-            label: element.path.startsWith('./') ? element.path.substring(2) : element.path,
-            iconPath: vscode.ThemeIcon.File,
+            resourceUri: element.uri,
             collapsibleState: vscode.TreeItemCollapsibleState.None,
             command: {
                 title: 'Open file',

@@ -1,7 +1,7 @@
-import {decodeText} from 'edacation';
+import {type WorkerOptions as _WorkerOptions, decodeText} from 'edacation';
+import path from 'path-browserify';
 import type * as vscode from 'vscode';
 
-import type {MessageFile} from '../../common/messages.js';
 import {type Project} from '../projects/index.js';
 
 import {AnsiModifier, type TaskOutputFile, type TerminalMessage, TerminalMessageEmitter} from './messaging.js';
@@ -13,7 +13,28 @@ export interface TaskDefinition extends vscode.TaskDefinition {
     uri?: vscode.Uri;
 }
 
-export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter {
+export interface TaskIOFile {
+    type: 'user' | 'artifact' | 'temp';
+    path: string;
+    data?: Uint8Array;
+}
+
+const getTaskFilePaths = (files: TaskIOFile[], relDir: string = '.'): TaskIOFile[] => {
+    return files.map((file) => {
+        // user files should not be touched
+        if (file.type === 'user' || file.path.startsWith(relDir)) return file;
+
+        if (file.type === 'temp') {
+            // temporary file
+            return {...file, path: path.join(relDir, 'temp', file.path)};
+        } else {
+            // artifact
+            return {...file, path: path.join(relDir, file.path)};
+        }
+    });
+};
+
+export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends TerminalMessageEmitter {
     private readonly runner: TaskRunner;
 
     private isDisabled: boolean;
@@ -38,11 +59,9 @@ export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter
 
     abstract getInputArgs(workerOptions: WorkerOptions): string[];
 
-    abstract getInputFiles(workerOptions: WorkerOptions): string[];
+    abstract getInputFiles(workerOptions: WorkerOptions): TaskIOFile[];
 
-    abstract getGeneratedInputFiles(workerOptions: WorkerOptions): MessageFile[];
-
-    abstract getOutputFiles(workerOptions: WorkerOptions): string[];
+    abstract getOutputFiles(workerOptions: WorkerOptions): TaskIOFile[];
 
     abstract handleStart(project: Project): Promise<void>;
 
@@ -75,14 +94,14 @@ export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter
 
         const command = this.getInputCommand(workerOptions);
         const args = this.getInputArgs(workerOptions);
-        const inputFiles = this.getInputFiles(workerOptions);
-        const generatedInputFiles = this.getGeneratedInputFiles(workerOptions);
-        const outputFiles = this.getOutputFiles(workerOptions);
+        const inputFiles = getTaskFilePaths(this.getInputFiles(workerOptions), workerOptions.target.directory);
+        const outputFiles = getTaskFilePaths(this.getOutputFiles(workerOptions), workerOptions.target.directory);
         const workerFilename = this.getWorkerFileName(workerOptions);
 
-        // Pretty-print input files and their contents
-        for (const inputFile of generatedInputFiles) {
-            this.println(inputFile.path + ':', undefined, AnsiModifier.BOLD);
+        // Pretty-print input files and their contents (if generated)
+        for (const inputFile of inputFiles) {
+            this.println(inputFile.path + (inputFile.data ? ':' : ''), undefined, AnsiModifier.BOLD);
+            if (!inputFile.data) continue;
 
             const indented = decodeText(inputFile.data)
                 .split('\n')
@@ -105,7 +124,6 @@ export abstract class TerminalTask<WorkerOptions> extends TerminalMessageEmitter
             args,
 
             inputFiles,
-            generatedInputFiles,
             outputFiles
         };
         await this.runner.run(ctx);
