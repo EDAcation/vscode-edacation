@@ -28,15 +28,8 @@ export default defineComponent({
             console.log('yosys target', this.target, this.targetIndex, yosys, yosys ?? {});
             return yosys ?? {};
         },
-        generated(): ReturnType<typeof generateYosysWorkerOptions> {
-            if (!this.target) {
-                return {
-                    inputFiles: [],
-                    outputFiles: [],
-                    tool: '',
-                    commands: []
-                };
-            }
+        generated(): ReturnType<typeof generateYosysWorkerOptions> | null {
+            if (!this.target) return null;
 
             return generateYosysWorkerOptions(
                 this.state.project!.configuration,
@@ -58,7 +51,7 @@ export default defineComponent({
         <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem">
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generated.commands"
+                :generated="generated?.commands ?? []"
                 workerId="yosys"
                 workerName="Yosys"
                 configId="commands"
@@ -70,7 +63,7 @@ export default defineComponent({
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generated.inputFiles"
+                :generated="generated?.inputFiles ?? []"
                 workerId="yosys"
                 workerName="Yosys"
                 configId="inputFiles"
@@ -83,7 +76,7 @@ export default defineComponent({
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generated.outputFiles"
+                :generated="generated?.outputFiles ?? []"
                 workerId="yosys"
                 workerName="Yosys"
                 configId="outputFiles"

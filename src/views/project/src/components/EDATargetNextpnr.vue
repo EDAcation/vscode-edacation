@@ -28,15 +28,8 @@ export default defineComponent({
             console.log('nextpnr target', this.target, this.targetIndex, nextpnr, nextpnr ?? {});
             return nextpnr ?? {};
         },
-        generated(): ReturnType<typeof generateNextpnrWorkerOptions> {
-            if (!this.target) {
-                return {
-                    inputFiles: [],
-                    outputFiles: [],
-                    tool: '',
-                    arguments: []
-                };
-            }
+        generated(): ReturnType<typeof generateNextpnrWorkerOptions> | null {
+            if (!this.target) return null;
 
             return generateNextpnrWorkerOptions(this.state.project!.configuration, this.target.id);
         }
@@ -57,7 +50,7 @@ export default defineComponent({
         <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem">
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generated.arguments"
+                :generated="generated?.arguments ?? []"
                 :parse="parseNextpnrArguments"
                 workerId="nextpnr"
                 workerName="nextpnr"
@@ -70,7 +63,7 @@ export default defineComponent({
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generated.inputFiles"
+                :generated="generated?.inputFiles ?? []"
                 workerId="nextpnr"
                 workerName="nextpnr"
                 configId="inputFiles"
@@ -83,7 +76,7 @@ export default defineComponent({
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generated.outputFiles"
+                :generated="generated?.outputFiles ?? []"
                 workerId="nextpnr"
                 workerName="nextpnr"
                 configId="outputFiles"

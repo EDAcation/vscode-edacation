@@ -44,7 +44,8 @@ const extensionConfig = Object.assign({}, baseConfig, {
     },
     externals: {
         vscode: 'commonjs vscode', // ignored because it doesn't exist
-        child_process: 'child_process'
+        child_process: 'child_process',
+        fs: 'fs'
     },
     resolve: {
         mainFields: ['browser', 'module', 'main'],
