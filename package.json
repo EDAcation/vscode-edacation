@@ -51,6 +51,32 @@
                     "light": "./resources/icons/edacation.svg",
                     "dark": "./resources/icons/edacation-light.svg"
                 }
+            },
+            {
+                "id": "edacation-yosys",
+                "extensions": [
+                    ".yosys.json"
+                ],
+                "aliases": [
+                    "EDAcation Yosys Data File"
+                ],
+                "icon": {
+                    "light": "./resources/icons/yosys.svg",
+                    "dark": "./resources/icons/yosys-light.svg"
+                }
+            },
+            {
+                "id": "edacation-nextpnr",
+                "extensions": [
+                    ".nextpnr.json"
+                ],
+                "aliases": [
+                    "EDAcation Nextpnr Data File"
+                ],
+                "icon": {
+                    "light": "./resources/icons/nextpnr.svg",
+                    "dark": "./resources/icons/nextpnr-light.svg"
+                }
             }
         ],
         "commands": [

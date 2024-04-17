@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg width="96" height="96" viewBox="0 0 25 22.5" version="1.1" id="svg5" xmlns="http://www.w3.org/2000/svg" xmlns:bx="https://boxy-svg.com">
+  <defs id="defs2">
+    <bx:grid x="0" y="0" width="2.5" height="2.5"/>
+  </defs>
+  <rect x="7.5" y="2.5" width="10" height="17.5" style="stroke-linejoin: round; fill: rgba(216, 216, 216, 0); stroke: rgb(205, 205, 205); stroke-width: 3.5px;"/>
+  <rect x="17.5" width="5" style="fill: rgb(216, 216, 216); stroke-linecap: round; stroke-linejoin: round; stroke: rgb(205, 205, 205); stroke-width: 3.5px;" height="0.027" y="15"/>
+  <rect x="17.5" width="5" style="fill: rgb(216, 216, 216); stroke-linecap: round; stroke-linejoin: round; stroke: rgb(205, 205, 205); stroke-width: 3.5px;" height="0.027" y="7.446"/>
+  <rect width="5" style="fill: rgb(216, 216, 216); stroke-linecap: round; stroke-linejoin: round; stroke: rgb(205, 205, 205); stroke-width: 3.5px;" height="0.027" y="7.419" x="2.5"/>
+  <rect width="5" style="fill: rgb(216, 216, 216); stroke-linecap: round; stroke-linejoin: round; stroke: rgb(205, 205, 205); stroke-width: 3.5px;" height="0.027" y="15.027" x="2.5"/>
+</svg>
