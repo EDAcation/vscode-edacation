@@ -103,7 +103,7 @@ export class Project extends BaseProject {
                 if (!copiedFileUri) continue;
 
                 fileUri = copiedFileUri;
-                folderRelativePath = vscode.workspace.asRelativePath(fileUri);
+                folderRelativePath = path.relative(this.getRoot().path, fileUri.path);
             }
             if (!folderRelativePath) continue;
 
@@ -177,7 +177,7 @@ export class Project extends BaseProject {
                 if (!copiedFileUri) continue;
 
                 fileUri = copiedFileUri;
-                folderRelativePath = vscode.workspace.asRelativePath(fileUri);
+                folderRelativePath = path.relative(this.getRoot().path, fileUri.path);
             }
             if (!folderRelativePath) continue;
 
