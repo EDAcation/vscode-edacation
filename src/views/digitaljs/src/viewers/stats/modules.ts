@@ -37,7 +37,7 @@ export const getTotalPrimCounts = (primitives: Primitive[]): {cells: number; bit
 
     for (const prim of primitives) {
         counts.cells += prim.count;
-        counts.bits += prim.count * prim.bitWidth;
+        counts.bits += prim.count * (prim.bitWidth || 0);
     }
 
     return counts;
@@ -45,10 +45,10 @@ export const getTotalPrimCounts = (primitives: Primitive[]): {cells: number; bit
 
 export class Primitive {
     public readonly name: string;
-    public readonly bitWidth: number;
+    public readonly bitWidth: number | null;
     public count: number;
 
-    constructor(name: string, bitWidth: number, count: number) {
+    constructor(name: string, bitWidth: number | null, count: number) {
         this.name = name.toLowerCase();
         this.bitWidth = bitWidth;
         this.count = count;
@@ -57,11 +57,13 @@ export class Primitive {
     static fromFQN(fqn: string, count: number): Primitive {
         fqn = fqn.replace('$', '');
         const bitWidthStr = fqn.split('_').reverse()[0] ?? '';
-        const bitWidth = parseInt(bitWidthStr);
-        if (Number.isNaN(bitWidth)) {
-            throw new Error(`Invalid FQN for primitive: ${fqn}`);
+        const bitWidth = parseInt(bitWidthStr) || null;
+
+        let name = fqn;
+        if (bitWidth != null) {
+            // If we actually have a bit width, slice off the last section of the fqn
+            name = fqn.slice(0, fqn.length - bitWidthStr.length - 1);
         }
-        const name = fqn.slice(0, fqn.length - bitWidthStr.length - 1);
 
         return new Primitive(name, bitWidth, count);
     }
@@ -148,14 +150,14 @@ export class Module {
     }
 
     addPrimitive(prim: Primitive) {
-        const oldPrim = this.findPrimitives({name: prim.name, width: prim.bitWidth}, false)[0];
+        const oldPrim = this.findPrimitives({name: prim.name, width: prim.bitWidth || undefined}, false)[0];
         if (oldPrim) {
             oldPrim.count += prim.count;
         } else {
             this._primitives.push(prim);
         }
 
-        const oldGloPrim = this.findPrimitives({name: prim.name, width: prim.bitWidth}, true)[0];
+        const oldGloPrim = this.findPrimitives({name: prim.name, width: prim.bitWidth || undefined}, true)[0];
         if (oldGloPrim) {
             oldGloPrim.count += prim.count;
         } else {
@@ -180,7 +182,7 @@ export class Module {
 
         // Update global primitives
         for (const gloPrim of module.globalPrimitives) {
-            const prim = this.findPrimitives({name: gloPrim.name, width: gloPrim.bitWidth}, true)[0];
+            const prim = this.findPrimitives({name: gloPrim.name, width: gloPrim.bitWidth || undefined}, true)[0];
             if (prim) {
                 prim.count += count * gloPrim.count;
             } else {
