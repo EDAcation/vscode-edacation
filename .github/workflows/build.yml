@@ -1,4 +1,4 @@
-name: Build and Publish
+name: Build
 
 # inspired by https://github.com/HaaLeo/vscode-timing/blob/master/.github/workflows/cicd.yml
 
@@ -43,6 +43,7 @@ jobs:
         with:
           pat: stub
           dryRun: true
+          preRelease: ${{ github.event_name != 'release' || github.event.release.prerelease }}
       - name: Upload Extension Package as Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -75,4 +76,5 @@ jobs:
         with:
           pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
           extensionFile: ${{ needs.build.outputs.vsixPath }}
+          preRelease: ${{ github.event_name != 'release' || github.event.release.prerelease }}
           registryUrl: https://marketplace.visualstudio.com
