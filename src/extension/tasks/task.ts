@@ -22,7 +22,11 @@ export interface TaskIOFile {
 const getTaskFilePaths = (files: TaskIOFile[], relDir: string = '.'): TaskIOFile[] => {
     return files.map((file) => {
         // user files should not be touched
-        if (file.type === 'user' || file.path.startsWith(relDir)) return file;
+        if (file.type === 'user') return file;
+
+        // Do nothing if already in relDir
+        const rel = path.relative(relDir, file.path);
+        if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) return file;
 
         if (file.type === 'temp') {
             // temporary file
@@ -99,17 +103,23 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
         const workerFilename = this.getWorkerFileName(workerOptions);
 
         // Pretty-print input files and their contents (if generated)
+        this.println('Input files:', undefined, AnsiModifier.BOLD);
         for (const inputFile of inputFiles) {
-            this.println(inputFile.path + (inputFile.data ? ':' : ''), undefined, AnsiModifier.BOLD);
+            this.println(' '.repeat(2) + inputFile.path + (inputFile.data ? ':' : ''));
             if (!inputFile.data) continue;
 
-            const indented = decodeText(inputFile.data)
-                .split('\n')
-                .map((line) => '  ' + line)
-                .join('\n');
-            this.println(indented);
-            this.println();
+            for (const line of decodeText(inputFile.data).split('\n')) {
+                this.println(' '.repeat(4) + line.trimEnd());
+            }
         }
+        this.println();
+
+        // Pretty-print output files
+        this.println('Output files:', undefined, AnsiModifier.BOLD);
+        for (const outputFile of outputFiles) {
+            this.println(' '.repeat(2) + outputFile.path);
+        }
+        this.println();
 
         // Print the runner and command to execute
         this.println(`Runner command (${this.runner.getName()}):`, undefined, AnsiModifier.BOLD);
