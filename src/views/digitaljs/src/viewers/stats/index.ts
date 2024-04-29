@@ -4,6 +4,7 @@ import type {YosysStats} from '../../types';
 import {BaseViewer} from '../base';
 
 import {ModuleExplorerGrid, ModuleOverviewGrid, PrimitivesOverviewGrid, TabsContainer} from './elements';
+import {ColorOverviewList} from './elements/colors';
 import type {InteractiveDataGrid, InteractiveDatagridConfig} from './elements/datagrid';
 import {type Module, buildModuleTree} from './modules';
 
@@ -15,6 +16,7 @@ export class StatsViewer extends BaseViewer<YosysStats> {
     private moduleOverview: ModuleOverviewGrid;
     private moduleExplorer: ModuleExplorerGrid;
     private primitivesOverview: PrimitivesOverviewGrid;
+    private colorsList: ColorOverviewList;
 
     constructor(mainView: View, initData: YosysStats) {
         super(mainView, initData);
@@ -33,10 +35,13 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         this.primitivesOverview = new PrimitivesOverviewGrid(this.modules);
         this.setupConfigStore(this.primitivesOverview);
 
+        this.colorsList = new ColorOverviewList();
+
         this.tabsContainer = new TabsContainer([
             {id: 'overview', title: 'Overview', element: this.moduleOverview},
             {id: 'explorer', title: 'Explorer', element: this.moduleExplorer},
-            {id: 'primitives', title: 'Primitives', element: this.primitivesOverview}
+            {id: 'primitives', title: 'Primitives', element: this.primitivesOverview},
+            {id: 'colors', title: 'Element Colors', element: this.colorsList}
         ]);
     }
 

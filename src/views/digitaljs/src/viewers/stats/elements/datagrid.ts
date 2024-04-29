@@ -12,7 +12,7 @@ export interface DataGridCell {
     borders?: CellBorder[]; // Default: no borders
 }
 
-class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
+export class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
     protected rootElem: HTMLElement;
 
     protected cells: DataGridCell[][];
