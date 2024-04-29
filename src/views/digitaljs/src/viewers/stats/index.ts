@@ -95,7 +95,10 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         header.textContent = 'Module Statistics';
         this.root.appendChild(header);
 
-        this.root.appendChild(this.tabsContainer.element);
+        const tabsElem = this.tabsContainer.element;
+        tabsElem.style.height = '100%';
+
+        this.root.appendChild(tabsElem);
         this.tabsContainer.render();
     }
 }
