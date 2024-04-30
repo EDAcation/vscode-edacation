@@ -360,7 +360,7 @@
         "@yowasp/nextpnr-ice40": "^0.7.187-dev.514",
         "@yowasp/yosys": "^0.38.21-dev.654",
         "digitaljs": "github:EDAcation/digitaljs#next",
-        "edacation": "^0.3.4",
+        "edacation": "^0.3.5",
         "nextpnr": "^0.4.15",
         "nextpnr-viewer": "^0.6.1",
         "os-browserify": "^0.3.0",
