@@ -22,7 +22,11 @@ export const activate = async (context: vscode.ExtensionContext) => {
     // Register custom editors
     for (const editorType of Object.values(editors)) {
         const editor = new editorType(context, projects);
-        context.subscriptions.push(vscode.window.registerCustomEditorProvider(editorType.getViewType(), editor));
+        context.subscriptions.push(
+            vscode.window.registerCustomEditorProvider(editorType.getViewType(), editor, {
+                webviewOptions: {retainContextWhenHidden: true}
+            })
+        );
     }
 
     // Register task providers
