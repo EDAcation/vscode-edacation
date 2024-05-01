@@ -100,12 +100,22 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
                 Export to SVG
                 <span slot="start" class="codicon codicon-save" />
             </vscode-button>
+            <vscode-button id="digitaljs-zoomout">
+                Zoom out
+                <span slot="start" class="codicon codicon-zoom-out" />
+            </vscode-button>
+            <vscode-button id="digitaljs-zoomin">
+                Zoom in
+                <span slot="start" class="codicon codicon-zoom-in" />
+            </vscode-button>
         `;
         this.root.appendChild(elementActions);
 
         const buttonStart = document.getElementById('digitaljs-start');
         const buttonStop = document.getElementById('digitaljs-stop');
         const buttonExport = document.getElementById('digitaljs-export');
+        const buttonZoomOut = document.getElementById('digitaljs-zoomout');
+        const buttonZoomIn = document.getElementById('digitaljs-zoomin');
 
         buttonStart?.addEventListener('click', () => circuit.start());
         buttonStop?.addEventListener('click', () => circuit.stop());
@@ -131,7 +141,19 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
 
         // Render circuit
         const elementCircuit = document.createElement('div');
-        circuit.displayOn(elementCircuit);
+        const mainPaper = circuit.displayOn(elementCircuit);
+
+        // Zoom buttons
+        let zoomLevel = 0;
+        buttonZoomOut?.addEventListener('click', () => {
+            zoomLevel -= 1;
+            circuit.scaleAndRefreshPaper(mainPaper, zoomLevel);
+        });
+        buttonZoomIn?.addEventListener('click', () => {
+            zoomLevel += 1;
+            circuit.scaleAndRefreshPaper(mainPaper, zoomLevel);
+        });
+
         this.root.appendChild(elementCircuit);
     }
 
