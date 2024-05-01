@@ -91,7 +91,7 @@ export class View {
             throw new Error('File is missing type or data keys.');
         }
 
-        if (fileData['type'] === 'rtl') {
+        if (fileData['type'] === 'rtl' || fileData['type'] === 'luts') {
             return new DiagramViewer(this, fileData['data']);
         } else if (fileData['type'] === 'stats') {
             return new StatsViewer(this, fileData['data']);

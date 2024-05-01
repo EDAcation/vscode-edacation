@@ -170,11 +170,20 @@ class YosysSynthTerminalTask extends BaseYosysTerminalTask {
     async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
         await super.handleEnd(project, outputFiles);
 
-        // Open LUT file in DigitalJS editor
+        // Find LUT file
         const lutFile = outputFiles.find((file) => file.path.endsWith('luts.yosys.json'));
-        if (lutFile) {
-            const uri = vscode.Uri.joinPath(project.getRoot(), lutFile.path);
-            await vscode.commands.executeCommand('vscode.open', uri);
-        }
+        if (!lutFile) return;
+        const uri = vscode.Uri.joinPath(project.getRoot(), lutFile.path);
+
+        // Update LUT file
+        const oldContent = await vscode.workspace.fs.readFile(uri);
+        const newContent = encodeJSON({
+            type: 'luts',
+            data: decodeJSON(oldContent)
+        });
+        await vscode.workspace.fs.writeFile(uri, newContent);
+
+        // Open LUT file
+        await vscode.commands.executeCommand('vscode.open', uri);
     }
 }
