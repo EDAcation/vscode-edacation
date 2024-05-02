@@ -42,6 +42,7 @@ const sanatizePaths = (array: MessageFile[]) =>
 const arrayToTree = (array: MessageFile[]): Tree => {
     const tree: Tree = {};
     for (const file of array) {
+        console.log(`Adding ${file.path} to tree`);
         if (file.path.startsWith('/')) {
             throw new Error('Absolute paths are not supported.');
         } else if (file.path.startsWith('../')) {
@@ -54,9 +55,18 @@ const arrayToTree = (array: MessageFile[]): Tree => {
 
         let lastDirectory: Tree = tree;
         for (const directory of directories) {
-            console.log('creating', directory);
-            const newDirectory: Tree = {};
-            lastDirectory[directory] = newDirectory;
+            let newDirectory = lastDirectory[directory];
+            if (!newDirectory) {
+                console.log('creating', directory);
+                newDirectory = {};
+                lastDirectory[directory] = newDirectory;
+            } else {
+                console.log('navigating', directory);
+            }
+
+            if (typeof newDirectory === 'string' || newDirectory instanceof Uint8Array) {
+                throw new Error(`${directory} is a file, cannot navigate`);
+            }
             lastDirectory = newDirectory;
         }
 
