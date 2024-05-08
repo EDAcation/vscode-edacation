@@ -196,10 +196,16 @@ export class Module {
     }
 }
 
-const resolveModuleDeps = (name: string, stats: YosysModuleStats, resolved: Map<string, Module>): Module | null => {
+const resolveModuleDeps = (
+    name: string,
+    stats: YosysModuleStats,
+    resolved: Map<string, Module>,
+    moduleNames: string[]
+): Module | null => {
     const module = new Module(name, stats);
     for (const [depName, count] of Object.entries(stats.num_cells_by_type)) {
-        if (depName.startsWith('$')) {
+        // Cell is a primitive if it starts with $ and is not the name of a custom module
+        if (depName.startsWith('$') && moduleNames.indexOf(depName) === -1) {
             module.addPrimitive(Primitive.fromFQN(depName, count));
             continue;
         }
@@ -217,6 +223,7 @@ const resolveModuleDeps = (name: string, stats: YosysModuleStats, resolved: Map<
 
 export const buildModuleTree = (modules: Record<string, YosysModuleStats>): Module[] => {
     const modEntries = Object.entries(modules);
+    const modNames = modEntries.map((e) => e[0]);
     const modCount = modEntries.length;
     if (!modCount) {
         return [];
@@ -227,12 +234,14 @@ export const buildModuleTree = (modules: Record<string, YosysModuleStats>): Modu
         const oldSize = resolved.size;
         for (let i = modEntries.length - 1; i >= 0; i--) {
             const [modName, stats] = modEntries[i];
-            const sanitizedName = modName.slice(1); // Strip leading "\"
+
+            // Strip leading "/"
+            const sanitizedName = modName.startsWith('\\') ? modName.slice(1) : modName;
             if (sanitizedName in resolved.keys()) {
                 continue;
             }
 
-            const module = resolveModuleDeps(sanitizedName, stats, resolved);
+            const module = resolveModuleDeps(sanitizedName, stats, resolved, modNames);
             if (!module) {
                 continue;
             }
