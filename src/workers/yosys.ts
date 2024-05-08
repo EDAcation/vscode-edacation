@@ -9,7 +9,7 @@ const importPromise = import(
 export class WorkerYosys extends WorkerTool {
     async run(args: string[], inputFileTree: Tree, options: RunOptions): Promise<Tree> {
         const {runYosys} = await importPromise;
-        return await runYosys(args, inputFileTree, options);
+        return (await runYosys(args, inputFileTree, options)) || {};
     }
 }
 
