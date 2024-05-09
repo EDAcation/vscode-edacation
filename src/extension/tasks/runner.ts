@@ -9,8 +9,6 @@ import type {TaskIOFile} from './task.js';
 
 export interface RunnerContext {
     project: Project;
-    workerFilename: string;
-
     command: string;
     args: string[];
 
@@ -39,7 +37,6 @@ export class WebAssemblyTaskRunner extends TaskRunner {
 
     async run(ctx: RunnerContext): Promise<void> {
         const inFiles = await this.readFiles(ctx.project, ctx.inputFiles);
-        const outFiles = ctx.outputFiles.map((file) => file.path);
 
         // Create & start worker
         const worker = this.createWorker();
@@ -48,8 +45,7 @@ export class WebAssemblyTaskRunner extends TaskRunner {
                 type: 'input',
                 command: ctx.command,
                 args: ctx.args,
-                inputFiles: inFiles,
-                outputFiles: outFiles
+                inputFiles: inFiles
             },
             inFiles.map(({data}) => data.buffer)
         );

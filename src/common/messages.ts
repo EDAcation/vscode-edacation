@@ -8,7 +8,6 @@ export interface WorkerMessageInput {
     command: string;
     args: string[];
     inputFiles: MessageFile[];
-    outputFiles: string[];
 }
 
 export type WorkerMessage = WorkerMessageInput;

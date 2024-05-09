@@ -37,10 +37,6 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
         return getNextpnrWorkerOptions(project, targetId);
     }
 
-    getWorkerFileName(workerOptions: NextpnrWorkerOptions): string {
-        return `${workerOptions.tool}.js`;
-    }
-
     getInputCommand(workerOptions: NextpnrWorkerOptions): string {
         return workerOptions.tool;
     }

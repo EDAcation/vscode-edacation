@@ -57,8 +57,6 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
 
     abstract getWorkerOptions(project: Project, targetId: string): WorkerOptions;
 
-    abstract getWorkerFileName(workerOptions: WorkerOptions): string;
-
     abstract getInputCommand(workerOptions: WorkerOptions): string;
 
     abstract getInputArgs(workerOptions: WorkerOptions): string[];
@@ -100,7 +98,6 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
         const args = this.getInputArgs(workerOptions);
         const inputFiles = getTaskFilePaths(this.getInputFiles(workerOptions), workerOptions.target.directory);
         const outputFiles = getTaskFilePaths(this.getOutputFiles(workerOptions), workerOptions.target.directory);
-        const workerFilename = this.getWorkerFileName(workerOptions);
 
         // Pretty-print input files and their contents (if generated)
         this.println('Input files:', undefined, AnsiModifier.BOLD);
@@ -128,11 +125,8 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
 
         const ctx: RunnerContext = {
             project,
-            workerFilename,
-
             command,
             args,
-
             inputFiles,
             outputFiles
         };
