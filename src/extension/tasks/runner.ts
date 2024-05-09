@@ -42,7 +42,7 @@ export class WebAssemblyTaskRunner extends TaskRunner {
         const outFiles = ctx.outputFiles.map((file) => file.path);
 
         // Create & start worker
-        const worker = this.createWorker(ctx.workerFilename);
+        const worker = this.createWorker();
         worker.sendMessage(
             {
                 type: 'input',
@@ -73,9 +73,9 @@ export class WebAssemblyTaskRunner extends TaskRunner {
         return files;
     }
 
-    private createWorker(workerFilename: string): UniversalWorker {
+    private createWorker(): UniversalWorker {
         const worker = new UniversalWorker(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, 'dist', 'workers', workerFilename).toString(true)
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, 'dist', 'workers', 'tool.js').toString(true)
         );
 
         worker.onEvent('message', this.handleMessage.bind(this));

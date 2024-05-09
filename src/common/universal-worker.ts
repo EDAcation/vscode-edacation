@@ -1,3 +1,6 @@
+/* This module is committing so many crimes we might as well disable ESLint for the entire file */
+
+/* eslint-disable */
 import type {TransferListItem} from 'worker_threads';
 
 import type {ExtensionMessage, WorkerMessage} from './messages.js';
@@ -7,10 +10,8 @@ type WorkerThreadsModule = typeof import('worker_threads');
 type WorkerThreadsWorker = import('worker_threads').Worker;
 /* eslint-enable @typescript-eslint/consistent-type-imports */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 const module: WorkerThreadsModule | undefined =
     typeof Worker === 'undefined' ? __non_webpack_require__('worker_threads') : undefined;
-/* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
 type InternalNodeWorker = {
     type: 'node';
@@ -29,23 +30,6 @@ interface EventCallbacks {
     messageerror: (err: Error) => void;
     message: ((message: ExtensionMessage) => void) | ((message: WorkerMessage) => void);
 }
-
-export const sendMessage = (message: ExtensionMessage, transferables: readonly TransferListItem[] & Transferable[]) => {
-    if (module) {
-        module.parentPort?.postMessage(message, transferables);
-    } else {
-        postMessage(message, transferables);
-    }
-};
-
-export const onEvent = <E extends keyof EventCallbacks>(event: E, callback: EventCallbacks[E]): void => {
-    if (module) {
-        module.parentPort?.on(event, callback);
-    } else {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        addEventListener(event, (event) => callback(extractData(event)));
-    }
-};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const extractData = (event: MessageEvent | ErrorEvent): any => {
@@ -94,3 +78,59 @@ export class UniversalWorker {
         this.worker.worker.postMessage(message, transferList);
     }
 }
+
+export const sendMessage = (message: ExtensionMessage, transferables: readonly TransferListItem[] & Transferable[]) => {
+    if (module) {
+        module.parentPort?.postMessage(message, transferables);
+    } else {
+        postMessage(message, transferables);
+    }
+};
+
+export const onEvent = <E extends keyof EventCallbacks>(event: E, callback: EventCallbacks[E]): void => {
+    if (module) {
+        module.parentPort?.on(event, callback);
+    } else {
+        addEventListener(event, (event) => callback(extractData(event)));
+    }
+};
+
+// (c) Catherine, ISC licensed (thanks!)
+// https://github.com/YoWASP/vscode/blob/main/src/workerThread.ts
+//
+// TODO: revisit once vscode's electron ships Node >18.19.0
+export const importModule = async (url: URL | string): Promise<any> => {
+    if (module) {
+        const vm = __non_webpack_require__('node:vm');
+
+        let code = await fetch(url).then((resp) => resp.text());
+        code = code.replace(/\bimport\.meta\.url\b/g, JSON.stringify(url));
+        code = code.replace(/\bawait import\b/g, 'await _import');
+        code = code.replace(/\(\) => import/g, '() => _import');
+        code = code.replace(/\bexport const\b/g, 'exports.');
+        code = code.replace(
+            /\bexport\s*{([^}]+)}\s*;/g,
+            (_match, args) => `exports={${args.replace(/(\w+)\s+as\s+(\w+)/g, '$2:$1')}};`
+        );
+        const script = new vm.Script(code, {
+            filename: url.toString()
+        });
+        const context: any = {
+            location: {
+                href: url.toString(),
+                toString() {
+                    return url.toString();
+                }
+            },
+            _import: (innerURL: string) => importModule(new URL(innerURL, url)),
+            exports: {},
+            globalThis
+        };
+        context.self = context;
+        Object.setPrototypeOf(context, globalThis);
+        script.runInNewContext(context, {contextOrigin: url.toString()});
+        return context.exports;
+    } else {
+        return await import(/* webpackIgnore: true */ url.toString());
+    }
+};
