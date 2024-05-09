@@ -24,10 +24,6 @@ export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOpti
         return 'yosys';
     }
 
-    getWorkerFileName(): string {
-        return 'yosys.js';
-    }
-
     getWorkerOptions(project: Project, targetId: string): YosysWorkerOptions {
         if (project.getInputFiles().length === 0) {
             throw new Error('Cannot synthesize project: no input files!');

@@ -9,8 +9,6 @@ import type {TaskIOFile} from './task.js';
 
 export interface RunnerContext {
     project: Project;
-    workerFilename: string;
-
     command: string;
     args: string[];
 
@@ -39,17 +37,15 @@ export class WebAssemblyTaskRunner extends TaskRunner {
 
     async run(ctx: RunnerContext): Promise<void> {
         const inFiles = await this.readFiles(ctx.project, ctx.inputFiles);
-        const outFiles = ctx.outputFiles.map((file) => file.path);
 
         // Create & start worker
-        const worker = this.createWorker(ctx.workerFilename);
+        const worker = this.createWorker();
         worker.sendMessage(
             {
                 type: 'input',
                 command: ctx.command,
                 args: ctx.args,
-                inputFiles: inFiles,
-                outputFiles: outFiles
+                inputFiles: inFiles
             },
             inFiles.map(({data}) => data.buffer)
         );
@@ -73,9 +69,9 @@ export class WebAssemblyTaskRunner extends TaskRunner {
         return files;
     }
 
-    private createWorker(workerFilename: string): UniversalWorker {
+    private createWorker(): UniversalWorker {
         const worker = new UniversalWorker(
-            vscode.Uri.joinPath(this.extensionContext.extensionUri, 'dist', 'workers', workerFilename).toString(true)
+            vscode.Uri.joinPath(this.extensionContext.extensionUri, 'dist', 'workers', 'tool.js').toString(true)
         );
 
         worker.onEvent('message', this.handleMessage.bind(this));

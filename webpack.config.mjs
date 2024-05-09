@@ -85,18 +85,7 @@ const extensionConfig = Object.assign({}, baseConfig, {
 /** @type WebpackConfig */
 const workerConfig = Object.assign({}, baseConfig, {
     entry: {
-        yosys: {
-            import: './src/workers/yosys.ts',
-            baseUri: 'blob:vscode-file://vscode-app/bogus'
-        },
-        'nextpnr-ecp5': {
-            import: './src/workers/nextpnr-ecp5.ts',
-            baseUri: 'blob:vscode-file://vscode-app/bogus'
-        },
-        'nextpnr-ice40': {
-            import: './src/workers/nextpnr-ice40.ts',
-            baseUri: 'blob:vscode-file://vscode-app/bogus'
-        }
+        tool: './src/workers/tool.ts'
     },
     output: {
         filename: '[name].js',
@@ -127,11 +116,6 @@ const workerConfig = Object.assign({}, baseConfig, {
         })
     ],
     module: {
-        parser: {
-            javascript: {
-                dynamicImportMode: 'eager'
-            }
-        },
         rules: [
             {
                 test: /\.ts$/,
