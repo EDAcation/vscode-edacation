@@ -2,6 +2,11 @@ import * as vscode from 'vscode';
 
 import {Project, type ProjectFile} from './project.js';
 
+interface SavedProjects {
+    curOpen: number | null;
+    paths: string[];
+}
+
 export class Projects {
     protected readonly context: vscode.ExtensionContext;
 
@@ -86,7 +91,7 @@ export class Projects {
         }
 
         if (shouldSetCurrent) {
-            this.setCurrent(project);
+            await this.setCurrent(project);
         }
 
         return project;
@@ -99,7 +104,7 @@ export class Projects {
 
         if (this.currentProject && this.currentProject.getUri().toString() === uri.toString()) {
             if (this.projects.length > 0) {
-                this.setCurrent(this.projects[0]);
+                await this.setCurrent(this.projects[0]);
             } else {
                 this.clearCurrent();
             }
@@ -108,16 +113,25 @@ export class Projects {
 
     async load() {
         try {
-            let projectUris = this.context.workspaceState.get<string[] | undefined>('projects');
-            if (!projectUris) {
-                projectUris = [];
+            let projectsConf = this.context.workspaceState.get<SavedProjects | string[] | undefined>('projects');
+            if (!projectsConf) {
+                projectsConf = {curOpen: null, paths: []};
+            } else if (Array.isArray(projectsConf)) {
+                // Older versions of the extension (<= 0.5.3) simply stored an array of paths instead,
+                // so if we find that value we need to migrate the config value.
+                projectsConf = {curOpen: null, paths: projectsConf};
             }
 
             this.projects = [];
-            for (const projectUri of projectUris) {
+            for (const projectUri of projectsConf.paths) {
                 const project = await Project.load(this, vscode.Uri.parse(projectUri));
 
                 this.projects.push(project);
+            }
+
+            const openInd = projectsConf.curOpen;
+            if (openInd != null && openInd >= 0 && openInd < this.projects.length) {
+                await this.setCurrent(this.projects[openInd]);
             }
         } catch (err) {
             await this.context.workspaceState.update('projects', undefined);
@@ -127,8 +141,8 @@ export class Projects {
 
         this.emitProjectChange();
 
-        if (this.projects.length > 0) {
-            this.setCurrent(this.projects[0]);
+        if (!this.currentProject && this.projects.length > 0) {
+            await this.setCurrent(this.projects[0]);
         }
     }
 
@@ -139,10 +153,17 @@ export class Projects {
             projectUris.push(projectUri);
         }
 
-        await this.context.workspaceState.update(
-            'projects',
-            projectUris.map((uri) => uri.toString())
-        );
+        let openIndex: number | null = null;
+        if (this.currentProject) {
+            openIndex = this.projects.indexOf(this.currentProject);
+        }
+
+        const data: SavedProjects = {
+            curOpen: openIndex,
+            paths: projectUris.map((uri) => uri.toString())
+        };
+
+        await this.context.workspaceState.update('projects', data);
 
         this.emitProjectChange();
     }
@@ -157,7 +178,7 @@ export class Projects {
             this.projects.splice(index, 1, newProject);
 
             if (this.currentProject === project) {
-                this.setCurrent(newProject);
+                await this.setCurrent(newProject);
             }
 
             this.emitProjectChange();
@@ -170,8 +191,10 @@ export class Projects {
         return this.currentProject;
     }
 
-    setCurrent(project: Project) {
+    async setCurrent(project: Project) {
         this.currentProject = project;
+
+        await this.store(false);
 
         this.emitProjectChange();
         this.emitInputFileChange();
