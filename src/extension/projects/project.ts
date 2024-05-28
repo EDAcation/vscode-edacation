@@ -1,4 +1,10 @@
-import {Project as BaseProject, DEFAULT_CONFIGURATION, type ProjectConfiguration, type ProjectState} from 'edacation';
+import {
+    Project as BaseProject,
+    DEFAULT_CONFIGURATION,
+    type ProjectConfiguration,
+    type ProjectOutputFileState,
+    type ProjectState
+} from 'edacation';
 import path from 'path';
 import * as vscode from 'vscode';
 
@@ -42,7 +48,7 @@ export class Project extends BaseProject {
         uri: vscode.Uri,
         name?: string,
         inputFiles: string[] = [],
-        outputFiles: string[] = [],
+        outputFiles: string[] | ProjectOutputFileState[] = [],
         configuration: ProjectConfiguration = DEFAULT_CONFIGURATION
     ) {
         super(name ? name : path.basename(uri.path, '.edaproject'), inputFiles, outputFiles, configuration);
@@ -63,10 +69,10 @@ export class Project extends BaseProject {
         }
 
         this.outputFileInfo = new Map();
-        for (const file of outputFiles) {
-            const uri = vscode.Uri.joinPath(this.getRoot(), file);
-            const watcher = getFileWatcher(uri, undefined, () => void this.removeOutputFiles([file]));
-            this.outputFileInfo.set(file, {uri, watcher});
+        for (const file of this.getOutputFiles()) {
+            const uri = vscode.Uri.joinPath(this.getRoot(), file.path);
+            const watcher = getFileWatcher(uri, undefined, () => void this.removeOutputFiles([file.path]));
+            this.outputFileInfo.set(file.path, {uri, watcher});
         }
 
         void this.cleanIOFiles();
@@ -227,7 +233,7 @@ export class Project extends BaseProject {
         return;
     }
 
-    async addOutputFileUris(fileUris: vscode.Uri[]): Promise<void> {
+    async addOutputFileUris(fileUris: vscode.Uri[], targetId: string): Promise<void> {
         const filePaths = [];
         for (let fileUri of fileUris) {
             // eslint-disable-next-line prefer-const
@@ -254,7 +260,7 @@ export class Project extends BaseProject {
             }
         }
 
-        super.addOutputFiles(filePaths);
+        super.addOutputFiles(filePaths.map((path) => ({path, targetId})));
 
         this.projects.emitOutputFileChange();
 
