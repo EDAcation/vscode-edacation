@@ -137,6 +137,7 @@ class View {
         elementHeader.textContent = 'Unable to render nextpnr file';
 
         const elementCode = document.createElement('code');
+        elementCode.style.whiteSpace = 'pre-wrap';
         elementCode.textContent = typeof error === 'string' ? error : error.stack || error.message;
 
         this.viewer = undefined;

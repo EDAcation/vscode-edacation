@@ -97,7 +97,7 @@ class RTLTerminalTask extends BaseYosysTerminalTask {
         );
         this.println('Done.');
 
-        // Open RTL file in DigitalJS editor
+        // Open RTL file
         const rtlFile = outputFiles.find((file) => file.path.endsWith('rtl.yosys.json'));
         if (rtlFile) {
             const uri = vscode.Uri.joinPath(project.getRoot(), rtlFile.path);
