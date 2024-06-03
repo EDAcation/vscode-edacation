@@ -77,6 +77,7 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
             }
             cellAttrs[cellName] = {body: {fill: group.color}};
         }
+        cellAttrs['Subcircuit'] = {body: {stroke: 'blue'}};
 
         // Initialize circuit
         const circuit = new Circuit(digitalJs, {subcircuitButtons: this.subCircuitButtons, cellAttributes: cellAttrs});
