@@ -213,22 +213,22 @@
             "view/item/context": [
                 {
                     "command": "edacation.closeProject",
-                    "when": "view == edacation-projects",
+                    "when": "view == edacation-projects && viewItem == file",
                     "group": "inline"
                 },
                 {
                     "command": "edacation.removeInputFile",
-                    "when": "view == edacation-inputFiles",
+                    "when": "view == edacation-inputFiles && viewItem == file",
                     "group": "inline"
                 },
                 {
                     "command": "edacation.removeOutputFile",
-                    "when": "view == edacation-outputFiles",
+                    "when": "view == edacation-outputFiles && viewItem == file",
                     "group": "inline"
                 },
                 {
                     "command": "edacation.trashOutputFile",
-                    "when": "view == edacation-outputFiles",
+                    "when": "view == edacation-outputFiles && viewItem == file",
                     "group": "inline"
                 }
             ]
