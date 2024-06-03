@@ -131,7 +131,7 @@ export class OutputFilesProvider extends BaseTreeDataProvider<OutputFileTreeItem
             return targets;
         }
 
-        // Target category
+        // below targets: output files
         if (element.type === 'target') {
             return project.getOutputFiles().flatMap((file) => {
                 if (!element.targetId) {
@@ -141,24 +141,6 @@ export class OutputFilesProvider extends BaseTreeDataProvider<OutputFileTreeItem
                     // Specific target category. Only display files with this target ID!
                     if (file.targetId !== element.targetId) return [];
                 }
-
-                const uri = project.getOutputFileUri(file.path);
-                if (!uri) return [];
-
-                return {
-                    type: 'file',
-                    file: {
-                        path: file.path,
-                        uri
-                    }
-                };
-            });
-        }
-
-        // below target IDs: output files
-        if (typeof element === 'string') {
-            return project.getOutputFiles().flatMap((file) => {
-                if (file.targetId !== element) return [];
 
                 const uri = project.getOutputFileUri(file.path);
                 if (!uri) return [];
