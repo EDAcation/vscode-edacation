@@ -151,7 +151,7 @@ const viewsConfig = Object.assign({}, baseConfig, {
     entry: {
         actions: './src/views/actions/src/main.ts',
         nextpnr: './src/views/nextpnr/src/main.ts',
-        digitaljs: './src/views/digitaljs/src/main.ts',
+        yosys: './src/views/yosys/src/main.ts',
         project: './src/views/project/src/main.ts'
     },
     output: {
@@ -171,8 +171,8 @@ const viewsConfig = Object.assign({}, baseConfig, {
         alias: {
             fs: false,
             child_process: false,
-            tmp: path.join(currentDirectory, 'src/views/digitaljs/src/aliases/tmp.ts'),
-            topsort: path.join(currentDirectory, 'src/views/digitaljs/src/aliases/topsort.ts')
+            tmp: path.join(currentDirectory, 'src/views/yosys/src/aliases/tmp.ts'),
+            topsort: path.join(currentDirectory, 'src/views/yosys/src/aliases/topsort.ts')
         },
         fallback: {
             crypto: false,
