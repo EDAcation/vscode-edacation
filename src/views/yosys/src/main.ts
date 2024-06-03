@@ -146,6 +146,7 @@ export class View {
         elementHeader.textContent = 'Unable to open DigitalJS file';
 
         const elementCode = document.createElement('code');
+        elementCode.style.whiteSpace = 'pre-wrap';
         if (sourceViewer !== null) {
             elementCode.textContent = `*** Error in Viewer: ${typeof sourceViewer} ***\n\n`;
         }

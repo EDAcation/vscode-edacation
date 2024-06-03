@@ -13,11 +13,11 @@ export class YosysEditor extends BaseEditor {
     }
 
     protected getStylePaths() {
-        return [['dist', 'views', 'digitaljs', 'index.css']];
+        return [['dist', 'views', 'yosys', 'index.css']];
     }
 
     protected getScriptPaths() {
-        return [['dist', 'views', 'digitaljs', 'index.js']];
+        return [['dist', 'views', 'yosys', 'index.js']];
     }
 
     protected getHtmlStyles(webview: vscode.Webview): string {
