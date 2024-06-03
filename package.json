@@ -5,7 +5,7 @@
     "description": "Learning environment for digital hardware design with Yosys and nextpnr.",
     "repository": "github:EDAcation/vscode-edacation",
     "license": "MIT",
-    "version": "0.5.3",
+    "version": "0.5.4",
     "contributors": [
         "Danielle Huisman <danielle@huisman.me> (https://github.com/DanielleHuisman)",
         "Daan Middelkoop <daantje676@gmail.com>",
