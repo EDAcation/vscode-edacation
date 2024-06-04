@@ -247,8 +247,9 @@ export class Project extends BaseProject {
             }
             if (!folderRelativePath) continue;
 
+            filePaths.push(folderRelativePath);
+
             if (!this.hasOutputFile(folderRelativePath)) {
-                filePaths.push(folderRelativePath);
                 this.outputFileInfo.set(folderRelativePath, {
                     uri: fileUri,
                     watcher: getFileWatcher(
