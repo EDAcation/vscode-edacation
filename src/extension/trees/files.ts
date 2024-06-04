@@ -7,7 +7,7 @@ import type {ProjectFile, Projects} from '../projects/index.js';
 import {BaseTreeDataProvider} from './base.js';
 
 abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
-    protected getFileTreeItem(file: ProjectFile): vscode.TreeItem {
+    protected getFileTreeItem(file: ProjectFile, showPath = false): vscode.TreeItem {
         // Add 'stale' description if file is output file and stale
         const outputFile = this.projects.getCurrent()?.getOutputFile(file.path) ?? null;
         const isOld = outputFile && outputFile.stale;
@@ -16,7 +16,7 @@ abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
             resourceUri: file.uri,
 
             label: basename(file.path),
-            description: isOld ? '(stale)' : false,
+            description: isOld ? '(stale)' : showPath,
             id: file.path,
 
             contextValue: 'file',
@@ -58,7 +58,7 @@ export class InputFilesProvider extends FilesProvider<ProjectFile> {
             throw new Error('Invalid state.');
         }
 
-        return this.getFileTreeItem(element);
+        return this.getFileTreeItem(element, true);
     }
 
     getChildren(element?: ProjectFile): ProjectFile[] {
