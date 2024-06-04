@@ -213,7 +213,7 @@
             "view/item/context": [
                 {
                     "command": "edacation.closeProject",
-                    "when": "view == edacation-projects && viewItem == file",
+                    "when": "view == edacation-projects",
                     "group": "inline"
                 },
                 {
