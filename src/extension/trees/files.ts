@@ -1,32 +1,44 @@
 import type {TargetConfiguration} from 'edacation';
+import {basename} from 'path-browserify';
 import * as vscode from 'vscode';
 
 import type {ProjectFile, Projects} from '../projects/index.js';
 
 import {BaseTreeDataProvider} from './base.js';
 
-const getFileTreeItem = (uri: vscode.Uri): vscode.TreeItem => {
-    return {
-        resourceUri: uri,
-        contextValue: 'file',
-        collapsibleState: vscode.TreeItemCollapsibleState.None,
-        command: {
-            title: 'Open file',
-            command: 'vscode.open',
-            arguments: [uri]
+abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
+    protected getFileTreeItem(file: ProjectFile): vscode.TreeItem {
+        let label = basename(file.path);
+
+        // Add 'old' prefix if file is output file and stale
+        const outputFile = this.projects.getCurrent()?.getOutputFile(file.path) ?? null;
+        if (outputFile && outputFile.stale) {
+            label = `(old) ${label}`;
         }
-    };
-};
 
-const getTargetTreeItem = (target: TargetConfiguration | null): vscode.TreeItem => {
-    return {
-        label: target?.name ?? 'Unknown targets',
-        contextValue: 'target',
-        collapsibleState: vscode.TreeItemCollapsibleState.Expanded
-    };
-};
+        return {
+            resourceUri: file.uri,
+            label: label,
+            contextValue: 'file',
+            collapsibleState: vscode.TreeItemCollapsibleState.None,
+            command: {
+                title: 'Open file',
+                command: 'vscode.open',
+                arguments: [file.uri]
+            }
+        };
+    }
 
-export class InputFilesProvider extends BaseTreeDataProvider<ProjectFile> {
+    getTargetTreeItem(target: TargetConfiguration | null): vscode.TreeItem {
+        return {
+            label: target?.name ?? 'Unknown targets',
+            contextValue: 'target',
+            collapsibleState: vscode.TreeItemCollapsibleState.Expanded
+        };
+    }
+}
+
+export class InputFilesProvider extends FilesProvider<ProjectFile> {
     static getViewID() {
         return 'edacation-inputFiles';
     }
@@ -43,7 +55,7 @@ export class InputFilesProvider extends BaseTreeDataProvider<ProjectFile> {
             throw new Error('Invalid state.');
         }
 
-        return getFileTreeItem(element.uri);
+        return this.getFileTreeItem(element);
     }
 
     getChildren(element?: ProjectFile): ProjectFile[] {
@@ -72,7 +84,7 @@ interface OutputFileTreeFile {
 
 export type OutputFileTreeItem = OutputFileTreeTarget | OutputFileTreeFile;
 
-export class OutputFilesProvider extends BaseTreeDataProvider<OutputFileTreeItem> {
+export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
     static getViewID() {
         return 'edacation-outputFiles';
     }
@@ -98,10 +110,10 @@ export class OutputFilesProvider extends BaseTreeDataProvider<OutputFileTreeItem
         // Target category
         if (element.type === 'target') {
             const target = element.targetId ? project.getTarget(element.targetId) : null;
-            return getTargetTreeItem(target);
+            return this.getTargetTreeItem(target);
         }
 
-        return getFileTreeItem(element.file.uri);
+        return this.getFileTreeItem(element.file);
     }
 
     getChildren(element?: OutputFileTreeItem): OutputFileTreeItem[] {

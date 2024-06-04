@@ -171,7 +171,7 @@ export class Project extends BaseProject {
                     uri: fileUri,
                     watcher: getFileWatcher(
                         fileUri,
-                        undefined,
+                        () => void this.markOutputFilesStale(true),
                         () => void this.removeInputFiles([folderRelativePath || ''])
                     )
                 });
@@ -182,10 +182,21 @@ export class Project extends BaseProject {
 
         this.projects.emitInputFileChange();
 
+        this.markOutputFilesStale(false);
+
         await this.save();
     }
 
+    async markOutputFilesStale(doSave = true) {
+        this.expireOutputFiles();
+        this.projects.emitOutputFileChange();
+
+        if (doSave) await this.save();
+    }
+
     async removeInputFiles(filePaths: string[]): Promise<void> {
+        if (!filePaths.length) return;
+
         for (const filePath of filePaths) {
             this.inputFileInfo.get(filePath)?.watcher.dispose();
             this.inputFileInfo.delete(filePath);
@@ -194,6 +205,8 @@ export class Project extends BaseProject {
         super.removeInputFiles(filePaths);
 
         this.projects.emitInputFileChange();
+
+        this.markOutputFilesStale(false);
 
         await this.save();
     }
