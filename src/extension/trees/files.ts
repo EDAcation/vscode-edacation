@@ -18,9 +18,13 @@ abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
 
         return {
             resourceUri: file.uri,
+
             label: label,
+            id: file.path,
+
             contextValue: 'file',
             collapsibleState: vscode.TreeItemCollapsibleState.None,
+
             command: {
                 title: 'Open file',
                 command: 'vscode.open',
@@ -32,6 +36,8 @@ abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
     getTargetTreeItem(target: TargetConfiguration | null): vscode.TreeItem {
         return {
             label: target?.name ?? 'Unknown targets',
+            id: target?.id,
+
             contextValue: 'target',
             collapsibleState: vscode.TreeItemCollapsibleState.Expanded
         };
@@ -145,26 +151,39 @@ export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
 
         // below targets: output files
         if (element.type === 'target') {
-            return project.getOutputFiles().flatMap((file) => {
-                if (!element.targetId) {
-                    // "unknown" category. If it has a targetId and it is valid, don't display it here!
-                    if (file.targetId !== null && project.getTarget(file.targetId) !== null) return [];
-                } else {
-                    // Specific target category. Only display files with this target ID!
-                    if (file.targetId !== element.targetId) return [];
-                }
-
-                const uri = project.getOutputFileUri(file.path);
-                if (!uri) return [];
-
-                return {
-                    type: 'file',
-                    file: {
-                        path: file.path,
-                        uri
+            return project
+                .getOutputFiles()
+                .flatMap((file): OutputFileTreeFile[] => {
+                    if (!element.targetId) {
+                        // "unknown" category. If it has a targetId and it is valid, don't display it here!
+                        if (file.targetId !== null && project.getTarget(file.targetId) !== null) return [];
+                    } else {
+                        // Specific target category. Only display files with this target ID!
+                        if (file.targetId !== element.targetId) return [];
                     }
-                };
-            });
+
+                    const uri = project.getOutputFileUri(file.path);
+                    if (!uri) return [];
+
+                    return [
+                        {
+                            type: 'file',
+                            file: {
+                                path: file.path,
+                                uri
+                            }
+                        }
+                    ];
+                })
+                .toSorted((a, b) => {
+                    // First sort by file extension, then file name
+                    const partsA = basename(a.file.path).split('.').toReversed();
+                    const partsB = basename(b.file.path).split('.').toReversed();
+
+                    if (partsA < partsB) return -1;
+                    if (partsA > partsB) return 1;
+                    return 0;
+                });
         }
 
         // below output files: nothing!
