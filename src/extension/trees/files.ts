@@ -8,18 +8,15 @@ import {BaseTreeDataProvider} from './base.js';
 
 abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
     protected getFileTreeItem(file: ProjectFile): vscode.TreeItem {
-        let label = basename(file.path);
-
-        // Add 'old' prefix if file is output file and stale
+        // Add 'stale' description if file is output file and stale
         const outputFile = this.projects.getCurrent()?.getOutputFile(file.path) ?? null;
-        if (outputFile && outputFile.stale) {
-            label = `(old) ${label}`;
-        }
+        const isOld = outputFile && outputFile.stale;
 
         return {
             resourceUri: file.uri,
 
-            label: label,
+            label: basename(file.path),
+            description: isOld ? '(stale)' : false,
             id: file.path,
 
             contextValue: 'file',
