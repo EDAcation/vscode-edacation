@@ -73,7 +73,11 @@ export class InputFilesProvider extends FilesProvider<ProjectFile> {
         // We do not want to nest input files
         if (element) return [];
 
-        return project.getInputFileUris();
+        return project.getInputFileUris().toSorted((a, b) => {
+            if (a.path < b.path) return -1;
+            if (a.path > b.path) return 1;
+            return 0;
+        });
     }
 }
 
