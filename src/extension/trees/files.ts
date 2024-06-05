@@ -1,5 +1,5 @@
-import type {TargetConfiguration} from 'edacation';
-import {basename} from 'path-browserify';
+import type {ProjectOutputFile, TargetConfiguration} from 'edacation';
+import {basename, extname} from 'path-browserify';
 import * as vscode from 'vscode';
 
 import type {ProjectFile, Projects} from '../projects/index.js';
@@ -37,6 +37,16 @@ abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
 
             contextValue: 'target',
             collapsibleState: vscode.TreeItemCollapsibleState.Expanded
+        };
+    }
+
+    getLogsTreeItem(): vscode.TreeItem {
+        return {
+            label: 'Logs',
+            id: 'logs',
+
+            contextValue: 'logs',
+            collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
         };
     }
 }
@@ -78,10 +88,13 @@ export class InputFilesProvider extends FilesProvider<ProjectFile> {
     }
 }
 
-// Project file or target id (for categories). Target ID may be empty string when unknown.
 interface OutputFileTreeTarget {
     type: 'target';
-    targetId: string | null;
+    targetId: string | null; // null = "unknown target" category
+}
+
+interface OutputFileTreeLog {
+    type: 'logs';
 }
 
 interface OutputFileTreeFile {
@@ -89,7 +102,19 @@ interface OutputFileTreeFile {
     file: ProjectFile;
 }
 
-export type OutputFileTreeItem = OutputFileTreeTarget | OutputFileTreeFile;
+export type OutputFileTreeItem = OutputFileTreeTarget | OutputFileTreeLog | OutputFileTreeFile;
+
+type OutputFileType = 'known' | 'unknown' | 'logs';
+
+const getOutputFileType = (file: ProjectOutputFile): OutputFileType => {
+    if (extname(file.path) === '.log') {
+        return 'logs';
+    } else if (file.targetId === null || file.target === null) {
+        return 'unknown';
+    } else {
+        return 'known';
+    }
+};
 
 export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
     static getViewID() {
@@ -114,12 +139,16 @@ export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
             throw new Error('Invalid state.');
         }
 
-        // Target category
         if (element.type === 'target') {
+            // Target category
             const target = element.targetId ? project.getTarget(element.targetId) : null;
             return this.getTargetTreeItem(target);
+        } else if (element.type === 'logs') {
+            // Logs category
+            return this.getLogsTreeItem();
         }
 
+        // Nested file
         return this.getFileTreeItem(element.file);
     }
 
@@ -131,36 +160,38 @@ export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
 
         // top-level: target IDs (categories)
         if (!element) {
-            const targetIds = new Set<string | null>();
+            const targetIds = new Set<string>();
+            let doIncludeUnknown = false;
+            let doIncludeLogs = false;
+
             for (const file of project.getOutputFiles()) {
-                const targetId = file.targetId;
-                if (targetId === null || project.getTarget(targetId) === null) {
-                    targetIds.add(null);
-                } else {
-                    targetIds.add(targetId);
-                }
+                const fileType = getOutputFileType(file);
+                if (fileType === 'known' && file.targetId) targetIds.add(file.targetId);
+                else if (fileType === 'unknown') doIncludeUnknown = true;
+                else if (fileType === 'logs') doIncludeLogs = true;
             }
 
-            const targets = Array.from(targetIds)
+            const categories = Array.from(targetIds)
                 .toSorted()
-                .map((id: string | null): OutputFileTreeTarget => ({type: 'target', targetId: id}));
-            if (targets.length && targets[0].targetId === null) {
-                return targets.slice(1).concat([{type: 'target', targetId: null}]);
-            }
-            return targets;
+                .map((id: string): OutputFileTreeItem => ({type: 'target', targetId: id}));
+            if (doIncludeUnknown) categories.push({type: 'target', targetId: null});
+            if (doIncludeLogs) categories.push({type: 'logs'});
+
+            return categories;
         }
 
-        // below targets: output files
         if (element.type === 'target') {
+            // below targets: output files
             return project
                 .getOutputFiles()
                 .flatMap((file): OutputFileTreeFile[] => {
+                    const fileType = getOutputFileType(file);
                     if (!element.targetId) {
-                        // "unknown" category. If it has a targetId and it is valid, don't display it here!
-                        if (file.targetId !== null && project.getTarget(file.targetId) !== null) return [];
+                        // "unknown" category
+                        if (fileType !== 'unknown') return [];
                     } else {
-                        // Specific target category. Only display files with this target ID!
-                        if (file.targetId !== element.targetId) return [];
+                        // Specific target category
+                        if (fileType !== 'known' || file.targetId !== element.targetId) return [];
                     }
 
                     const uri = project.getOutputFileUri(file.path);
@@ -185,6 +216,26 @@ export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
                     if (partsA > partsB) return 1;
                     return 0;
                 });
+        } else if (element.type === 'logs') {
+            // below logs: logs!
+            return project
+                .getOutputFiles()
+                .filter((file) => getOutputFileType(file) === 'logs')
+                .flatMap((file): OutputFileTreeFile[] => {
+                    const uri = project.getOutputFileUri(file.path);
+                    if (!uri) return [];
+
+                    return [
+                        {
+                            type: 'file',
+                            file: {
+                                path: file.path,
+                                uri
+                            }
+                        }
+                    ];
+                })
+                .toSorted();
         }
 
         // below output files: nothing!

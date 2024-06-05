@@ -70,8 +70,8 @@ export class RemoveOutputFileCommand extends CurrentProjectCommand {
     }
 
     async executeForCurrentProject(project: Project, treeItem: OutputFileTreeItem) {
-        if (treeItem.type === 'target') {
-            await vscode.window.showErrorMessage('Output file removal is not supported for entire targets');
+        if (treeItem.type !== 'file') {
+            await vscode.window.showErrorMessage('Output file removal is not supported for this item');
             return;
         }
 
@@ -85,8 +85,8 @@ export class TrashOutputFileCommand extends CurrentProjectCommand {
     }
 
     async executeForCurrentProject(project: Project, treeItem: OutputFileTreeItem) {
-        if (treeItem.type === 'target') {
-            await vscode.window.showErrorMessage('Output file trashing is not supported for entire targets');
+        if (treeItem.type !== 'file') {
+            await vscode.window.showErrorMessage('Output file trashing is not supported for this item');
             return;
         }
 
