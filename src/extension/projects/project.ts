@@ -222,23 +222,32 @@ export class Project extends BaseProject {
             return;
         }
 
-        const answer = await vscode.window.showErrorMessage(
-            `Copy file into EDA project root?`,
+        const answer = await vscode.window.showInformationMessage(
+            `Copy file into workspace?`,
             {
                 detail: `File "${uri.path}" is not in folder "${
                     this.getRoot().path
-                }". Do you want to copy it into the project root?`,
+                }". Do you want to copy it into the project workspace?`,
                 modal: true
             },
             'Yes',
             'No'
         );
         if (answer === 'Yes') {
-            const target = vscode.Uri.joinPath(this.getRoot(), path.basename(uri.path));
+            const targetDir = vscode.Uri.joinPath(this.getRoot(), 'src');
+            const target = vscode.Uri.joinPath(targetDir, path.basename(uri.path));
 
-            return new Promise((resolve, _reject) => {
-                fs.copyFile(uri.fsPath, target.fsPath, () => {
-                    resolve(target);
+            return new Promise((resolve, reject) => {
+                fs.mkdir(targetDir.fsPath, {recursive: true}, (err) => {
+                    if (err) {
+                        reject();
+                        vscode.window.showErrorMessage(`Failed to copy file: ${err}`);
+                        return;
+                    }
+
+                    fs.copyFile(uri.fsPath, target.fsPath, () => {
+                        resolve(target);
+                    });
                 });
             });
         }
