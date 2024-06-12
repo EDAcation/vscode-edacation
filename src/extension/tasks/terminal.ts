@@ -10,6 +10,11 @@ import {type TaskDefinition, type TerminalTask} from './task.js';
 
 const PROJECT_PATTERN = '**/*.edaproject';
 
+interface JobDefinition<WorkerOptions extends _WorkerOptions> {
+    task: TerminalTask<WorkerOptions>;
+    targetId: string;
+}
+
 export abstract class TaskProvider extends BaseTaskProvider {
     private taskPromise?: Promise<vscode.Task[]> | undefined;
     private fileSystemWatcher: vscode.FileSystemWatcher;
@@ -110,7 +115,7 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
     private definition: TaskDefinition;
 
     private tasks: TerminalTask<WorkerOptions>[];
-    private curTask: TerminalTask<WorkerOptions> | null;
+    private curJob: JobDefinition<WorkerOptions> | null;
 
     private curProject: Project | null;
 
@@ -134,7 +139,7 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
         this.definition = definition;
 
         this.tasks = tasks;
-        this.curTask = null;
+        this.curJob = null;
 
         this.curProject = null;
 
@@ -167,20 +172,20 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
     }
 
     protected async exit(code: number) {
-        if (!this.curTask) return;
+        if (!this.curJob) return;
 
         try {
             // Write logs
             const uri = vscode.Uri.joinPath(
                 this.curProject ? this.curProject.getRoot() : this.folder.uri,
                 'logs',
-                `${this.curTask?.getName()}.log`
+                `${this.curJob.task.getName()}.log`
             );
             await vscode.workspace.fs.writeFile(uri, encodeText(this.logMessages.join('')));
 
             if (this.curProject) {
                 // Add log to output files
-                await this.curProject.addOutputFileUris([uri]);
+                await this.curProject.addOutputFileUris([uri], this.curJob.targetId);
             }
         } catch (err) {
             console.error(err);
@@ -212,32 +217,35 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
         }
 
         if (this.tasks.length === 0 || prevExitCode !== 0) {
-            this.curTask = null;
+            this.curJob = null;
             this.curProject = null;
 
             this.closeEmitter.fire(prevExitCode);
             return;
         }
 
-        this.curTask = this.tasks[0];
+        this.curJob = {
+            task: this.tasks[0],
+            targetId: this.definition.targetId ?? this.curProject.getConfiguration().targets[0].id
+        };
         this.tasks.splice(0, 1);
 
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        this.curTask.onMessage(this.handleMessage.bind(this, this.curTask));
+        this.curJob.task.onMessage(this.handleMessage.bind(this, this.curJob));
 
         try {
             // Ensure that target dirs are set correctly BEFORE running the task
             await this.curProject.updateTargetDirectories();
 
-            await this.curTask.handleStart(this.curProject);
+            await this.curJob.task.handleStart(this.curProject);
 
-            await this.curTask.execute(this.curProject, this.definition);
+            await this.curJob.task.execute(this.curProject, this.curJob.targetId);
         } catch (err) {
             await this.error(err);
         }
     }
 
-    private async handleMessage(task: TerminalTask<WorkerOptions>, message: TerminalMessage) {
+    private async handleMessage(job: JobDefinition<WorkerOptions>, message: TerminalMessage) {
         if (!this.curProject) {
             console.warn(`Received message but no project active! ${JSON.stringify(message)}`);
             return;
@@ -272,10 +280,10 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
 
                     // Add output files to project output
                     const uris = outputFiles.map((outp) => outp.uri).filter((outp): outp is vscode.Uri => !!outp);
-                    await this.curProject.addOutputFileUris(uris);
+                    await this.curProject.addOutputFileUris(uris, job.targetId);
 
-                    await task.handleEnd(this.curProject, outputFiles);
-                    task.cleanup();
+                    await job.task.handleEnd(this.curProject, outputFiles);
+                    job.task.cleanup();
 
                     await this.exit(0);
 

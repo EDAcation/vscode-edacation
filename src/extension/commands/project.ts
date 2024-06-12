@@ -224,6 +224,6 @@ export class SelectProject extends BaseCommand {
     }
 
     async execute(project: Project) {
-        this.projects.setCurrent(project);
+        await this.projects.setCurrent(project);
     }
 }
