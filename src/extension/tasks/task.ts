@@ -5,7 +5,7 @@ import type * as vscode from 'vscode';
 import {type Project} from '../projects/index.js';
 
 import {AnsiModifier, type TaskOutputFile, type TerminalMessage, TerminalMessageEmitter} from './messaging.js';
-import {type RunnerContext, type TaskRunner} from './runner.js';
+import {ToolProvider} from './toolprovider.js';
 
 export interface TaskDefinition extends vscode.TaskDefinition {
     project: string;
@@ -39,16 +39,16 @@ const getTaskFilePaths = (files: TaskIOFile[], relDir: string = '.'): TaskIOFile
 };
 
 export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends TerminalMessageEmitter {
-    private readonly runner: TaskRunner;
+    private readonly toolProvider: ToolProvider;
 
     private isDisabled: boolean;
 
-    constructor(runner: TaskRunner) {
+    constructor(toolProvider: ToolProvider) {
         super();
 
-        this.runner = runner;
-        // proxy all runner messages to terminal
-        this.runner.onMessage(this.onRunnerMessage.bind(this));
+        this.toolProvider = toolProvider;
+        // proxy all provider messages to terminal
+        this.toolProvider.onMessage(this.onProviderMessage.bind(this));
 
         this.isDisabled = false;
     }
@@ -69,7 +69,7 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
 
     abstract handleEnd(project: Project, outputFiles: TaskOutputFile[]): Promise<void>;
 
-    private onRunnerMessage(message: TerminalMessage) {
+    private onProviderMessage(message: TerminalMessage) {
         if (this.isDisabled) return;
 
         switch (message.type) {
@@ -118,19 +118,18 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
         }
         this.println();
 
-        // Print the runner and command to execute
-        this.println(`Runner command (${this.runner.getName()}):`, undefined, AnsiModifier.BOLD);
+        // Print the tool provider and command to execute
+        this.println(`Tool command (${this.toolProvider.getName()}):`, undefined, AnsiModifier.BOLD);
         this.println(`  ${command} ${args.join(' ')}`);
         this.println();
 
-        const ctx: RunnerContext = {
+        await this.toolProvider.run({
             project,
             command,
             args,
             inputFiles,
             outputFiles
-        };
-        await this.runner.run(ctx);
+        });
     }
 
     cleanup() {

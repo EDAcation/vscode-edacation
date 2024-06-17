@@ -7,7 +7,7 @@ import {type Project} from '../projects/index.js';
 import {type TaskOutputFile, TerminalMessageEmitter} from './messaging.js';
 import type {TaskIOFile} from './task.js';
 
-export interface RunnerContext {
+interface Context {
     project: Project;
     command: string;
     args: string[];
@@ -16,7 +16,7 @@ export interface RunnerContext {
     outputFiles: TaskIOFile[];
 }
 
-export abstract class TaskRunner extends TerminalMessageEmitter {
+export abstract class ToolProvider extends TerminalMessageEmitter {
     protected readonly extensionContext: vscode.ExtensionContext;
 
     constructor(extensionContext: vscode.ExtensionContext) {
@@ -27,15 +27,15 @@ export abstract class TaskRunner extends TerminalMessageEmitter {
 
     abstract getName(): string;
 
-    abstract run(ctx: RunnerContext): Promise<void>;
+    abstract run(ctx: Context): Promise<void>;
 }
 
-export class WebAssemblyTaskRunner extends TaskRunner {
+export class WebAssemblyToolProvider extends ToolProvider {
     getName() {
         return 'WebAssembly';
     }
 
-    async run(ctx: RunnerContext): Promise<void> {
+    async run(ctx: Context): Promise<void> {
         const inFiles = await this.readFiles(ctx.project, ctx.inputFiles);
 
         // Create & start worker
@@ -120,7 +120,7 @@ export class WebAssemblyTaskRunner extends TaskRunner {
     }
 }
 
-export class NativeTaskRunner extends TaskRunner {
+export class NativeToolProvider extends ToolProvider {
     private lineBuffer: Record<'stdout' | 'stderr', string>;
 
     getName() {
@@ -136,7 +136,7 @@ export class NativeTaskRunner extends TaskRunner {
         };
     }
 
-    async run(ctx: RunnerContext): Promise<void> {
+    async run(ctx: Context): Promise<void> {
         // Write generated input files so the native process can load them
         for (const file of ctx.inputFiles) {
             if (!file.data) continue;
@@ -148,7 +148,7 @@ export class NativeTaskRunner extends TaskRunner {
         const child_process = await import('child_process').catch(() => void 0);
         if (!child_process || !child_process.spawn) {
             this.error(
-                'Unable to import required dependencies. Please note that the native runner is unavailable in a web environment.'
+                'Unable to import required dependencies. Please note that native tools are unavailable in a web environment.'
             );
             return;
         }
@@ -168,7 +168,7 @@ export class NativeTaskRunner extends TaskRunner {
         if (error instanceof Error) {
             if ((error as Error & {code: string}).code === 'ENOENT') {
                 this.error(
-                    'Could not find native runner entrypoint. Are Yosys/Nextpnr installed on your system and available in PATH?'
+                    'Could not find native tool entrypoint. Are Yosys/Nextpnr installed on your system and available in PATH?'
                 );
                 return;
             }
@@ -188,7 +188,7 @@ export class NativeTaskRunner extends TaskRunner {
         }
     }
 
-    private onProcessExit(ctx: RunnerContext, code: number | null, signal: string | null) {
+    private onProcessExit(ctx: Context, code: number | null, signal: string | null) {
         // flush buffers to get all output on the terminal
         if (this.lineBuffer['stdout'].length > 0) {
             this.println(this.lineBuffer['stdout'], 'stdout');
@@ -210,12 +210,12 @@ export class NativeTaskRunner extends TaskRunner {
     }
 }
 
-export const getConfiguredRunner = (context: vscode.ExtensionContext): TaskRunner => {
+export const getConfiguredProvider = (context: vscode.ExtensionContext): ToolProvider => {
     const useNative = vscode.workspace.getConfiguration('edacation').get('useNativeRunners');
 
     if (useNative) {
-        return new NativeTaskRunner(context);
+        return new NativeToolProvider(context);
     } else {
-        return new WebAssemblyTaskRunner(context);
+        return new WebAssemblyToolProvider(context);
     }
 };

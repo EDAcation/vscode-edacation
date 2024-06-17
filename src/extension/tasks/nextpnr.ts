@@ -4,9 +4,9 @@ import * as vscode from 'vscode';
 import type {Project} from '../projects/index.js';
 
 import {AnsiModifier, type TaskOutputFile} from './messaging.js';
-import {getConfiguredRunner} from './runner.js';
 import {type TaskDefinition, type TaskIOFile, TerminalTask} from './task.js';
 import {TaskProvider, TaskTerminal} from './terminal.js';
+import {getConfiguredProvider} from './toolprovider.js';
 
 export class NextpnrTaskProvider extends TaskProvider {
     static getType() {
@@ -21,8 +21,8 @@ export class NextpnrTaskProvider extends TaskProvider {
         folder: vscode.WorkspaceFolder,
         definition: TaskDefinition
     ): TaskTerminal<NextpnrWorkerOptions> {
-        const runner = getConfiguredRunner(this.context);
-        const task = new NextpnrTerminalTask(runner);
+        const provider = getConfiguredProvider(this.context);
+        const task = new NextpnrTerminalTask(provider);
 
         return new TaskTerminal(this.projects, folder, definition, [task]);
     }

@@ -11,9 +11,9 @@ import type {Project} from '../projects/index.js';
 import {decodeJSON, encodeJSON, encodeText} from '../util.js';
 
 import {AnsiModifier, type TaskOutputFile} from './messaging.js';
-import {getConfiguredRunner} from './runner.js';
 import {type TaskDefinition, type TaskIOFile, TerminalTask} from './task.js';
 import {TaskProvider, TaskTerminal} from './terminal.js';
+import {getConfiguredProvider} from './toolprovider.js';
 
 type JSONValue = string | number | boolean | {[x: string]: JSONValue} | Array<JSONValue>;
 
@@ -85,9 +85,9 @@ export class YosysTaskProvider extends TaskProvider {
         folder: vscode.WorkspaceFolder,
         definition: TaskDefinition
     ): TaskTerminal<YosysWorkerOptions> {
-        const runner = getConfiguredRunner(this.context);
-        const prepareTask = new YosysPrepareTerminalTask(runner);
-        const synthesisTask = new YosysSynthTerminalTask(runner);
+        const provider = getConfiguredProvider(this.context);
+        const prepareTask = new YosysPrepareTerminalTask(provider);
+        const synthesisTask = new YosysSynthTerminalTask(provider);
 
         return new TaskTerminal(this.projects, folder, definition, [prepareTask, synthesisTask]);
     }
