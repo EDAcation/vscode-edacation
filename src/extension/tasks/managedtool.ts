@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 
+import * as node from '../../common/node-modules.js';
+
 interface Platform {
     os: 'win32' | 'linux' | 'darwin';
     arch: 'x64' | 'arm64';
@@ -23,11 +25,6 @@ interface ToolSettings {
 }
 
 type ToolsState = Record<string, ToolSettings>;
-
-const modOS = __non_webpack_require__('os') as Promise<typeof import('os')>;
-const modStream = __non_webpack_require__('stream') as Promise<typeof import('stream')>;
-const modZlib = __non_webpack_require__('zlib') as Promise<typeof import('zlib')>;
-const modTar = __non_webpack_require__('tar-fs') as Promise<typeof import('tar-fs')>;
 
 export class ManagedTool {
     private static SUPPORTED_PLATFORMS: Platform[] = [
@@ -95,7 +92,7 @@ export class ManagedTool {
     private static async getPlatform(): Promise<Platform> {
         if (ManagedTool.platformCache) return ManagedTool.platformCache;
 
-        const osmod = await modOS;
+        const osmod = await node.os();
         if (!osmod) throw new Error('Native features cannot be used on VSCode for the web!');
 
         const os = osmod.platform();
@@ -145,7 +142,7 @@ export class ManagedTool {
 
         // Create data buffer
         const buffer = Buffer.from(toolBuf);
-        const readable = new (await modStream).PassThrough();
+        const readable = new (await node.stream()).PassThrough();
         readable.end(buffer);
 
         const toolName = this.tool;
@@ -153,9 +150,9 @@ export class ManagedTool {
 
         // Extract!
         let entrypoint: string | null = null;
-        const gunzipStream = readable.pipe((await modZlib).createGunzip());
+        const gunzipStream = readable.pipe((await node.zlib()).createGunzip());
         const unpackStream = gunzipStream.pipe(
-            (await modTar).extract(targetDir.fsPath, {
+            (await node.tar()).extract(targetDir.fsPath, {
                 map(header) {
                     // Identify entrypoint
                     if (header.type == 'file' && header.name.split('/').at(-1) === toolName) {

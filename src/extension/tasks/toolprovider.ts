@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import type {ExtensionMessage, MessageFile} from '../../common/messages.js';
+import * as node from '../../common/node-modules.js';
 import {UniversalWorker} from '../../common/universal-worker.js';
 import {type Project} from '../projects/index.js';
 
@@ -146,10 +147,9 @@ abstract class NativeToolProvider extends ToolProvider {
             await vscode.workspace.fs.writeFile(destUri, file.data);
         }
 
-        const child_process = await import('child_process').catch(() => void 0);
-        if (!child_process || !child_process.spawn) {
+        if (!node.isAvailable()) {
             this.error(
-                'Unable to import required dependencies. Please note that native tools are unavailable in a web environment.'
+                'Required dependencies are unavailable. Please note that native tools are unavailable in a web environment.'
             );
             return;
         }
@@ -160,7 +160,7 @@ abstract class NativeToolProvider extends ToolProvider {
             return;
         }
 
-        const proc = child_process.spawn(entrypoint, ctx.args, {
+        const proc = (await node.childProcess()).spawn(entrypoint, ctx.args, {
             cwd: ctx.project.getRoot().fsPath
         });
 

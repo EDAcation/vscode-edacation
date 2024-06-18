@@ -2,6 +2,7 @@ import {Project as BaseProject, DEFAULT_CONFIGURATION, type ProjectConfiguration
 import path from 'path';
 import * as vscode from 'vscode';
 
+import * as node from '../../common/node-modules.js';
 import {asWorkspaceRelativeFolderPath, decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util.js';
 
 import type {Projects} from './projects.js';
@@ -133,9 +134,7 @@ export class Project extends BaseProject {
     }
 
     private async tryCopyFileIntoWorkspace(uri: vscode.Uri): Promise<vscode.Uri | undefined> {
-        const fs = await import('fs');
-
-        if (!fs || !fs.copyFile) {
+        if (!node.isAvailable()) {
             await vscode.window.showErrorMessage(`File must be in the a subfolder of the EDA project root.`, {
                 detail: `File "${uri.path}" is not in folder "${this.getRoot().path}".`,
                 modal: true
@@ -155,6 +154,7 @@ export class Project extends BaseProject {
             'No'
         );
         if (answer === 'Yes') {
+            const fs = await node.fs();
             const target = vscode.Uri.joinPath(this.getRoot(), path.basename(uri.path));
 
             return new Promise((resolve, _reject) => {
