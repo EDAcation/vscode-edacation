@@ -31,10 +31,17 @@
         "configuration": {
             "title": "EDAcation",
             "properties": {
-                "edacation.useNativeRunners": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Use native Yosys/Nextpnr binaries installed on the system instead of the bundled WebAssembly binaries."
+                "edacation.toolProvider": {
+                    "type": "string",
+                    "markdownDescription": "Specifies the tool provider used to run Yosys and Nextpnr. See the [docs](https://github.com/EDAcation/vscode-edacation/blob/main/docs/tool-provider.md) for more information.",
+                    "default": "native-managed",
+                    "enum": ["native-managed", "native-host", "web"],
+                    "enumItemLabels": ["Native (Managed)", "Native (Host)", "Web"],
+                    "enumDescriptions": [
+                        "Let EDAcation install and manage native Yosys & Nextpnr tools on your system. Only available on VSCode for Desktop on certain platforms.",
+                        "Use native Yosys & Nextpnr tools that are already present on the system. Requires said tools to be available in PATH. Only available on VSCode for Desktop.",
+                        "Use WebAssembly versions of Yosys & Nextpnr. This option requires an active internet connection. Slower, but available on all platforms and environments."
+                    ]
                 }
             }
         },
@@ -327,6 +334,7 @@
         "@trivago/prettier-plugin-sort-imports": "^4.3.0",
         "@types/mocha": "^10.0.6",
         "@types/path-browserify": "^1.0.2",
+        "@types/tar-fs": "^2.0.4",
         "@types/vscode": "1.73.0",
         "@types/vscode-webview": "^1.57.4",
         "@types/webpack-env": "^1.18.4",
@@ -360,6 +368,7 @@
         "nextpnr-viewer": "^0.6.1",
         "os-browserify": "^0.3.0",
         "path-browserify": "^1.0.1",
+        "tar-fs": "^3.0.6",
         "vue": "^3.4.27",
         "yosys2digitaljs": "^0.8.0"
     }

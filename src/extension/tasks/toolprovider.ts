@@ -4,6 +4,7 @@ import type {ExtensionMessage, MessageFile} from '../../common/messages.js';
 import {UniversalWorker} from '../../common/universal-worker.js';
 import {type Project} from '../projects/index.js';
 
+import {ManagedTool} from './managedtool.js';
 import {type TaskOutputFile, TerminalMessageEmitter} from './messaging.js';
 import type {TaskIOFile} from './task.js';
 
@@ -15,6 +16,8 @@ interface Context {
     inputFiles: TaskIOFile[];
     outputFiles: TaskIOFile[];
 }
+
+type ToolConfigOption = 'native-managed' | 'native-host' | 'web';
 
 export abstract class ToolProvider extends TerminalMessageEmitter {
     protected readonly extensionContext: vscode.ExtensionContext;
@@ -120,12 +123,8 @@ export class WebAssemblyToolProvider extends ToolProvider {
     }
 }
 
-export class NativeToolProvider extends ToolProvider {
+abstract class NativeToolProvider extends ToolProvider {
     private lineBuffer: Record<'stdout' | 'stderr', string>;
-
-    getName() {
-        return 'Native';
-    }
 
     constructor(extensionContext: vscode.ExtensionContext) {
         super(extensionContext);
@@ -135,6 +134,8 @@ export class NativeToolProvider extends ToolProvider {
             stderr: ''
         };
     }
+
+    protected abstract getEntrypoint(command: string): Promise<string | null>;
 
     async run(ctx: Context): Promise<void> {
         // Write generated input files so the native process can load them
@@ -153,7 +154,13 @@ export class NativeToolProvider extends ToolProvider {
             return;
         }
 
-        const proc = child_process.spawn(ctx.command, ctx.args, {
+        const entrypoint = await this.getEntrypoint(ctx.command);
+        if (!entrypoint) {
+            this.error('No entrypoint available. Aborting.');
+            return;
+        }
+
+        const proc = child_process.spawn(entrypoint, ctx.args, {
             cwd: ctx.project.getRoot().fsPath
         });
 
@@ -168,7 +175,7 @@ export class NativeToolProvider extends ToolProvider {
         if (error instanceof Error) {
             if ((error as Error & {code: string}).code === 'ENOENT') {
                 this.error(
-                    'Could not find native tool entrypoint. Are Yosys/Nextpnr installed on your system and available in PATH?'
+                    'Could not find host tool entrypoint. Are Yosys/Nextpnr installed on your system and available in PATH?'
                 );
                 return;
             }
@@ -210,12 +217,47 @@ export class NativeToolProvider extends ToolProvider {
     }
 }
 
-export const getConfiguredProvider = (context: vscode.ExtensionContext): ToolProvider => {
-    const useNative = vscode.workspace.getConfiguration('edacation').get('useNativeRunners');
+export class ManagedToolProvider extends NativeToolProvider {
+    getName(): string {
+        return 'Native - Managed';
+    }
 
-    if (useNative) {
-        return new NativeToolProvider(context);
-    } else {
+    async getEntrypoint(command: string): Promise<string | null> {
+        const tool = new ManagedTool(this.extensionContext, command);
+        const entrypoint = await tool.getEntrypoint();
+        if (entrypoint) return entrypoint;
+
+        // If not yet installed...
+        await vscode.window.withProgress(
+            {title: `Installing ${tool.getName()}...`, location: vscode.ProgressLocation.Notification},
+            (_progress) => tool.install()
+        );
+
+        return await tool.getEntrypoint();
+    }
+}
+
+export class HostToolProvider extends NativeToolProvider {
+    getName(): string {
+        return 'Native - Host';
+    }
+
+    async getEntrypoint(command: string): Promise<string | null> {
+        // Host tools should be installed to PATH. Just return the command here - the OS should resolve it.
+        return command;
+    }
+}
+
+export const getConfiguredProvider = (context: vscode.ExtensionContext): ToolProvider => {
+    const provider = vscode.workspace.getConfiguration('edacation').get('toolProvider') as ToolConfigOption;
+
+    if (provider === 'native-managed') {
+        return new ManagedToolProvider(context);
+    } else if (provider === 'native-host') {
+        return new HostToolProvider(context);
+    } else if (provider === 'web') {
         return new WebAssemblyToolProvider(context);
+    } else {
+        throw new Error(`Unrecognized tool provider option: ${provider}`);
     }
 };
