@@ -4,24 +4,19 @@
 import type {TransferListItem} from 'worker_threads';
 
 import type {ExtensionMessage, WorkerMessage} from './messages.js';
+import * as node from './node-modules.js';
 
-/* eslint-disable @typescript-eslint/consistent-type-imports */
-type WorkerThreadsModule = typeof import('worker_threads');
-type WorkerThreadsWorker = import('worker_threads').Worker;
-/* eslint-enable @typescript-eslint/consistent-type-imports */
+const module: node.ModuleWorkerThreads | undefined = node.isAvailable() ? node.importSync('worker_threads') : undefined;
 
-const module: WorkerThreadsModule | undefined =
-    typeof Worker === 'undefined' ? __non_webpack_require__('worker_threads') : undefined;
-
-type InternalNodeWorker = {
+interface InternalNodeWorker {
     type: 'node';
-    worker: WorkerThreadsWorker;
-};
+    worker: InstanceType<node.ModuleWorkerThreads['Worker']>;
+}
 
-type InternalWebWorker = {
+interface InternalWebWorker {
     type: 'web';
     worker: Worker;
-};
+}
 
 type InternalWorker = InternalNodeWorker | InternalWebWorker;
 
@@ -31,7 +26,6 @@ interface EventCallbacks {
     message: ((message: ExtensionMessage) => void) | ((message: WorkerMessage) => void);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const extractData = (event: MessageEvent | ErrorEvent): any => {
     if (event instanceof MessageEvent) {
         return event.data;

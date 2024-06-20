@@ -1,13 +1,15 @@
 import * as vscode from 'vscode';
 
 import type {ExtensionMessage, MessageFile} from '../../common/messages.js';
+import * as node from '../../common/node-modules.js';
 import {UniversalWorker} from '../../common/universal-worker.js';
 import {type Project} from '../projects/index.js';
 
+import {ManagedTool} from './managedtool.js';
 import {type TaskOutputFile, TerminalMessageEmitter} from './messaging.js';
 import type {TaskIOFile} from './task.js';
 
-export interface RunnerContext {
+interface Context {
     project: Project;
     command: string;
     args: string[];
@@ -16,7 +18,9 @@ export interface RunnerContext {
     outputFiles: TaskIOFile[];
 }
 
-export abstract class TaskRunner extends TerminalMessageEmitter {
+type ToolConfigOption = 'native-managed' | 'native-host' | 'web';
+
+export abstract class ToolProvider extends TerminalMessageEmitter {
     protected readonly extensionContext: vscode.ExtensionContext;
 
     constructor(extensionContext: vscode.ExtensionContext) {
@@ -27,15 +31,15 @@ export abstract class TaskRunner extends TerminalMessageEmitter {
 
     abstract getName(): string;
 
-    abstract run(ctx: RunnerContext): Promise<void>;
+    abstract run(ctx: Context): Promise<void>;
 }
 
-export class WebAssemblyTaskRunner extends TaskRunner {
+export class WebAssemblyToolProvider extends ToolProvider {
     getName() {
         return 'WebAssembly';
     }
 
-    async run(ctx: RunnerContext): Promise<void> {
+    async run(ctx: Context): Promise<void> {
         const inFiles = await this.readFiles(ctx.project, ctx.inputFiles);
 
         // Create & start worker
@@ -120,12 +124,8 @@ export class WebAssemblyTaskRunner extends TaskRunner {
     }
 }
 
-export class NativeTaskRunner extends TaskRunner {
+abstract class NativeToolProvider extends ToolProvider {
     private lineBuffer: Record<'stdout' | 'stderr', string>;
-
-    getName() {
-        return 'Native';
-    }
 
     constructor(extensionContext: vscode.ExtensionContext) {
         super(extensionContext);
@@ -136,7 +136,9 @@ export class NativeTaskRunner extends TaskRunner {
         };
     }
 
-    async run(ctx: RunnerContext): Promise<void> {
+    protected abstract getEntrypoint(command: string): Promise<string | null>;
+
+    async run(ctx: Context): Promise<void> {
         // Write generated input files so the native process can load them
         for (const file of ctx.inputFiles) {
             if (!file.data) continue;
@@ -145,15 +147,20 @@ export class NativeTaskRunner extends TaskRunner {
             await vscode.workspace.fs.writeFile(destUri, file.data);
         }
 
-        const child_process = await import('child_process').catch(() => void 0);
-        if (!child_process || !child_process.spawn) {
+        if (!node.isAvailable()) {
             this.error(
-                'Unable to import required dependencies. Please note that the native runner is unavailable in a web environment.'
+                'Required dependencies are unavailable. Please note that native tools are unavailable in a web environment.'
             );
             return;
         }
 
-        const proc = child_process.spawn(ctx.command, ctx.args, {
+        const entrypoint = await this.getEntrypoint(ctx.command);
+        if (!entrypoint) {
+            this.error('No entrypoint available. Aborting.');
+            return;
+        }
+
+        const proc = (await node.childProcess()).spawn(entrypoint, ctx.args, {
             cwd: ctx.project.getRoot().fsPath
         });
 
@@ -168,7 +175,7 @@ export class NativeTaskRunner extends TaskRunner {
         if (error instanceof Error) {
             if ((error as Error & {code: string}).code === 'ENOENT') {
                 this.error(
-                    'Could not find native runner entrypoint. Are Yosys/Nextpnr installed on your system and available in PATH?'
+                    'Could not find host tool entrypoint. Are Yosys/Nextpnr installed on your system and available in PATH?'
                 );
                 return;
             }
@@ -188,7 +195,7 @@ export class NativeTaskRunner extends TaskRunner {
         }
     }
 
-    private onProcessExit(ctx: RunnerContext, code: number | null, signal: string | null) {
+    private onProcessExit(ctx: Context, code: number | null, signal: string | null) {
         // flush buffers to get all output on the terminal
         if (this.lineBuffer['stdout'].length > 0) {
             this.println(this.lineBuffer['stdout'], 'stdout');
@@ -210,12 +217,45 @@ export class NativeTaskRunner extends TaskRunner {
     }
 }
 
-export const getConfiguredRunner = (context: vscode.ExtensionContext): TaskRunner => {
-    const useNative = vscode.workspace.getConfiguration('edacation').get('useNativeRunners');
+export class ManagedToolProvider extends NativeToolProvider {
+    getName(): string {
+        return 'Native - Managed';
+    }
 
-    if (useNative) {
-        return new NativeTaskRunner(context);
+    async getEntrypoint(command: string): Promise<string | null> {
+        const tool = new ManagedTool(this.extensionContext, command);
+        const entrypoint = await tool.getEntrypoint();
+
+        // If already installed & valid, just return here
+        if (entrypoint) return entrypoint;
+
+        await vscode.commands.executeCommand('edacation.installTool', tool.getName());
+
+        return await tool.getEntrypoint();
+    }
+}
+
+export class HostToolProvider extends NativeToolProvider {
+    getName(): string {
+        return 'Native - Host';
+    }
+
+    async getEntrypoint(command: string): Promise<string | null> {
+        // Host tools should be installed to PATH. Just return the command here - the OS should resolve it.
+        return command;
+    }
+}
+
+export const getConfiguredProvider = (context: vscode.ExtensionContext): ToolProvider => {
+    const provider = vscode.workspace.getConfiguration('edacation').get('toolProvider') as ToolConfigOption;
+
+    if (provider === 'native-managed') {
+        return new ManagedToolProvider(context);
+    } else if (provider === 'native-host') {
+        return new HostToolProvider(context);
+    } else if (provider === 'web') {
+        return new WebAssemblyToolProvider(context);
     } else {
-        return new WebAssemblyTaskRunner(context);
+        throw new Error(`Unrecognized tool provider option: ${provider}`);
     }
 };
