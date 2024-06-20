@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import type {Project, ProjectFile} from '../projects/index.js';
+import {OutputFileTreeItem} from '../trees/files.js';
 import {FILE_FILTERS_HDL} from '../util.js';
 
 import {CurrentProjectCommand} from './base.js';
@@ -68,8 +69,13 @@ export class RemoveOutputFileCommand extends CurrentProjectCommand {
         return 'edacation.removeOutputFile';
     }
 
-    async executeForCurrentProject(project: Project, file: ProjectFile) {
-        await project.removeOutputFiles([file.path]);
+    async executeForCurrentProject(project: Project, treeItem: OutputFileTreeItem) {
+        if (treeItem.type !== 'file') {
+            await vscode.window.showErrorMessage('Output file removal is not supported for this item');
+            return;
+        }
+
+        await project.removeOutputFiles([treeItem.file.path]);
     }
 }
 
@@ -78,11 +84,16 @@ export class TrashOutputFileCommand extends CurrentProjectCommand {
         return 'edacation.trashOutputFile';
     }
 
-    async executeForCurrentProject(project: Project, file: ProjectFile) {
-        await project.removeOutputFiles([file.path]);
+    async executeForCurrentProject(project: Project, treeItem: OutputFileTreeItem) {
+        if (treeItem.type !== 'file') {
+            await vscode.window.showErrorMessage('Output file trashing is not supported for this item');
+            return;
+        }
+
+        await project.removeOutputFiles([treeItem.file.path]);
 
         try {
-            await vscode.workspace.fs.delete(file.uri);
+            await vscode.workspace.fs.delete(treeItem.file.uri);
         } catch {
             return;
         }

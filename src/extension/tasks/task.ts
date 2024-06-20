@@ -88,11 +88,8 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
         }
     }
 
-    async execute(project: Project, definition: TaskDefinition) {
-        const workerOptions = this.getWorkerOptions(
-            project,
-            definition.targetId ?? project.getConfiguration().targets[0].id
-        );
+    async execute(project: Project, targetId: string) {
+        const workerOptions = this.getWorkerOptions(project, targetId);
 
         const command = this.getInputCommand(workerOptions);
         const args = this.getInputArgs(workerOptions);
