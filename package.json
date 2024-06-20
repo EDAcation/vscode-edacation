@@ -5,7 +5,7 @@
     "description": "Learning environment for digital hardware design with Yosys and nextpnr.",
     "repository": "github:EDAcation/vscode-edacation",
     "license": "MIT",
-    "version": "0.5.5",
+    "version": "0.5.6",
     "contributors": [
         "Danielle Huisman <danielle@huisman.me> (https://github.com/DanielleHuisman)",
         "Daan Middelkoop <daantje676@gmail.com>",
@@ -35,8 +35,16 @@
                     "type": "string",
                     "markdownDescription": "Specifies the tool provider used to run Yosys and Nextpnr. See the [docs](https://github.com/EDAcation/vscode-edacation/blob/main/docs/tool-provider.md) for more information.",
                     "default": "native-managed",
-                    "enum": ["native-managed", "native-host", "web"],
-                    "enumItemLabels": ["Native (Managed)", "Native (Host)", "Web"],
+                    "enum": [
+                        "native-managed",
+                        "native-host",
+                        "web"
+                    ],
+                    "enumItemLabels": [
+                        "Native (Managed)",
+                        "Native (Host)",
+                        "Web"
+                    ],
                     "enumDescriptions": [
                         "Let EDAcation install and manage native Yosys & Nextpnr tools on your system. Only available on VSCode for Desktop on certain platforms.",
                         "Use native Yosys & Nextpnr tools that are already present on the system. Requires said tools to be available in PATH. Only available on VSCode for Desktop.",
