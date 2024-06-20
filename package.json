@@ -147,6 +147,16 @@
                 "title": "Open Project Configuration"
             },
             {
+                "command": "edacation.installTool",
+                "category": "EDAcation",
+                "title": "Install or Update a Managed Tool"
+            },
+            {
+                "command": "edacation.checkToolUpdates",
+                "category": "EDAcation",
+                "title": "Check for Managed Tool updates"
+            },
+            {
                 "command": "edacation.runRTL",
                 "category": "EDAcation",
                 "title": "Show RTL"

@@ -26,6 +26,9 @@ interface ToolSettings {
 
 type ToolsState = Record<string, ToolSettings>;
 
+const GLOBAL_STATE_KEY = 'managedTools';
+const TOOL_SUBDIR = 'managedTools';
+
 export class ManagedTool {
     private static SUPPORTED_PLATFORMS: Platform[] = [
         {os: 'win32', arch: 'x64'},
@@ -35,9 +38,6 @@ export class ManagedTool {
         {os: 'darwin', arch: 'arm64'}
     ];
     private static SOURCE_REPO = 'https://api.github.com/repos/YosysHQ/oss-cad-suite-build';
-
-    private static TOOL_SUBDIR = 'managedTools';
-    private static GLOBAL_STATE_KEY = 'managedTools';
 
     private static platformCache: Platform | null = null;
     private static assetsCache: GithubAsset[] | null = null;
@@ -52,7 +52,7 @@ export class ManagedTool {
     }
 
     private async getToolsDir(): Promise<vscode.Uri> {
-        const dir = vscode.Uri.joinPath(this.extensionContext.globalStorageUri, ManagedTool.TOOL_SUBDIR);
+        const dir = vscode.Uri.joinPath(this.extensionContext.globalStorageUri, TOOL_SUBDIR);
         await vscode.workspace.fs.createDirectory(dir);
         return dir;
     }
@@ -62,14 +62,11 @@ export class ManagedTool {
     }
 
     private async getToolsState(): Promise<ToolsState> {
-        const state = (await this.extensionContext.globalState.get(ManagedTool.GLOBAL_STATE_KEY)) as
-            | ToolsState
-            | undefined;
-        return state ?? {};
+        return getToolsState(this.extensionContext);
     }
 
     private async setToolsState(state: ToolsState) {
-        await this.extensionContext.globalState.update(ManagedTool.GLOBAL_STATE_KEY, state);
+        return setToolsState(this.extensionContext, state);
     }
 
     private async getSettings(): Promise<ToolSettings | null> {
@@ -104,7 +101,16 @@ export class ManagedTool {
         return platform;
     }
 
-    private static async getAvailableAssets(refresh = false): Promise<GithubAsset[]> {
+    private async getAsset(): Promise<GithubAsset> {
+        const platform = await ManagedTool.getPlatform();
+        const assets = await ManagedTool.getLatestToolVersions();
+
+        const asset = assets.find((asset) => asset.name === `${platform.os}-${platform.arch}-${this.tool}.tgz`);
+        if (!asset) throw new Error(`Could not find tool: ${this.tool} for ${platform.os}-${platform.arch}`);
+        return asset;
+    }
+
+    static async getLatestToolVersions(refresh = false): Promise<GithubAsset[]> {
         if (!refresh && ManagedTool.assetsCache) return ManagedTool.assetsCache;
 
         const platform = await ManagedTool.getPlatform();
@@ -120,13 +126,15 @@ export class ManagedTool {
         return release.assets.filter((asset) => asset.state == 'uploaded');
     }
 
-    private async getAsset(): Promise<GithubAsset> {
-        const platform = await ManagedTool.getPlatform();
-        const assets = await ManagedTool.getAvailableAssets();
+    async isUpdateAvailable(): Promise<boolean> {
+        const curVersion = (await this.getSettings())?.version;
+        // Something is broken?
+        if (!curVersion) return false;
 
-        const asset = assets.find((asset) => asset.name === `${platform.os}-${platform.arch}-${this.tool}.tgz`);
-        if (!asset) throw new Error(`Cannot find downloadable tool for platform: ${platform.os}-${platform.arch}`);
-        return asset;
+        const latestVersion = (await this.getAsset()).updated_at;
+
+        // Update available if version strings are not equal
+        return curVersion !== latestVersion;
     }
 
     async install() {
@@ -207,3 +215,17 @@ export class ManagedTool {
         return entrypoint.fsPath;
     }
 }
+
+const getToolsState = async (extensionContext: vscode.ExtensionContext): Promise<ToolsState> => {
+    const state = (await extensionContext.globalState.get(GLOBAL_STATE_KEY)) as ToolsState | undefined;
+    return state ?? {};
+};
+
+const setToolsState = async (extensionContext: vscode.ExtensionContext, state: ToolsState): Promise<void> => {
+    await extensionContext.globalState.update(GLOBAL_STATE_KEY, state);
+};
+
+export const getInstalledTools = async (extensionContext: vscode.ExtensionContext): Promise<ManagedTool[]> => {
+    const state = await getToolsState(extensionContext);
+    return Object.keys(state).map((id) => new ManagedTool(extensionContext, id));
+};

@@ -225,13 +225,11 @@ export class ManagedToolProvider extends NativeToolProvider {
     async getEntrypoint(command: string): Promise<string | null> {
         const tool = new ManagedTool(this.extensionContext, command);
         const entrypoint = await tool.getEntrypoint();
+
+        // If already installed & valid, just return here
         if (entrypoint) return entrypoint;
 
-        // If not yet installed...
-        await vscode.window.withProgress(
-            {title: `Installing ${tool.getName()}...`, location: vscode.ProgressLocation.Notification},
-            (_progress) => tool.install()
-        );
+        await vscode.commands.executeCommand('edacation.installTool', tool.getName());
 
         return await tool.getEntrypoint();
     }
