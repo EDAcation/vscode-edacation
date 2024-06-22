@@ -12,8 +12,8 @@ const pickTools = async (tools: ManagedTool[], prompt = 'Select tools'): Promise
             const latestVersion = await tool.getLatestVersion();
             pickItems.push({
                 label: tool.getName(),
-                description: 'Installable',
-                detail: latestVersion ?? undefined
+                description: latestVersion ?? undefined,
+                detail: 'Installable'
             });
         } else if (await tool.isUpdateAvailable()) {
             // Installed, but updateable
@@ -21,16 +21,16 @@ const pickTools = async (tools: ManagedTool[], prompt = 'Select tools'): Promise
             const latestVersion = await tool.getLatestVersion();
             pickItems.push({
                 label: tool.getName(),
-                description: 'Updateable',
-                detail: `${curVersion} => ${latestVersion}`
+                description: `${curVersion} => ${latestVersion}`,
+                detail: 'Updateable'
             });
         } else {
             // Installed and up-to-date
             const curVersion = await tool.getInstalledVersion();
             pickItems.push({
                 label: tool.getName(),
-                description: 'Up-to-date',
-                detail: curVersion ?? undefined
+                description: curVersion ?? undefined,
+                detail: 'Up-to-date'
             });
         }
     }
