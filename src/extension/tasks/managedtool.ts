@@ -28,6 +28,7 @@ type ToolsState = Record<string, ToolSettings>;
 
 const GLOBAL_STATE_KEY = 'managedTools';
 const TOOL_SUBDIR = 'managedTools';
+const SUGGESTED_TOOLS = ['yosys', 'nextpnr-ecp5', 'nextpnr-ice40'];
 
 export class ManagedTool {
     private static SUPPORTED_PLATFORMS: Platform[] = [
@@ -123,18 +124,31 @@ export class ManagedTool {
             });
         if (!release) return [];
 
-        return release.assets.filter((asset) => asset.state == 'uploaded');
+        const assets = release.assets.filter((asset) => asset.state == 'uploaded');
+        ManagedTool.assetsCache = assets;
+        return assets;
+    }
+
+    async getInstalledVersion(): Promise<string | null> {
+        return (await this.getSettings())?.version ?? null;
+    }
+
+    async getLatestVersion(): Promise<string | null> {
+        return (await this.getAsset()).updated_at;
     }
 
     async isUpdateAvailable(): Promise<boolean> {
-        const curVersion = (await this.getSettings())?.version;
-        // Something is broken?
-        if (!curVersion) return false;
+        const curVersion = await this.getInstalledVersion();
+        if (!curVersion) return false; // Something is broken?
 
-        const latestVersion = (await this.getAsset()).updated_at;
+        const latestVersion = await this.getLatestVersion();
 
         // Update available if version strings are not equal
         return curVersion !== latestVersion;
+    }
+
+    async isInstalled(): Promise<boolean> {
+        return (await this.getEntrypoint()) != null;
     }
 
     async install() {
@@ -228,4 +242,8 @@ const setToolsState = async (extensionContext: vscode.ExtensionContext, state: T
 export const getInstalledTools = async (extensionContext: vscode.ExtensionContext): Promise<ManagedTool[]> => {
     const state = await getToolsState(extensionContext);
     return Object.keys(state).map((id) => new ManagedTool(extensionContext, id));
+};
+
+export const getSuggestedTools = async (extenstionContext: vscode.ExtensionContext): Promise<ManagedTool[]> => {
+    return SUGGESTED_TOOLS.map((id) => new ManagedTool(extenstionContext, id));
 };
