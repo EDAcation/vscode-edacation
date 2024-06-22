@@ -57,9 +57,18 @@ export class InstallToolCommand extends BaseCommand {
         await Promise.all(
             tools.map(async (tool) => {
                 try {
+                    let prevProgress = 0;
                     await vscode.window.withProgress(
                         {title: `Installing ${tool.getName()}...`, location: vscode.ProgressLocation.Notification},
-                        (_progress) => tool.install()
+                        (msgProgress) =>
+                            tool.install((dlProgress) => {
+                                if (!dlProgress) return msgProgress.report({increment: undefined});
+
+                                // Convert from 0 - 1 to 0 - 100
+                                const curProgress = dlProgress * 100;
+                                msgProgress.report({increment: curProgress - prevProgress});
+                                prevProgress = curProgress;
+                            })
                     );
                 } catch (err) {
                     await vscode.window.showErrorMessage(`Error while installing tool: ${err}`);

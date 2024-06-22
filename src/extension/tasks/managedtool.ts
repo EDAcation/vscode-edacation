@@ -30,6 +30,64 @@ const GLOBAL_STATE_KEY = 'managedTools';
 const TOOL_SUBDIR = 'managedTools';
 const SUGGESTED_TOOLS = ['yosys', 'nextpnr-ecp5', 'nextpnr-ice40'];
 
+const downloadTool = async (
+    url: string,
+    extractPath: string,
+    onProgress?: (progress: number | null) => void,
+    onExtractFile?: (path: string) => void
+): Promise<void> => {
+    const resp = await fetch(url);
+    if (resp.status !== 200) throw new Error(`Unexpected HTTP status code: ${resp.status}`);
+    if (!resp.body) throw new Error(`No data in response body!`);
+
+    const contentLength = Number.parseInt(resp.headers.get('content-length') || '') || 0;
+    const fetchReader = resp.body.getReader();
+
+    // Create dl - gunzip - untar pipeline
+    const buffer = new (await node.stream()).PassThrough();
+    const gunzipStream = buffer.pipe((await node.zlib()).createGunzip());
+    const unpackStream = gunzipStream.pipe(
+        (await node.tar()).extract(extractPath, {
+            map(header) {
+                if (header.type === 'file' && onExtractFile) onExtractFile(header.name);
+                return header;
+            }
+        })
+    );
+
+    if (onProgress) onProgress(null);
+
+    // Read download in chunks
+    let downloadedSize = 0;
+    while (true) {
+        const chunk = await fetchReader.read();
+        if (chunk.done) {
+            buffer.end();
+            break;
+        }
+
+        downloadedSize += chunk.value.byteLength;
+        buffer.write(chunk.value);
+
+        // Only update progress if we can give an indication
+        if (onProgress && contentLength) {
+            onProgress(downloadedSize / contentLength);
+        }
+    }
+
+    // Wait until installation is done (or errors out)
+    await new Promise((resolve, reject) => {
+        unpackStream.on('finish', resolve);
+
+        buffer.on('error', reject);
+        gunzipStream.on('error', reject);
+        unpackStream.on('error', reject);
+    });
+
+    // Finally, update progress handler, just to be sure
+    if (onProgress) onProgress(1);
+};
+
 export class ManagedTool {
     private static SUPPORTED_PLATFORMS: Platform[] = [
         {os: 'win32', arch: 'x64'},
@@ -151,53 +209,22 @@ export class ManagedTool {
         return (await this.getEntrypoint()) != null;
     }
 
-    async install() {
-        // Find correct tool asset
+    async install(onProgress?: (progress: number | null) => void) {
+        // Find correct tool asset and target dirs
         const asset = await this.getAsset();
-
-        // Download .tgz (tar + gzip) file
-        const toolBuf = await fetch(asset.browser_download_url)
-            .then((resp) => resp.arrayBuffer())
-            .catch((err) => {
-                throw err;
-            });
-
-        // Create data buffer
-        const buffer = Buffer.from(toolBuf);
-        const readable = new (await node.stream()).PassThrough();
-        readable.end(buffer);
-
-        const toolName = this.tool;
         const targetDir = await this.getDir();
 
-        // Extract!
-        let entrypoint: string | null = null;
-        const gunzipStream = readable.pipe((await node.zlib()).createGunzip());
-        const unpackStream = gunzipStream.pipe(
-            (await node.tar()).extract(targetDir.fsPath, {
-                map(header) {
-                    // Identify entrypoint
-                    if (header.type == 'file' && header.name.split('/').at(-1) === toolName) {
-                        console.log(`Found entrypoint: ${header.name}`);
-                        entrypoint = header.name;
-                    }
-
-                    return header;
-                }
-            })
-        );
-
-        // Wait until extraction is done (or errors out)
-        await new Promise((resolve, reject) => {
-            unpackStream.on('finish', resolve);
-
-            gunzipStream.on('error', reject);
-            unpackStream.on('error', reject);
+        const toolName = this.tool;
+        let entrypoint: string | undefined;
+        await downloadTool(asset.browser_download_url, targetDir.fsPath, onProgress, (filePath) => {
+            if (filePath.split('/').at(-1) === toolName) {
+                console.log(`Found entrypoint: ${filePath}`);
+                entrypoint = filePath;
+            }
         });
 
         if (!entrypoint) {
-            entrypoint = `bin/${this.tool}`;
-            console.warn(`Assuming entrypoint: ${entrypoint}`);
+            throw new Error(`Could not find tool entrypoint!`);
         }
 
         // Update tool registry
