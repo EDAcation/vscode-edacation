@@ -152,6 +152,11 @@
                 "title": "Install or Update a Managed Tool"
             },
             {
+                "command": "edacation.uninstallTool",
+                "category": "EDAcation",
+                "title": "Uninstall a Managed Tool"
+            },
+            {
                 "command": "edacation.checkToolUpdates",
                 "category": "EDAcation",
                 "title": "Check for Managed Tool updates"
