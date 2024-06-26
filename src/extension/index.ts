@@ -8,6 +8,21 @@ import type {BaseTreeDataProvider} from './trees/base.js';
 import * as trees from './trees/index.js';
 import * as webviews from './webviews/index.js';
 
+let updateCheckInterval: number | NodeJS.Timeout | undefined;
+
+const setToolUpdateCheckInterval = async () => {
+    if (updateCheckInterval) clearInterval(updateCheckInterval);
+
+    const interval = vscode.workspace.getConfiguration('edacation').get('toolUpdateCheckInterval') as number;
+    if (interval === 0) return;
+
+    updateCheckInterval = setInterval(
+        () => void vscode.commands.executeCommand('edacation.checkToolUpdates'),
+        interval * 60 * 1000
+    );
+    await vscode.commands.executeCommand('edacation.checkToolUpdates');
+};
+
 let projects: Projects | undefined;
 
 export const activate = async (context: vscode.ExtensionContext) => {
@@ -50,6 +65,10 @@ export const activate = async (context: vscode.ExtensionContext) => {
     }
 
     await projects.load();
+
+    // Managed tool update checker
+    await setToolUpdateCheckInterval();
+    vscode.workspace.onDidChangeConfiguration(setToolUpdateCheckInterval);
 };
 
 export const deactivate = () => {
