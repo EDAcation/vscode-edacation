@@ -71,8 +71,9 @@ export class InstallToolCommand extends BaseCommand {
                             })
                     );
                 } catch (err) {
-                    await vscode.window.showErrorMessage(`Error while installing tool: ${err}`);
+                    void vscode.window.showErrorMessage(`Error while installing tool: ${err}`);
                     console.error(err);
+                    return;
                 }
 
                 void vscode.window.showInformationMessage(`Successfully installed ${tool.getName()}`);
@@ -105,8 +106,9 @@ export class UninstallToolCommand extends BaseCommand {
                 try {
                     await tool.uninstall();
                 } catch (err) {
-                    await vscode.window.showErrorMessage(`Error while uninstalling tool: ${err}`);
+                    void vscode.window.showErrorMessage(`Error while uninstalling tool: ${err}`);
                     console.error(err);
+                    return;
                 }
 
                 void vscode.window.showInformationMessage(`Successfully uninstalled ${tool.getName()}`);
