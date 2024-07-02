@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as node from '../../common/node-modules.js';
 
 interface Platform {
-    os: 'win32' | 'linux' | 'darwin';
+    os: 'windows' | 'linux' | 'darwin';
     arch: 'x64' | 'arm64';
 }
 
@@ -90,7 +90,7 @@ const downloadTool = async (
 
 export class ManagedTool {
     private static SUPPORTED_PLATFORMS: Platform[] = [
-        {os: 'win32', arch: 'x64'},
+        {os: 'windows', arch: 'x64'},
         {os: 'linux', arch: 'x64'},
         {os: 'linux', arch: 'arm64'},
         {os: 'darwin', arch: 'x64'},
@@ -148,7 +148,10 @@ export class ManagedTool {
     private static async getPlatform(): Promise<Platform> {
         if (ManagedTool.platformCache) return ManagedTool.platformCache;
 
-        const os = node.os().platform();
+        // get OS ('win32' -> 'windows' for correct bucket name)
+        const nodePlatform = node.os().platform();
+        const os = nodePlatform === 'win32' ? 'windows' : nodePlatform;
+
         const arch = node.os().arch();
 
         const platform = ManagedTool.SUPPORTED_PLATFORMS.find((plat) => plat.os == os && plat.arch == arch);
