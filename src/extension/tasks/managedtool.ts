@@ -217,18 +217,18 @@ export class ManagedTool {
         const asset = await this.getAsset();
         const targetDir = await this.getDir();
 
-        const toolName = this.tool;
+        const entrypointNames = [this.tool, `${this.tool}.exe`];
         let entrypoint: string | undefined;
+
         await downloadTool(asset.browser_download_url, targetDir.fsPath, onProgress, (filePath) => {
-            if (filePath.split('/').at(-1) === toolName) {
-                console.log(`Found entrypoint: ${filePath}`);
-                entrypoint = filePath;
-            }
+            const fileName = filePath.split('/').at(-1) ?? '';
+            if (entrypointNames.includes(fileName)) entrypoint = filePath;
         });
 
         if (!entrypoint) {
             throw new Error(`Could not find tool entrypoint!`);
         }
+        console.log(`Using entrypoint for ${this.tool}: ${entrypoint}`);
 
         // Update tool registry
         await this.setSettings({
