@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 
+import * as node from '../common/node-modules.js';
+
 import * as commands from './commands/index.js';
 import * as editors from './editors/index.js';
 import {Projects} from './projects/index.js';
@@ -11,6 +13,9 @@ import * as webviews from './webviews/index.js';
 let updateCheckInterval: number | NodeJS.Timeout | undefined;
 
 const setToolUpdateCheckInterval = async () => {
+    // Only run periodic checks when running under nodejs
+    if (!node.isAvailable()) return;
+
     if (updateCheckInterval) clearInterval(updateCheckInterval);
 
     const interval = vscode.workspace.getConfiguration('edacation').get('toolUpdateCheckInterval') as number;
@@ -67,7 +72,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
     await projects.load();
 
     // Managed tool update checker
-    await setToolUpdateCheckInterval();
+    void setToolUpdateCheckInterval();
     vscode.workspace.onDidChangeConfiguration(setToolUpdateCheckInterval);
 };
 
