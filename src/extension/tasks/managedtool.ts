@@ -44,10 +44,10 @@ const downloadTool = async (
     const fetchReader = resp.body.getReader();
 
     // Create dl - gunzip - untar pipeline
-    const buffer = new (await node.stream()).PassThrough();
-    const gunzipStream = buffer.pipe((await node.zlib()).createGunzip());
+    const buffer = new (node.stream().PassThrough)();
+    const gunzipStream = buffer.pipe(node.zlib().createGunzip());
     const unpackStream = gunzipStream.pipe(
-        (await node.tar()).extract(extractPath, {
+        node.tar().extract(extractPath, {
             map(header) {
                 if (header.type === 'file' && onExtractFile) onExtractFile(header.name);
                 return header;
@@ -148,11 +148,8 @@ export class ManagedTool {
     private static async getPlatform(): Promise<Platform> {
         if (ManagedTool.platformCache) return ManagedTool.platformCache;
 
-        const osmod = await node.os();
-        if (!osmod) throw new Error('Native features cannot be used on VSCode for the web!');
-
-        const os = osmod.platform();
-        const arch = osmod.arch();
+        const os = node.os().platform();
+        const arch = node.os().arch();
 
         const platform = ManagedTool.SUPPORTED_PLATFORMS.find((plat) => plat.os == os && plat.arch == arch);
         if (!platform) throw new Error(`Platform not supported: ${os}-${arch}`);
@@ -175,7 +172,10 @@ export class ManagedTool {
         const platform = await ManagedTool.getPlatform();
         const url = `${ManagedTool.SOURCE_REPO}/releases/tags/bucket-${platform.os}-${platform.arch}`;
         const release = await fetch(url)
-            .then((resp): Promise<GithubRelease> => resp.json())
+            .then((resp): Promise<GithubRelease> => {
+                if (!resp.ok) throw new Error(`GitHub returned status code: ${resp.status} (${resp.statusText})`);
+                return resp.json();
+            })
             .catch((err) => {
                 console.warn(`Release bucket fetch failed: ${err}`);
                 return null;
@@ -258,7 +258,7 @@ export class ManagedTool {
 }
 
 const getToolsState = async (extensionContext: vscode.ExtensionContext): Promise<ToolsState> => {
-    const state = (await extensionContext.globalState.get(GLOBAL_STATE_KEY)) as ToolsState | undefined;
+    const state = (await extensionContext.globalState.get(GLOBAL_STATE_KEY)) as ToolsState;
     return state ?? {};
 };
 

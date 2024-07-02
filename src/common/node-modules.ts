@@ -8,7 +8,7 @@ type Module = any; // TODO: refine?
 
 const moduleCache = new Map<string, Module>();
 
-export const importModule = (module: string): Module => {
+const importModule = (module: string): Module => {
     const cached = moduleCache.get(module);
     if (cached) return cached;
 
@@ -29,10 +29,10 @@ export type ModuleTarFS = typeof import('tar-fs');
 export type ModuleWorkerThreads = typeof import('worker_threads');
 export type ModuleZLib = typeof import('zlib');
 
-export const childProcess = async () => importModule('child_process') as ModuleChildProcess;
-export const fs = async () => importModule('fs') as ModuleFS;
-export const os = async () => importModule('os') as ModuleOS;
-export const stream = async () => importModule('stream') as ModuleStream;
-export const tar = async () => importModule('tar-fs') as ModuleTarFS;
-export const workerThreads = async () => importModule('worker_threads') as ModuleWorkerThreads;
-export const zlib = async () => importModule('zlib') as ModuleZLib;
+export const childProcess = () => importModule('child_process') as ModuleChildProcess;
+export const fs = () => importModule('fs') as ModuleFS;
+export const os = () => importModule('os') as ModuleOS;
+export const stream = () => importModule('stream') as ModuleStream;
+export const tar = () => importModule('tar-fs') as ModuleTarFS;
+export const workerThreads = () => importModule('worker_threads') as ModuleWorkerThreads;
+export const zlib = () => importModule('zlib') as ModuleZLib;

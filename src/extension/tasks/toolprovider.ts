@@ -160,7 +160,7 @@ abstract class NativeToolProvider extends ToolProvider {
             return;
         }
 
-        const proc = (await node.childProcess()).spawn(entrypoint, ctx.args, {
+        const proc = node.childProcess().spawn(entrypoint, ctx.args, {
             cwd: ctx.project.getRoot().fsPath
         });
 
