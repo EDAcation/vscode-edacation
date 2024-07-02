@@ -183,7 +183,7 @@ export class Project extends BaseProject {
 
         this.projects.emitInputFileChange();
 
-        this.markOutputFilesStale(false);
+        await this.markOutputFilesStale(false);
 
         await this.save();
     }
@@ -207,7 +207,7 @@ export class Project extends BaseProject {
 
         this.projects.emitInputFileChange();
 
-        this.markOutputFilesStale(false);
+        await this.markOutputFilesStale(false);
 
         await this.save();
     }
@@ -233,19 +233,18 @@ export class Project extends BaseProject {
             'No'
         );
         if (answer === 'Yes') {
-            const fs = await node.fs();
             const targetDir = vscode.Uri.joinPath(this.getRoot(), 'src');
             const target = vscode.Uri.joinPath(targetDir, path.basename(uri.path));
 
             return new Promise((resolve, reject) => {
-                fs.mkdir(targetDir.fsPath, {recursive: true}, (err) => {
+                node.fs().mkdir(targetDir.fsPath, {recursive: true}, (err) => {
                     if (err) {
                         reject();
-                        vscode.window.showErrorMessage(`Failed to copy file: ${err}`);
+                        void vscode.window.showErrorMessage(`Failed to copy file: ${err}`);
                         return;
                     }
 
-                    fs.copyFile(uri.fsPath, target.fsPath, () => {
+                    node.fs().copyFile(uri.fsPath, target.fsPath, () => {
                         resolve(target);
                     });
                 });

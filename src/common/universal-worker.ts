@@ -6,7 +6,7 @@ import type {TransferListItem} from 'worker_threads';
 import type {ExtensionMessage, WorkerMessage} from './messages.js';
 import * as node from './node-modules.js';
 
-const module: node.ModuleWorkerThreads | undefined = node.isAvailable() ? node.importSync('worker_threads') : undefined;
+const isNodeJs = node.isAvailable();
 
 interface InternalNodeWorker {
     type: 'node';
@@ -41,11 +41,11 @@ export class UniversalWorker {
             url = new URL(url);
         }
 
-        if (module) {
+        if (isNodeJs) {
             console.log('Creating Node.js worker');
             this.worker = {
                 type: 'node',
-                worker: new module.Worker(url, options)
+                worker: new (node.workerThreads().Worker)(url, options)
             };
         } else {
             console.log('Creating Web Worker');
@@ -74,16 +74,16 @@ export class UniversalWorker {
 }
 
 export const sendMessage = (message: ExtensionMessage, transferables: readonly TransferListItem[] & Transferable[]) => {
-    if (module) {
-        module.parentPort?.postMessage(message, transferables);
+    if (isNodeJs) {
+        node.workerThreads().parentPort?.postMessage(message, transferables);
     } else {
         postMessage(message, transferables);
     }
 };
 
 export const onEvent = <E extends keyof EventCallbacks>(event: E, callback: EventCallbacks[E]): void => {
-    if (module) {
-        module.parentPort?.on(event, callback);
+    if (isNodeJs) {
+        node.workerThreads().parentPort?.on(event, callback);
     } else {
         addEventListener(event, (event) => callback(extractData(event)));
     }

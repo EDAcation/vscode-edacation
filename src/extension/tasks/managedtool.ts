@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as node from '../../common/node-modules.js';
 
 interface Platform {
-    os: 'win32' | 'linux' | 'darwin';
+    os: 'windows' | 'linux' | 'darwin';
     arch: 'x64' | 'arm64';
 }
 
@@ -28,10 +28,69 @@ type ToolsState = Record<string, ToolSettings>;
 
 const GLOBAL_STATE_KEY = 'managedTools';
 const TOOL_SUBDIR = 'managedTools';
+const SUGGESTED_TOOLS = ['yosys', 'nextpnr-ecp5', 'nextpnr-ice40'];
+
+const downloadTool = async (
+    url: string,
+    extractPath: string,
+    onProgress?: (progress: number | null) => void,
+    onExtractFile?: (path: string) => void
+): Promise<void> => {
+    const resp = await fetch(url);
+    if (resp.status !== 200) throw new Error(`Unexpected HTTP status code: ${resp.status}`);
+    if (!resp.body) throw new Error(`No data in response body!`);
+
+    const contentLength = Number.parseInt(resp.headers.get('content-length') || '') || 0;
+    const fetchReader = resp.body.getReader();
+
+    // Create dl - gunzip - untar pipeline
+    const buffer = new (node.stream().PassThrough)();
+    const gunzipStream = buffer.pipe(node.zlib().createGunzip());
+    const unpackStream = gunzipStream.pipe(
+        node.tar().extract(extractPath, {
+            map(header) {
+                if (header.type === 'file' && onExtractFile) onExtractFile(header.name);
+                return header;
+            }
+        })
+    );
+
+    if (onProgress) onProgress(null);
+
+    // Read download in chunks
+    let downloadedSize = 0;
+    while (true) {
+        const chunk = await fetchReader.read();
+        if (chunk.done) {
+            buffer.end();
+            break;
+        }
+
+        downloadedSize += chunk.value.byteLength;
+        buffer.write(chunk.value);
+
+        // Only update progress if we can give an indication
+        if (onProgress && contentLength) {
+            onProgress(downloadedSize / contentLength);
+        }
+    }
+
+    // Wait until installation is done (or errors out)
+    await new Promise((resolve, reject) => {
+        unpackStream.on('finish', resolve);
+
+        buffer.on('error', reject);
+        gunzipStream.on('error', reject);
+        unpackStream.on('error', reject);
+    });
+
+    // Finally, update progress handler, just to be sure
+    if (onProgress) onProgress(1);
+};
 
 export class ManagedTool {
     private static SUPPORTED_PLATFORMS: Platform[] = [
-        {os: 'win32', arch: 'x64'},
+        {os: 'windows', arch: 'x64'},
         {os: 'linux', arch: 'x64'},
         {os: 'linux', arch: 'arm64'},
         {os: 'darwin', arch: 'x64'},
@@ -89,11 +148,11 @@ export class ManagedTool {
     private static async getPlatform(): Promise<Platform> {
         if (ManagedTool.platformCache) return ManagedTool.platformCache;
 
-        const osmod = await node.os();
-        if (!osmod) throw new Error('Native features cannot be used on VSCode for the web!');
+        // get OS ('win32' -> 'windows' for correct bucket name)
+        const nodePlatform = node.os().platform();
+        const os = nodePlatform === 'win32' ? 'windows' : nodePlatform;
 
-        const os = osmod.platform();
-        const arch = osmod.arch();
+        const arch = node.os().arch();
 
         const platform = ManagedTool.SUPPORTED_PLATFORMS.find((plat) => plat.os == os && plat.arch == arch);
         if (!platform) throw new Error(`Platform not supported: ${os}-${arch}`);
@@ -116,74 +175,59 @@ export class ManagedTool {
         const platform = await ManagedTool.getPlatform();
         const url = `${ManagedTool.SOURCE_REPO}/releases/tags/bucket-${platform.os}-${platform.arch}`;
         const release = await fetch(url)
-            .then((resp): Promise<GithubRelease> => resp.json())
+            .then((resp): Promise<GithubRelease> => {
+                if (!resp.ok) throw new Error(`GitHub returned status code: ${resp.status} (${resp.statusText})`);
+                return resp.json();
+            })
             .catch((err) => {
                 console.warn(`Release bucket fetch failed: ${err}`);
                 return null;
             });
         if (!release) return [];
 
-        return release.assets.filter((asset) => asset.state == 'uploaded');
+        const assets = release.assets.filter((asset) => asset.state == 'uploaded');
+        ManagedTool.assetsCache = assets;
+        return assets;
+    }
+
+    async getInstalledVersion(): Promise<string | null> {
+        return (await this.getSettings())?.version ?? null;
+    }
+
+    async getLatestVersion(): Promise<string | null> {
+        return (await this.getAsset()).updated_at;
     }
 
     async isUpdateAvailable(): Promise<boolean> {
-        const curVersion = (await this.getSettings())?.version;
-        // Something is broken?
-        if (!curVersion) return false;
+        const curVersion = await this.getInstalledVersion();
+        if (!curVersion) return false; // Something is broken?
 
-        const latestVersion = (await this.getAsset()).updated_at;
+        const latestVersion = await this.getLatestVersion();
 
         // Update available if version strings are not equal
         return curVersion !== latestVersion;
     }
 
-    async install() {
-        // Find correct tool asset
+    async isInstalled(): Promise<boolean> {
+        return (await this.getEntrypoint()) != null;
+    }
+
+    async install(onProgress?: (progress: number | null) => void) {
+        // Find correct tool asset and target dirs
         const asset = await this.getAsset();
-
-        // Download .tgz (tar + gzip) file
-        const toolBuf = await fetch(asset.browser_download_url)
-            .then((resp) => resp.arrayBuffer())
-            .catch((err) => {
-                throw err;
-            });
-
-        // Create data buffer
-        const buffer = Buffer.from(toolBuf);
-        const readable = new (await node.stream()).PassThrough();
-        readable.end(buffer);
-
-        const toolName = this.tool;
         const targetDir = await this.getDir();
 
-        // Extract!
-        let entrypoint: string | null = null;
-        const gunzipStream = readable.pipe((await node.zlib()).createGunzip());
-        const unpackStream = gunzipStream.pipe(
-            (await node.tar()).extract(targetDir.fsPath, {
-                map(header) {
-                    // Identify entrypoint
-                    if (header.type == 'file' && header.name.split('/').at(-1) === toolName) {
-                        console.log(`Found entrypoint: ${header.name}`);
-                        entrypoint = header.name;
-                    }
-
-                    return header;
-                }
-            })
-        );
-
-        // Wait until extraction is done (or errors out)
-        await new Promise((resolve, reject) => {
-            unpackStream.on('finish', resolve);
-
-            gunzipStream.on('error', reject);
-            unpackStream.on('error', reject);
+        const toolName = this.tool;
+        let entrypoint: string | undefined;
+        await downloadTool(asset.browser_download_url, targetDir.fsPath, onProgress, (filePath) => {
+            if (filePath.split('/').at(-1) === toolName) {
+                console.log(`Found entrypoint: ${filePath}`);
+                entrypoint = filePath;
+            }
         });
 
         if (!entrypoint) {
-            entrypoint = `bin/${this.tool}`;
-            console.warn(`Assuming entrypoint: ${entrypoint}`);
+            throw new Error(`Could not find tool entrypoint!`);
         }
 
         // Update tool registry
@@ -217,7 +261,7 @@ export class ManagedTool {
 }
 
 const getToolsState = async (extensionContext: vscode.ExtensionContext): Promise<ToolsState> => {
-    const state = (await extensionContext.globalState.get(GLOBAL_STATE_KEY)) as ToolsState | undefined;
+    const state = (await extensionContext.globalState.get(GLOBAL_STATE_KEY)) as ToolsState;
     return state ?? {};
 };
 
@@ -228,4 +272,8 @@ const setToolsState = async (extensionContext: vscode.ExtensionContext, state: T
 export const getInstalledTools = async (extensionContext: vscode.ExtensionContext): Promise<ManagedTool[]> => {
     const state = await getToolsState(extensionContext);
     return Object.keys(state).map((id) => new ManagedTool(extensionContext, id));
+};
+
+export const getSuggestedTools = async (extenstionContext: vscode.ExtensionContext): Promise<ManagedTool[]> => {
+    return SUGGESTED_TOOLS.map((id) => new ManagedTool(extenstionContext, id));
 };

@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 
+import * as node from '../common/node-modules.js';
+
 import * as commands from './commands/index.js';
 import * as editors from './editors/index.js';
 import {Projects} from './projects/index.js';
@@ -7,6 +9,24 @@ import * as tasks from './tasks/index.js';
 import type {BaseTreeDataProvider} from './trees/base.js';
 import * as trees from './trees/index.js';
 import * as webviews from './webviews/index.js';
+
+let updateCheckInterval: number | NodeJS.Timeout | undefined;
+
+const setToolUpdateCheckInterval = async () => {
+    // Only run periodic checks when running under nodejs
+    if (!node.isAvailable()) return;
+
+    if (updateCheckInterval) clearInterval(updateCheckInterval);
+
+    const interval = vscode.workspace.getConfiguration('edacation').get('toolUpdateCheckInterval') as number;
+    if (interval === 0) return;
+
+    updateCheckInterval = setInterval(
+        () => void vscode.commands.executeCommand('edacation.checkToolUpdates'),
+        interval * 60 * 1000
+    );
+    await vscode.commands.executeCommand('edacation.checkToolUpdates');
+};
 
 let projects: Projects | undefined;
 
@@ -50,6 +70,10 @@ export const activate = async (context: vscode.ExtensionContext) => {
     }
 
     await projects.load();
+
+    // Managed tool update checker
+    void setToolUpdateCheckInterval();
+    vscode.workspace.onDidChangeConfiguration(setToolUpdateCheckInterval);
 };
 
 export const deactivate = () => {
