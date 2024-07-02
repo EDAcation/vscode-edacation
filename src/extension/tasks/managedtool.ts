@@ -1,3 +1,4 @@
+import * as tar from 'tar-fs';
 import * as vscode from 'vscode';
 
 import * as node from '../../common/node-modules.js';
@@ -47,7 +48,7 @@ const downloadTool = async (
     const buffer = new (node.stream().PassThrough)();
     const gunzipStream = buffer.pipe(node.zlib().createGunzip());
     const unpackStream = gunzipStream.pipe(
-        node.tar().extract(extractPath, {
+        tar.extract(extractPath, {
             map(header) {
                 if (header.type === 'file' && onExtractFile) onExtractFile(header.name);
                 return header;

@@ -8,11 +8,11 @@ type Module = any; // TODO: refine?
 
 const moduleCache = new Map<string, Module>();
 
-const importModule = (module: string): Module => {
+const requireModule = (module: string): Module => {
     const cached = moduleCache.get(module);
     if (cached) return cached;
 
-    console.log(`Importing node module: ${module}`);
+    console.log(`Requiring node module (CommonJS): ${module}`);
 
     const mod = __non_webpack_require__(module);
     moduleCache.set(module, mod);
@@ -25,14 +25,12 @@ export type ModuleChildProcess = typeof import('child_process');
 export type ModuleFS = typeof import('fs');
 export type ModuleOS = typeof import('os');
 export type ModuleStream = typeof import('stream');
-export type ModuleTarFS = typeof import('tar-fs');
 export type ModuleWorkerThreads = typeof import('worker_threads');
 export type ModuleZLib = typeof import('zlib');
 
-export const childProcess = () => importModule('child_process') as ModuleChildProcess;
-export const fs = () => importModule('fs') as ModuleFS;
-export const os = () => importModule('os') as ModuleOS;
-export const stream = () => importModule('stream') as ModuleStream;
-export const tar = () => importModule('tar-fs') as ModuleTarFS;
-export const workerThreads = () => importModule('worker_threads') as ModuleWorkerThreads;
-export const zlib = () => importModule('zlib') as ModuleZLib;
+export const childProcess = () => requireModule('child_process') as ModuleChildProcess;
+export const fs = () => requireModule('fs') as ModuleFS;
+export const os = () => requireModule('os') as ModuleOS;
+export const stream = () => requireModule('stream') as ModuleStream;
+export const workerThreads = () => requireModule('worker_threads') as ModuleWorkerThreads;
+export const zlib = () => requireModule('zlib') as ModuleZLib;
