@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+import * as node from '../../common/node-modules.js';
 import {ManagedTool, getInstalledTools, getSuggestedTools} from '../tasks/managedtool';
 
 import {BaseCommand} from './base';
@@ -41,12 +42,24 @@ const pickTools = async (tools: ManagedTool[], prompt = 'Select tools'): Promise
     return tools.filter((tool) => selectedToolNames.includes(tool.getName()));
 };
 
-export class InstallToolCommand extends BaseCommand {
+abstract class ManagedToolCommand extends BaseCommand {
+    abstract exec(...args: unknown[]): Promise<void>;
+
+    async execute(...args: unknown[]) {
+        if (!node.isAvailable()) {
+            throw new Error('Native tools cannot be used in a web environment.');
+        }
+
+        return await this.exec(...args);
+    }
+}
+
+export class InstallToolCommand extends ManagedToolCommand {
     static getID(): string {
         return 'edacation.installTool';
     }
 
-    async execute(...toolNames: string[]): Promise<void> {
+    override async exec(...toolNames: string[]): Promise<void> {
         let tools: ManagedTool[];
         if (toolNames.length) {
             tools = toolNames.map((toolName) => new ManagedTool(this.context, toolName));
@@ -86,12 +99,12 @@ export class InstallToolCommand extends BaseCommand {
     }
 }
 
-export class UninstallToolCommand extends BaseCommand {
+export class UninstallToolCommand extends ManagedToolCommand {
     static getID(): string {
         return 'edacation.uninstallTool';
     }
 
-    async execute(...toolNames: string[]): Promise<void> {
+    override async exec(...toolNames: string[]): Promise<void> {
         let tools: ManagedTool[];
         if (toolNames.length) {
             tools = toolNames.map((toolName) => new ManagedTool(this.context, toolName));
@@ -121,12 +134,12 @@ export class UninstallToolCommand extends BaseCommand {
     }
 }
 
-export class CheckToolUpdateCommand extends BaseCommand {
+export class CheckToolUpdateCommand extends ManagedToolCommand {
     static getID(): string {
         return 'edacation.checkToolUpdates';
     }
 
-    async execute(..._args: unknown[]): Promise<void> {
+    override async exec(..._args: unknown[]): Promise<void> {
         // Filter out updateable tools
         const updateableTools: ManagedTool[] = [];
         for (const tool of await getInstalledTools(this.context)) {

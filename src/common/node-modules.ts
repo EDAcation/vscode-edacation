@@ -9,6 +9,8 @@ type Module = any; // TODO: refine?
 const moduleCache = new Map<string, Module>();
 
 const requireModule = (module: string): Module => {
+    if (!isAvailable()) throw new Error('Native features cannot be used in a web environment!');
+
     const cached = moduleCache.get(module);
     if (cached) return cached;
 
