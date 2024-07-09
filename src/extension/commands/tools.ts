@@ -51,7 +51,11 @@ export class InstallToolCommand extends BaseCommand {
         if (toolNames.length) {
             tools = toolNames.map((toolName) => new ManagedTool(this.context, toolName));
         } else {
-            tools = await pickTools(await getSuggestedTools(this.context), 'Select tools to (re)install');
+            const suggestedTools = await vscode.window.withProgress(
+                {location: vscode.ProgressLocation.Window},
+                (_prog) => getSuggestedTools(this.context)
+            );
+            tools = await pickTools(suggestedTools, 'Select tools to (re)install');
         }
 
         await Promise.all(
@@ -123,11 +127,6 @@ export class CheckToolUpdateCommand extends BaseCommand {
     }
 
     async execute(..._args: unknown[]): Promise<void> {
-        await vscode.window.withProgress(
-            {title: '[EDAcation] Checking for tool updates...', location: vscode.ProgressLocation.Window},
-            (_progress) => ManagedTool.getLatestToolVersions(true)
-        );
-
         // Filter out updateable tools
         const updateableTools: ManagedTool[] = [];
         for (const tool of await getInstalledTools(this.context)) {
@@ -148,7 +147,7 @@ export class CheckToolUpdateCommand extends BaseCommand {
         const resp = await vscode.window.showInformationMessage(infoMessage, 'Yes', 'No');
         if (resp === 'Yes') {
             await Promise.all(
-                updateableTools.map((tool) => vscode.commands.executeCommand('edacation.installTool', tool.getName()))
+                updateableTools.map((tool) => vscode.commands.executeCommand('edacation.installTool', tool.getId()))
             );
         }
     }

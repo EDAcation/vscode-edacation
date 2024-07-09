@@ -229,7 +229,7 @@ export class ManagedToolProvider extends NativeToolProvider {
         // If already installed & valid, just return here
         if (entrypoint) return entrypoint;
 
-        await vscode.commands.executeCommand('edacation.installTool', tool.getName());
+        await vscode.commands.executeCommand('edacation.installTool', tool.getId());
 
         return await tool.getEntrypoint();
     }

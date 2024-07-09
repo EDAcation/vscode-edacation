@@ -5,37 +5,45 @@ import * as node from '../../common/node-modules.js';
 
 interface Platform {
     os: 'windows' | 'linux' | 'darwin';
-    arch: 'x64' | 'arm64';
+    arch: string;
 }
 
-interface GithubAsset {
-    name: string;
-    state: 'uploaded' | 'open';
-    size: number;
-    updated_at: string;
-    browser_download_url: string;
+interface AvailableTool {
+    friendly_name: string;
+    tool: string;
+    arch: string;
+    version: string;
+    download_url: string;
 }
 
-interface GithubRelease {
-    assets: GithubAsset[];
+interface AvailableToolRegistry {
+    version: string;
+    tools: AvailableTool[];
 }
 
 interface ToolSettings {
     version: string;
-    entrypoint: string;
 }
 
 type ToolsState = Record<string, ToolSettings>;
 
 const GLOBAL_STATE_KEY = 'managedTools';
 const TOOL_SUBDIR = 'managedTools';
-const SUGGESTED_TOOLS = ['yosys', 'nextpnr-ecp5', 'nextpnr-ice40'];
+
+const getDateString = (): string => {
+    const now = new Date();
+
+    const year = now.getUTCFullYear();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(now.getUTCDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+};
 
 const downloadTool = async (
     url: string,
     extractPath: string,
-    onProgress?: (progress: number | null) => void,
-    onExtractFile?: (path: string) => void
+    onProgress?: (progress: number | null) => void
 ): Promise<void> => {
     const resp = await fetch(url);
     if (resp.status !== 200) throw new Error(`Unexpected HTTP status code: ${resp.status}`);
@@ -50,7 +58,8 @@ const downloadTool = async (
     const unpackStream = gunzipStream.pipe(
         tar.extract(extractPath, {
             map(header) {
-                if (header.type === 'file' && onExtractFile) onExtractFile(header.name);
+                // Remove the first top-level directory
+                header.name = header.name.replace(/^.+?\//, '');
                 return header;
             }
         })
@@ -90,25 +99,28 @@ const downloadTool = async (
 };
 
 export class ManagedTool {
-    private static SUPPORTED_PLATFORMS: Platform[] = [
-        {os: 'windows', arch: 'x64'},
-        {os: 'linux', arch: 'x64'},
-        {os: 'linux', arch: 'arm64'},
-        {os: 'darwin', arch: 'x64'},
-        {os: 'darwin', arch: 'arm64'}
-    ];
-    private static SOURCE_REPO = 'https://api.github.com/repos/YosysHQ/oss-cad-suite-build';
+    private static TOOLS_URL = 'https://github.com/edacation/native-fpga-tools/releases/latest/download/tools.json';
 
     private static platformCache: Platform | null = null;
-    private static assetsCache: GithubAsset[] | null = null;
+    private static availToolsCache: AvailableToolRegistry | null = null;
 
     constructor(
         private extensionContext: vscode.ExtensionContext,
         private tool: string
     ) {}
 
-    getName(): string {
+    getId(): string {
         return this.tool;
+    }
+
+    getName(): string {
+        const toolsCache = ManagedTool.availToolsCache?.tools || [];
+        const curTool = toolsCache.find((tool) => tool.tool === this.tool);
+
+        // Cache is unavailable
+        if (!curTool) return this.tool;
+
+        return curTool.friendly_name;
     }
 
     private async getToolsDir(): Promise<vscode.Uri> {
@@ -152,51 +164,53 @@ export class ManagedTool {
         // get OS ('win32' -> 'windows' for correct bucket name)
         const nodePlatform = node.os().platform();
         const os = nodePlatform === 'win32' ? 'windows' : nodePlatform;
-
         const arch = node.os().arch();
 
-        const platform = ManagedTool.SUPPORTED_PLATFORMS.find((plat) => plat.os == os && plat.arch == arch);
-        if (!platform) throw new Error(`Platform not supported: ${os}-${arch}`);
+        if (!(os === 'linux' || os === 'windows' || os === 'darwin')) {
+            throw new Error(`Unsupported OS: ${os}`);
+        }
 
-        return platform;
+        return {os, arch};
     }
 
-    private async getAsset(): Promise<GithubAsset> {
+    private async getLatestTool(): Promise<AvailableTool> {
         const platform = await ManagedTool.getPlatform();
-        const assets = await ManagedTool.getLatestToolVersions();
+        const tools = await ManagedTool.getLatestTools();
 
-        const asset = assets.find((asset) => asset.name === `${platform.os}-${platform.arch}-${this.tool}.tgz`);
-        if (!asset) throw new Error(`Could not find tool: ${this.tool} for ${platform.os}-${platform.arch}`);
-        return asset;
+        const tool = tools.find((tool) => tool.tool === this.tool);
+        if (!tool) throw new Error(`Could not find tool: ${this.tool} for ${platform.os}-${platform.arch}`);
+        return tool;
     }
 
-    static async getLatestToolVersions(refresh = false): Promise<GithubAsset[]> {
-        if (!refresh && ManagedTool.assetsCache) return ManagedTool.assetsCache;
+    static async getLatestTools(): Promise<AvailableTool[]> {
+        const cache = ManagedTool.availToolsCache;
+        if (cache && cache.version == getDateString()) return cache.tools;
 
         const platform = await ManagedTool.getPlatform();
-        const url = `${ManagedTool.SOURCE_REPO}/releases/tags/bucket-${platform.os}-${platform.arch}`;
-        const release = await fetch(url)
-            .then((resp): Promise<GithubRelease> => {
+        const toolRegistry = await fetch(ManagedTool.TOOLS_URL)
+            .then((resp): Promise<AvailableToolRegistry> => {
                 if (!resp.ok) throw new Error(`GitHub returned status code: ${resp.status} (${resp.statusText})`);
                 return resp.json();
             })
             .catch((err) => {
-                console.warn(`Release bucket fetch failed: ${err}`);
+                console.warn(`Tool registry fetch failed: ${err}`);
                 return null;
             });
-        if (!release) return [];
+        if (!toolRegistry) return [];
 
-        const assets = release.assets.filter((asset) => asset.state == 'uploaded');
-        ManagedTool.assetsCache = assets;
-        return assets;
+        // Other os-arch combinations are irrelevant
+        toolRegistry.tools = toolRegistry.tools.filter((tool) => tool.arch === `${platform.os}-${platform.arch}`);
+
+        ManagedTool.availToolsCache = toolRegistry;
+        return toolRegistry.tools;
     }
 
     async getInstalledVersion(): Promise<string | null> {
         return (await this.getSettings())?.version ?? null;
     }
 
-    async getLatestVersion(): Promise<string | null> {
-        return (await this.getAsset()).updated_at;
+    async getLatestVersion(): Promise<string> {
+        return (await this.getLatestTool()).version;
     }
 
     async isUpdateAvailable(): Promise<boolean> {
@@ -215,26 +229,14 @@ export class ManagedTool {
 
     async install(onProgress?: (progress: number | null) => void) {
         // Find correct tool asset and target dirs
-        const asset = await this.getAsset();
+        const tool = await this.getLatestTool();
         const targetDir = await this.getDir();
 
-        const entrypointNames = [this.tool, `${this.tool}.exe`];
-        let entrypoint: string | undefined;
-
-        await downloadTool(asset.browser_download_url, targetDir.fsPath, onProgress, (filePath) => {
-            const fileName = filePath.split('/').at(-1) ?? '';
-            if (entrypointNames.includes(fileName)) entrypoint = filePath;
-        });
-
-        if (!entrypoint) {
-            throw new Error(`Could not find tool entrypoint!`);
-        }
-        console.log(`Using entrypoint for ${this.tool}: ${entrypoint}`);
+        await downloadTool(tool.download_url, targetDir.fsPath, onProgress);
 
         // Update tool registry
         await this.setSettings({
-            version: asset.updated_at,
-            entrypoint: entrypoint
+            version: tool.version
         });
     }
 
@@ -246,10 +248,7 @@ export class ManagedTool {
     }
 
     async getEntrypoint(): Promise<string | null> {
-        const settings = await this.getSettings();
-        if (!settings) return null;
-
-        const entrypoint = vscode.Uri.joinPath(await this.getDir(), settings.entrypoint);
+        const entrypoint = vscode.Uri.joinPath(await this.getDir(), 'bin', this.tool);
         try {
             await vscode.workspace.fs.stat(entrypoint);
         } catch {
@@ -276,5 +275,6 @@ export const getInstalledTools = async (extensionContext: vscode.ExtensionContex
 };
 
 export const getSuggestedTools = async (extenstionContext: vscode.ExtensionContext): Promise<ManagedTool[]> => {
-    return SUGGESTED_TOOLS.map((id) => new ManagedTool(extenstionContext, id));
+    const tools = await ManagedTool.getLatestTools();
+    return tools.map((tool) => new ManagedTool(extenstionContext, tool.tool));
 };
