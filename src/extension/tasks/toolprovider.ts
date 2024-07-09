@@ -5,7 +5,7 @@ import * as node from '../../common/node-modules.js';
 import {UniversalWorker} from '../../common/universal-worker.js';
 import {type Project} from '../projects/index.js';
 
-import {ManagedTool} from './managedtool.js';
+import {ManagedTool, type NativeToolExecutionOptions} from './managedtool.js';
 import {type TaskOutputFile, TerminalMessageEmitter} from './messaging.js';
 import type {TaskIOFile} from './task.js';
 
@@ -136,7 +136,7 @@ abstract class NativeToolProvider extends ToolProvider {
         };
     }
 
-    protected abstract getEntrypoint(command: string): Promise<string | null>;
+    protected abstract getExecutionOptions(command: string): Promise<NativeToolExecutionOptions | null>;
 
     async run(ctx: Context): Promise<void> {
         // Write generated input files so the native process can load them
@@ -154,15 +154,21 @@ abstract class NativeToolProvider extends ToolProvider {
             return;
         }
 
-        const entrypoint = await this.getEntrypoint(ctx.command);
-        if (!entrypoint) {
-            this.error('No entrypoint available. Aborting.');
+        const execOptions = await this.getExecutionOptions(ctx.command);
+        if (!execOptions) {
+            this.error('Native tool is unavailable. Aborting.');
             return;
         }
 
-        const proc = node.childProcess().spawn(entrypoint, ctx.args, {
-            cwd: ctx.project.getRoot().fsPath
-        });
+        const spawnArgs = {
+            cwd: ctx.project.getRoot().fsPath,
+            env: process.env
+        };
+        if (execOptions.path) {
+            spawnArgs['env']['PATH'] = execOptions.path;
+        }
+
+        const proc = node.childProcess().spawn(execOptions.entrypoint, ctx.args, spawnArgs);
 
         proc.on('exit', this.onProcessExit.bind(this, ctx));
         proc.on('error', this.onProcessError.bind(this));
@@ -222,16 +228,16 @@ export class ManagedToolProvider extends NativeToolProvider {
         return 'Native - Managed';
     }
 
-    async getEntrypoint(command: string): Promise<string | null> {
+    async getExecutionOptions(command: string): Promise<NativeToolExecutionOptions | null> {
         const tool = new ManagedTool(this.extensionContext, command);
-        const entrypoint = await tool.getEntrypoint();
+        const options = await tool.getExecutionOptions();
 
         // If already installed & valid, just return here
-        if (entrypoint) return entrypoint;
+        if (options) return options;
 
         await vscode.commands.executeCommand('edacation.installTool', tool.getId());
 
-        return await tool.getEntrypoint();
+        return await tool.getExecutionOptions();
     }
 }
 
@@ -240,9 +246,9 @@ export class HostToolProvider extends NativeToolProvider {
         return 'Native - Host';
     }
 
-    async getEntrypoint(command: string): Promise<string | null> {
+    async getExecutionOptions(command: string): Promise<NativeToolExecutionOptions | null> {
         // Host tools should be installed to PATH. Just return the command here - the OS should resolve it.
-        return command;
+        return {entrypoint: command};
     }
 }
 

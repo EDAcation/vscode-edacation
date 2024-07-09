@@ -27,6 +27,11 @@ interface ToolSettings {
 
 type ToolsState = Record<string, ToolSettings>;
 
+export interface NativeToolExecutionOptions {
+    entrypoint: string;
+    path?: string;
+}
+
 const GLOBAL_STATE_KEY = 'managedTools';
 const TOOL_SUBDIR = 'managedTools';
 
@@ -224,7 +229,7 @@ export class ManagedTool {
     }
 
     async isInstalled(): Promise<boolean> {
-        return (await this.getEntrypoint()) != null;
+        return (await this.getExecutionOptions()) != null;
     }
 
     async install(onProgress?: (progress: number | null) => void) {
@@ -247,16 +252,29 @@ export class ManagedTool {
         await vscode.workspace.fs.delete(toolDir, {recursive: true, useTrash: false});
     }
 
-    async getEntrypoint(): Promise<string | null> {
-        const entrypoint = vscode.Uri.joinPath(await this.getDir(), 'bin', this.tool);
+    async getExecutionOptions(): Promise<NativeToolExecutionOptions | null> {
+        const platform = await ManagedTool.getPlatform();
+        const toolDir = await this.getDir();
+
+        const paths = ['bin/', 'lib/'].map((path) => vscode.Uri.joinPath(toolDir, path).fsPath);
+        const pathSep = platform.os === 'windows' ? ';' : ':';
+        const existingPath = node.process().env['PATH'] ?? '';
+        const pathStr = existingPath + pathSep + paths.join(`${pathSep}`);
+
+        const executableName = platform.os === 'windows' ? `${this.tool}.exe` : this.tool;
+
+        const entrypoint = vscode.Uri.joinPath(toolDir, 'bin', executableName);
         try {
             await vscode.workspace.fs.stat(entrypoint);
         } catch {
-            // File does not exist
+            // Entrypoint does not exist
             return null;
         }
 
-        return entrypoint.fsPath;
+        return {
+            entrypoint: entrypoint.fsPath,
+            path: pathStr
+        };
     }
 }
 
