@@ -19,8 +19,7 @@ const baseConfig = {
     entry: {},
 
     externals: {
-        vscode: 'commonjs vscode',
-        fs: 'fs'
+        vscode: 'commonjs vscode'
     },
     performance: {
         hints: false

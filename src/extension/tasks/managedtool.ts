@@ -1,4 +1,3 @@
-import * as tar from 'tar-fs';
 import * as vscode from 'vscode';
 
 import * as node from '../../common/node-modules.js';
@@ -56,6 +55,8 @@ const downloadTool = async (
 
     const contentLength = Number.parseInt(resp.headers.get('content-length') || '') || 0;
     const fetchReader = resp.body.getReader();
+
+    const tar = await node.tar();
 
     // Create dl - gunzip - untar pipeline
     const buffer = new (node.stream().PassThrough)();
