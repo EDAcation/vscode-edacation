@@ -53,6 +53,10 @@ const extensionConfig = Object.assign({}, baseConfig, {
             path: 'path-browserify'
         }
     },
+    externals: {
+        vscode: 'commonjs vscode',
+        fs: 'fs'
+    },
     module: {
         rules: [
             {
