@@ -354,13 +354,10 @@
         "compile-web": "tsc && webpack",
         "package-web": "webpack --mode production --devtool hidden-source-map",
         "vscode:prepublish": "npm run package-web",
-        "lint": "eslint ./src --ext ts",
-        "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/extension/test/suite/index.js",
-        "pretest": "npm run compile-web"
+        "lint": "eslint ./src --ext ts"
     },
     "devDependencies": {
         "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-        "@types/mocha": "^10.0.6",
         "@types/path-browserify": "^1.0.2",
         "@types/tar-fs": "^2.0.4",
         "@types/vscode": "1.73.0",
@@ -376,7 +373,6 @@
         "eslint": "^8.57.0",
         "eslint-plugin-vue": "^9.22.0",
         "mini-css-extract-plugin": "^2.7.6",
-        "mocha": "^10.2.0",
         "prettier": "^3.3.2",
         "process": "^0.11.10",
         "style-loader": "^4.0.0",
