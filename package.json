@@ -50,6 +50,11 @@
                         "Use native Yosys & Nextpnr tools that are already present on the system. Requires said tools to be available in PATH. Only available on VSCode for Desktop.",
                         "Use WebAssembly versions of Yosys & Nextpnr. This option requires an active internet connection. Slower, but available on all platforms and environments."
                     ]
+                },
+                "edacation.toolUpdateCheckInterval": {
+                    "type": "integer",
+                    "description": "Specifies the interval to check for managed tool updates, in minutes. Set to 0 to disable automatic update checks.",
+                    "default": 60
                 }
             }
         },
@@ -158,6 +163,11 @@
                 "command": "edacation.installTool",
                 "category": "EDAcation",
                 "title": "Install or Update a Managed Tool"
+            },
+            {
+                "command": "edacation.uninstallTool",
+                "category": "EDAcation",
+                "title": "Uninstall a Managed Tool"
             },
             {
                 "command": "edacation.checkToolUpdates",

@@ -19,7 +19,7 @@ const baseConfig = {
     entry: {},
 
     externals: {
-        vscode: 'commonjs vscode' // ignored because it doesn't exist
+        vscode: 'commonjs vscode'
     },
     performance: {
         hints: false
@@ -41,11 +41,6 @@ const extensionConfig = Object.assign({}, baseConfig, {
         path: path.join(currentDirectory, 'dist', 'extension'),
         libraryTarget: 'commonjs',
         devtoolModuleFilenameTemplate: '../../[resource-path]'
-    },
-    externals: {
-        vscode: 'commonjs vscode', // ignored because it doesn't exist
-        child_process: 'child_process',
-        fs: 'fs'
     },
     resolve: {
         mainFields: ['browser', 'module', 'main'],

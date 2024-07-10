@@ -1,30 +1,35 @@
+/* eslint-disable @typescript-eslint/consistent-type-imports */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 type Module = any; // TODO: refine?
 
 const moduleCache = new Map<string, Module>();
 
-export const importSync = (module: string): Module => {
+const requireModule = (module: string): Module => {
+    if (!isAvailable()) throw new Error('Native features cannot be used in a web environment!');
+
     const cached = moduleCache.get(module);
     if (cached) return cached;
 
-    console.log(`Importing node module (!sync!): ${module}`);
+    console.log(`Requiring node module (CommonJS): ${module}`);
 
     const mod = __non_webpack_require__(module);
     moduleCache.set(module, mod);
     return mod;
 };
 
-export const importAsync = async (module: string): Promise<Module> => {
+const importModule = async (module: string): Promise<Module> => {
+    if (!isAvailable()) throw new Error('Native features cannot be used in a web environment!');
+
     const cached = moduleCache.get(module);
     if (cached) return cached;
 
-    console.log(`Importing node module (async): ${module}`);
+    console.log(`Importing node module (ES6): ${module}`);
 
-    let mod;
-    try {
-        mod = await import(/* webpackIgnore: true */ module);
-    } catch {
-        throw new Error(`Could not import module: ${module}`);
-    }
+    const mod = await import(/* webpackIgnore: true */ module);
     moduleCache.set(module, mod);
     return mod;
 };
@@ -34,15 +39,17 @@ export const isAvailable = (): boolean => typeof Worker === 'undefined';
 export type ModuleChildProcess = typeof import('child_process');
 export type ModuleFS = typeof import('fs');
 export type ModuleOS = typeof import('os');
+export type ModuleProcess = typeof import('process');
 export type ModuleStream = typeof import('stream');
 export type ModuleTarFS = typeof import('tar-fs');
 export type ModuleWorkerThreads = typeof import('worker_threads');
 export type ModuleZLib = typeof import('zlib');
 
-export const childProcess = async () => importAsync('child_process') as Promise<ModuleChildProcess>;
-export const fs = async () => importAsync('fs') as Promise<ModuleFS>;
-export const os = async () => importAsync('os') as Promise<ModuleOS>;
-export const stream = async () => importAsync('stream') as Promise<ModuleStream>;
-export const tar = async () => importAsync('tar-fs') as Promise<ModuleTarFS>;
-export const workerThreads = async () => importAsync('worker_threads') as Promise<ModuleWorkerThreads>;
-export const zlib = async () => importAsync('zlib') as Promise<ModuleZLib>;
+export const childProcess = () => requireModule('child_process') as ModuleChildProcess;
+export const fs = () => requireModule('fs') as ModuleFS;
+export const os = () => requireModule('os') as ModuleOS;
+export const process = () => requireModule('process') as ModuleProcess;
+export const stream = () => requireModule('stream') as ModuleStream;
+export const tar = () => importModule('tar-fs') as Promise<ModuleTarFS>;
+export const workerThreads = () => requireModule('worker_threads') as ModuleWorkerThreads;
+export const zlib = () => requireModule('zlib') as ModuleZLib;
