@@ -23,7 +23,8 @@
         "Visualization"
     ],
     "activationEvents": [
-        "onCommand:workbench.action.tasks.runTask"
+        "onCommand:workbench.action.tasks.runTask",
+        "onStartupFinished"
     ],
     "main": "./dist/extension/extension.js",
     "browser": "./dist/extension/extension.js",
@@ -51,10 +52,10 @@
                         "Use WebAssembly versions of Yosys & Nextpnr. This option requires an active internet connection. Slower, but available on all platforms and environments."
                     ]
                 },
-                "edacation.toolUpdateCheckInterval": {
-                    "type": "integer",
-                    "description": "Specifies the interval to check for managed tool updates, in minutes. Set to 0 to disable automatic update checks.",
-                    "default": 60
+                "edacation.checkToolUpdatesOnStartup": {
+                    "type": "boolean",
+                    "description": "Whether to check for managed tool updates on startup.",
+                    "default": true
                 }
             }
         },
