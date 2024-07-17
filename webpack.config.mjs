@@ -33,8 +33,7 @@ const baseConfig = {
 /** @type WebpackConfig */
 const extensionConfig = Object.assign({}, baseConfig, {
     entry: {
-        extension: './src/extension/index.ts',
-        'test/suite/index': './src/extension/test/suite/index.ts'
+        extension: './src/extension/index.ts'
     },
     output: {
         filename: '[name].js',
@@ -53,6 +52,10 @@ const extensionConfig = Object.assign({}, baseConfig, {
             assert: 'assert',
             path: 'path-browserify'
         }
+    },
+    externals: {
+        vscode: 'commonjs vscode',
+        fs: 'fs'
     },
     module: {
         rules: [

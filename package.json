@@ -5,7 +5,7 @@
     "description": "Learning environment for digital hardware design with Yosys and nextpnr.",
     "repository": "github:EDAcation/vscode-edacation",
     "license": "MIT",
-    "version": "0.5.5",
+    "version": "0.5.9",
     "contributors": [
         "Danielle Huisman <danielle@huisman.me> (https://github.com/DanielleHuisman)",
         "Daan Middelkoop <daantje676@gmail.com>",
@@ -23,7 +23,8 @@
         "Visualization"
     ],
     "activationEvents": [
-        "onCommand:workbench.action.tasks.runTask"
+        "onCommand:workbench.action.tasks.runTask",
+        "onStartupFinished"
     ],
     "main": "./dist/extension/extension.js",
     "browser": "./dist/extension/extension.js",
@@ -54,10 +55,10 @@
                         "Use WebAssembly versions of Yosys & Nextpnr. This option requires an active internet connection. Slower, but available on all platforms and environments."
                     ]
                 },
-                "edacation.toolUpdateCheckInterval": {
-                    "type": "integer",
-                    "description": "Specifies the interval to check for managed tool updates, in minutes. Set to 0 to disable automatic update checks.",
-                    "default": 60
+                "edacation.checkToolUpdatesOnStartup": {
+                    "type": "boolean",
+                    "description": "Whether to check for managed tool updates on startup.",
+                    "default": true
                 }
             }
         },
@@ -357,13 +358,10 @@
         "compile-web": "tsc && webpack",
         "package-web": "webpack --mode production --devtool hidden-source-map",
         "vscode:prepublish": "npm run package-web",
-        "lint": "eslint ./src --ext ts",
-        "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/extension/test/suite/index.js",
-        "pretest": "npm run compile-web"
+        "lint": "eslint ./src --ext ts"
     },
     "devDependencies": {
         "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-        "@types/mocha": "^10.0.6",
         "@types/path-browserify": "^1.0.2",
         "@types/tar-fs": "^2.0.4",
         "@types/vscode": "1.73.0",
@@ -380,7 +378,6 @@
         "eslint": "^8.57.0",
         "eslint-plugin-vue": "^9.22.0",
         "mini-css-extract-plugin": "^2.7.6",
-        "mocha": "^10.2.0",
         "prettier": "^3.3.2",
         "process": "^0.11.10",
         "style-loader": "^4.0.0",
@@ -396,7 +393,7 @@
         "@vscode/codicons": "^0.0.35",
         "@vscode/webview-ui-toolkit": "^1.3.1",
         "digitaljs": "github:EDAcation/digitaljs#next",
-        "edacation": "github:edacation/edacation#feat/advanced-output-files",
+        "edacation": "^0.3.7",
         "nextpnr-viewer": "^0.6.1",
         "os-browserify": "^0.3.0",
         "path-browserify": "^1.0.1",

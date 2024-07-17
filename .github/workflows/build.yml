@@ -76,7 +76,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ubuntu-latest
-      - name: GitHub Release
+      - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
@@ -90,3 +90,9 @@ jobs:
           extensionFile: ${{ needs.build.outputs.vsixPath }}
           preRelease: ${{ github.event_name != 'release' || github.event.release.prerelease }}
           registryUrl: https://marketplace.visualstudio.com
+      - name: Publish to Open VSX Registry
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          pat: ${{ secrets.OPEN_VSX_TOKEN }}
+          extensionFile: ${{ needs.build.outputs.vsixPath }}
+          preRelease: ${{ github.event_name != 'release' || github.event.release.prerelease }}
