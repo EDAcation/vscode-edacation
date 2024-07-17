@@ -3,14 +3,14 @@ import {provideVSCodeDesignSystem, vsCodeButton, vsCodeDropdown, vsCodeOption} f
 
 import {vscode} from '../../vscode';
 
-import EDAPlaceholder from './components/EDAPlaceholder.vue';
+import EDAProjectActions from './components/EDAProjectActions.vue';
 import {state} from './state';
 
 provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeDropdown(), vsCodeOption());
 
 export default {
     components: {
-        EDAPlaceholder
+        EDAProjectActions
     },
     data() {
         return {
@@ -42,7 +42,7 @@ export default {
 
 <template>
     <main>
-        <EDAPlaceholder />
+        <EDAProjectActions />
     </main>
 </template>
 
