@@ -94,7 +94,7 @@ export const onEvent = <E extends keyof EventCallbacks>(event: E, callback: Even
 //
 // TODO: revisit once vscode's electron ships Node >18.19.0
 export const importModule = async (url: URL | string): Promise<any> => {
-    if (module) {
+    if (isNodeJs) {
         const vm = __non_webpack_require__('node:vm');
 
         let code = await fetch(url).then((resp) => resp.text());
