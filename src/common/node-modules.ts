@@ -42,6 +42,7 @@ export type ModuleOS = typeof import('os');
 export type ModuleProcess = typeof import('process');
 export type ModuleStream = typeof import('stream');
 export type ModuleTarFS = typeof import('tar-fs');
+export type ModuleWhich = typeof import('which');
 export type ModuleWorkerThreads = typeof import('worker_threads');
 export type ModuleZLib = typeof import('zlib');
 
@@ -51,5 +52,6 @@ export const os = () => requireModule('os') as ModuleOS;
 export const process = () => requireModule('process') as ModuleProcess;
 export const stream = () => requireModule('stream') as ModuleStream;
 export const tar = () => importModule('tar-fs') as Promise<ModuleTarFS>;
+export const which = () => requireModule('which') as ModuleWhich;
 export const workerThreads = () => requireModule('worker_threads') as ModuleWorkerThreads;
 export const zlib = () => requireModule('zlib') as ModuleZLib;
