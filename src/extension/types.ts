@@ -29,6 +29,7 @@ interface ViewMessageChange {
 interface ViewMessageCommand {
     type: 'command';
     command: string;
+    args?: [];
 }
 
 interface ViewMessageRequestSave {

@@ -16,14 +16,22 @@ export default defineComponent({
         };
     },
     methods: {
-        executeCommand(command: string) {
+        executeCommand(command: string, ...args: unknown[]) {
             console.log(this.selectedTarget);
 
             vscode.vscode.postMessage({
                 type: 'command',
-                command: `edacation.${command}`
+                command: `edacation.${command}`,
+                args: args
             });
         },
+
+        executeTargetCommand(command: string) {
+            if (!this.selectedTarget) {
+                return this.executeCommand(command);
+            }
+            return this.executeCommand(command, this.selectedTarget.id)
+        }
     },
     computed: {
         targets(): TargetConfiguration[] {
@@ -47,9 +55,9 @@ export default defineComponent({
             <vscode-divider></vscode-divider>
             <EDATargetSelector v-if="targets.length > 1"/>
 
-            <vscode-button @click="executeCommand('runRTL')">Show RTL</vscode-button>
-            <vscode-button @click="executeCommand('runYosys')">Synthesize using Yosys</vscode-button>
-            <vscode-button @click="executeCommand('runNextpnr')">Place and Route using nextpnr</vscode-button>
+            <vscode-button @click="executeTargetCommand('runRTL')">Show RTL</vscode-button>
+            <vscode-button @click="executeTargetCommand('runYosys')">Synthesize using Yosys</vscode-button>
+            <vscode-button @click="executeTargetCommand('runNextpnr')">Place and Route using nextpnr</vscode-button>
         </template>
     </div>
 </template>

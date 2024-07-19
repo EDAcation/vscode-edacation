@@ -60,7 +60,7 @@ export class ActionsProvider extends BaseWebviewViewProvider {
                 });
             }
         } else if (message.type === 'command') {
-            await vscode.commands.executeCommand(message.command);
+            await vscode.commands.executeCommand(message.command, ...(message.args ?? []));
         }
     }
 }

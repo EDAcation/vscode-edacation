@@ -1,3 +1,4 @@
+import type {TargetConfiguration} from 'edacation';
 import * as vscode from 'vscode';
 
 import {ProjectEditor} from '../editors/index.js';
@@ -20,7 +21,24 @@ export class OpenProjectConfigurationCommand extends CurrentProjectCommand {
 abstract class RunTaskCommand extends CurrentProjectCommand {
     abstract getTaskFilter(): vscode.TaskFilter;
 
-    async executeForCurrentProject(project: Project) {
+    async executeForCurrentProject(project: Project, targetId?: string) {
+        const targets = project.getConfiguration().targets;
+        if (targets.length === 0) {
+            await vscode.window.showWarningMessage('The current project has no targets defined.');
+            return;
+        }
+
+        let target: TargetConfiguration | undefined;
+        if (targetId) {
+            target = targets.find((target) => target.id === targetId);
+            if (!target) {
+                await vscode.window.showWarningMessage(`No target was found with ID "${targetId}".`);
+                return;
+            }
+        } else {
+            target = targets[0];
+        }
+
         const tasks = await vscode.tasks.fetchTasks(this.getTaskFilter());
         const task = tasks.find((task) => {
             if (
@@ -32,7 +50,8 @@ abstract class RunTaskCommand extends CurrentProjectCommand {
             }
 
             const uri = vscode.Uri.joinPath(task.scope.uri, task.definition.project as string);
-            return uri.toString() === project.getUri().toString();
+            const targetId = task.definition.targetId as string;
+            return uri.toString() === project.getUri().toString() && targetId === target.id;
         });
 
         if (task) {

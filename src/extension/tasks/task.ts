@@ -9,7 +9,7 @@ import {ToolProvider} from './toolprovider.js';
 
 export interface TaskDefinition extends vscode.TaskDefinition {
     project: string;
-    targetId?: string;
+    targetId: string;
     uri?: vscode.Uri;
 }
 

@@ -273,36 +273,51 @@
             {
                 "type": "rtl",
                 "required": [
-                    "project"
+                    "project",
+                    "targetId"
                 ],
                 "properties": {
                     "project": {
                         "type": "string",
                         "description": "Path of the EDA project."
+                    },
+                    "targetId": {
+                        "type": "string",
+                        "description": "ID of the target to execute this task on."
                     }
                 }
             },
             {
                 "type": "yosys",
                 "required": [
-                    "project"
+                    "project",
+                    "targetId"
                 ],
                 "properties": {
                     "project": {
                         "type": "string",
                         "description": "Path of the EDA project."
+                    },
+                    "targetId": {
+                        "type": "string",
+                        "description": "ID of the target to execute this task on."
                     }
                 }
             },
             {
                 "type": "nextpnr",
                 "required": [
-                    "project"
+                    "project",
+                    "targetId"
                 ],
                 "properties": {
                     "project": {
                         "type": "string",
                         "description": "Path of the EDA project."
+                    },
+                    "targetId": {
+                        "type": "string",
+                        "description": "ID of the target to execute this task on."
                     }
                 }
             }
