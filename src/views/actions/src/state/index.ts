@@ -5,14 +5,12 @@ import {vscode} from '../../../vscode';
 
 export interface State {
     project?: ProjectState;
-    selectedTargetIndex: string;
-    selectedTargetTabId: string;
+    selectedTargetIndex: number;
 }
 
 export const DEFAULT_STATE = {
     project: undefined,
-    selectedTargetIndex: 'all',
-    selectedTargetTabId: 'tab-device'
+    selectedTargetIndex: 0
 };
 
 export let state = reactive<State>(DEFAULT_STATE);
