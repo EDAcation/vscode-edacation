@@ -42,11 +42,15 @@ export default defineComponent({
         <vscode-button @click="executeCommand('openProjectConfiguration')">
             Open Project Configuration
         </vscode-button>
-        <vscode-divider></vscode-divider>
-        <EDATargetSelector v-if="targets.length > 1"/>
-        <vscode-button @click="executeCommand('runRTL')">Show RTL</vscode-button>
-        <vscode-button @click="executeCommand('runYosys')">Synthesize using Yosys</vscode-button>
-        <vscode-button @click="executeCommand('runNextpnr')">Place and Route using nextpnr</vscode-button>
+
+        <template v-if="targets.length !== 0">
+            <vscode-divider></vscode-divider>
+            <EDATargetSelector v-if="targets.length > 1"/>
+
+            <vscode-button @click="executeCommand('runRTL')">Show RTL</vscode-button>
+            <vscode-button @click="executeCommand('runYosys')">Synthesize using Yosys</vscode-button>
+            <vscode-button @click="executeCommand('runNextpnr')">Place and Route using nextpnr</vscode-button>
+        </template>
     </div>
 </template>
 

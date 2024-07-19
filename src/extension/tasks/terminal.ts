@@ -216,6 +216,12 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
             }
         }
 
+        const projectConfig = this.curProject.getConfiguration();
+        if (projectConfig.targets.length === 0) {
+            await this.error(new Error('The current project has no targets defined!'));
+            return;
+        }
+
         if (this.tasks.length === 0 || prevExitCode !== 0) {
             this.curJob = null;
             this.curProject = null;
@@ -226,7 +232,7 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
 
         this.curJob = {
             task: this.tasks[0],
-            targetId: this.definition.targetId ?? this.curProject.getConfiguration().targets[0].id
+            targetId: this.definition.targetId ?? projectConfig.targets[0].id
         };
         this.tasks.splice(0, 1);
 
