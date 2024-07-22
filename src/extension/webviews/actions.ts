@@ -24,16 +24,22 @@ export class ActionsProvider extends BaseWebviewViewProvider {
         };
     }
 
-    public resolveWebviewView(
+    public async resolveWebviewView(
         webviewView: vscode.WebviewView,
         context: vscode.WebviewViewResolveContext<unknown>,
         token: vscode.CancellationToken
-    ): void | Thenable<void> {
+    ): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         super.resolveWebviewView(webviewView, context, token);
 
-        // TODO: subscribe to project change
-        // this.projects.getProjectEmitter().event.
+        this.projects.getProjectEmitter().event((_changed) => {
+            const project = this.projects.getCurrent();
+
+            void webviewView.webview.postMessage({
+                type: 'project',
+                project: project ? Project.serialize(project) : undefined
+            });
+        });
     }
 
     protected async onDidReceiveMessage(webview: vscode.Webview, message: ViewMessage): Promise<void> {
@@ -54,7 +60,7 @@ export class ActionsProvider extends BaseWebviewViewProvider {
                 });
             }
         } else if (message.type === 'command') {
-            await vscode.commands.executeCommand(message.command);
+            await vscode.commands.executeCommand(message.command, ...(message.args ?? []));
         }
     }
 }

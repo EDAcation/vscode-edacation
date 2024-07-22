@@ -1,16 +1,16 @@
 <script lang="ts">
-import {provideVSCodeDesignSystem, vsCodeButton, vsCodeDropdown, vsCodeOption} from '@vscode/webview-ui-toolkit';
+import {provideVSCodeDesignSystem, vsCodeButton, vsCodeDivider, vsCodeDropdown, vsCodeOption} from '@vscode/webview-ui-toolkit';
 
 import {vscode} from '../../vscode';
 
-import EDAPlaceholder from './components/EDAPlaceholder.vue';
+import EDAProjectActions from './components/EDAProjectActions.vue';
 import {state} from './state';
 
-provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeDropdown(), vsCodeOption());
+provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeDropdown(), vsCodeOption(), vsCodeDivider());
 
 export default {
     components: {
-        EDAPlaceholder
+        EDAProjectActions
     },
     data() {
         return {
@@ -42,7 +42,7 @@ export default {
 
 <template>
     <main>
-        <EDAPlaceholder />
+        <EDAProjectActions />
     </main>
 </template>
 
