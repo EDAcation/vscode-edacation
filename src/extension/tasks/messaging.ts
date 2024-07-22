@@ -42,7 +42,7 @@ export abstract class TerminalMessageEmitter {
         this.messageEvent.event(callback);
     }
 
-    private fire(message: TerminalMessage) {
+    protected fire(message: TerminalMessage) {
         this.messageEvent.fire(message);
     }
 
