@@ -55,7 +55,8 @@ const extensionConfig = Object.assign({}, baseConfig, {
     },
     externals: {
         vscode: 'commonjs vscode',
-        fs: 'fs'
+        fs: 'fs',
+        'fs/promises': 'fs/promises'
     },
     module: {
         rules: [
