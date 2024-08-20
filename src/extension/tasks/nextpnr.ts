@@ -1,7 +1,8 @@
-import {type NextpnrWorkerOptions, getNextpnrWorkerOptions} from 'edacation';
+import {type NextpnrWorkerOptions, VENDORS, getNextpnrWorkerOptions} from 'edacation';
 import * as vscode from 'vscode';
 
 import type {Project} from '../projects/index.js';
+import {decodeJSON, encodeJSON} from '../util.js';
 
 import {AnsiModifier, type TaskOutputFile} from './messaging.js';
 import {type TaskDefinition, type TaskIOFile, TerminalTask} from './task.js';
@@ -67,7 +68,7 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
         this.println();
     }
 
-    async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
+    async handleEnd(project: Project, workerOptions: NextpnrWorkerOptions, outputFiles: TaskOutputFile[]) {
         this.println();
         this.println(
             `Finished placing and routing EDA project "${project.getName()}" using nextpnr.`,
@@ -76,11 +77,26 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
         );
         this.println();
 
-        // Open placed and routed file in nextpnr editor
-        const pnrFile = outputFiles.find((file) => file.path === 'routed.nextpnr.json');
-        if (pnrFile) {
-            const uri = vscode.Uri.joinPath(project.getRoot(), pnrFile.path);
-            await vscode.commands.executeCommand('vscode.open', uri);
-        }
+        const pnrFile = outputFiles.find((file) => file.path.endsWith('routed.nextpnr.json'));
+        if (!pnrFile) return;
+        const uri = vscode.Uri.joinPath(project.getRoot(), pnrFile.path);
+
+        const target = workerOptions.target;
+        const deviceName = VENDORS[target.vendor]?.families[target.family].devices[target.device].device;
+
+        this.println('Updating output file...');
+        const oldContent = await vscode.workspace.fs.readFile(uri);
+        const newContent = encodeJSON({
+            chip: {
+                family: target.family,
+                device: deviceName
+            },
+            data: decodeJSON(oldContent)
+        });
+        await vscode.workspace.fs.writeFile(uri, newContent);
+        this.println('Done.');
+
+        // Open file in nextpnr editor
+        await vscode.commands.executeCommand('vscode.open', uri);
     }
 }

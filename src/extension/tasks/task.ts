@@ -70,9 +70,9 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
 
     abstract handleStart(project: Project): Promise<void>;
 
-    abstract handleEnd(project: Project, outputFiles: TaskOutputFile[]): Promise<void>;
+    abstract handleEnd(project: Project, workerOptions: WorkerOptions, outputFiles: TaskOutputFile[]): Promise<void>;
 
-    async execute(project: Project, targetId: string) {
+    async execute(project: Project, targetId: string): Promise<WorkerOptions> {
         const workerOptions = this.getWorkerOptions(project, targetId);
 
         const command = this.getInputCommand(workerOptions);
@@ -114,6 +114,8 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
         this.println();
 
         await this.toolProvider.execute();
+
+        return workerOptions;
     }
 
     cleanup() {
