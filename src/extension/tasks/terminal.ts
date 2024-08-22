@@ -13,6 +13,7 @@ const PROJECT_PATTERN = '**/*.edaproject';
 interface JobDefinition<WorkerOptions extends _WorkerOptions> {
     task: TerminalTask<WorkerOptions>;
     targetId: string;
+    workerOptions?: WorkerOptions;
 }
 
 export abstract class TaskProvider extends BaseTaskProvider {
@@ -257,7 +258,7 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
 
             await this.curJob.task.handleStart(this.curProject);
 
-            await this.curJob.task.execute(this.curProject, this.curJob.targetId);
+            this.curJob.workerOptions = await this.curJob.task.execute(this.curProject, this.curJob.targetId);
         } catch (err) {
             await this.error(err);
         }
@@ -282,6 +283,10 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
                     break;
                 }
                 case 'done': {
+                    if (!job.workerOptions) {
+                        throw new Error('Task did not deposit worker options, cannot handle finish');
+                    }
+
                     const outputFiles = message.outputFiles || [];
                     for (const file of outputFiles) {
                         // Construct URI if missing
@@ -300,7 +305,7 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
                     const uris = outputFiles.map((outp) => outp.uri).filter((outp): outp is vscode.Uri => !!outp);
                     await this.curProject.addOutputFileUris(uris, job.targetId);
 
-                    await job.task.handleEnd(this.curProject, outputFiles);
+                    await job.task.handleEnd(this.curProject, job.workerOptions, outputFiles);
                     job.task.cleanup();
 
                     await this.exit(0);

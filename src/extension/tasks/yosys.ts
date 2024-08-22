@@ -61,7 +61,7 @@ export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOpti
         this.println();
     }
 
-    async handleEnd(project: Project, _outputFiles: TaskOutputFile[]) {
+    async handleEnd(project: Project, _workerOptions: YosysWorkerOptions, _outputFiles: TaskOutputFile[]) {
         this.println();
         this.println(
             `Finished synthesizing EDA project "${project.getName()}" using Yosys.`,
@@ -131,8 +131,8 @@ class YosysPrepareTerminalTask extends BaseYosysTerminalTask {
         return record;
     }
 
-    async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
-        await super.handleEnd(project, outputFiles);
+    async handleEnd(project: Project, workerOptions: YosysWorkerOptions, outputFiles: TaskOutputFile[]) {
+        await super.handleEnd(project, workerOptions, outputFiles);
 
         const presynthFile = outputFiles.find((file) => file.path.endsWith('presynth.yosys.json'));
         if (!presynthFile || !presynthFile.uri) return;
@@ -163,8 +163,8 @@ class YosysSynthTerminalTask extends BaseYosysTerminalTask {
         return workerOptions.outputFiles.map((path) => ({type: 'artifact', path}));
     }
 
-    async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
-        await super.handleEnd(project, outputFiles);
+    async handleEnd(project: Project, workerOptions: YosysWorkerOptions, outputFiles: TaskOutputFile[]) {
+        await super.handleEnd(project, workerOptions, outputFiles);
 
         // Find LUT file
         const lutFile = outputFiles.find((file) => file.path.endsWith('luts.yosys.json'));

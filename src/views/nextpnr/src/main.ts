@@ -21,6 +21,22 @@ interface MessageDocument {
 
 type Message = MessageDocument;
 
+// TODO: export from nextpnr-viewer
+type Chip = {
+    family: 'ecp5';
+    device: '25k' | '45k' | '85k';
+};
+
+interface NextpnrJSON {
+    creator: string;
+    modules: any;
+}
+
+interface NextpnrFileFormat {
+    chip: Chip;
+    data: NextpnrJSON;
+}
+
 class View {
     private readonly root: HTMLDivElement;
     private state: State;
@@ -106,7 +122,20 @@ class View {
             }
 
             // Parse nextpnr document from JSON string
-            const json = JSON.parse(this.state.document);
+            // Support old file format as well (raw NextpnrJSON)
+            const json = JSON.parse(this.state.document) as NextpnrFileFormat | NextpnrJSON;
+
+            let chip: Chip | undefined;
+            let data: NextpnrJSON;
+            if ('chip' in json) {
+                chip = {
+                    family: json.chip.family,
+                    device: json.chip.device
+                };
+                data = json.data;
+            } else {
+                data = json;
+            }
 
             if (!this.viewer) {
                 // Clear root
@@ -121,12 +150,13 @@ class View {
                 this.viewer = nextpnrViewer(elementViewer, {
                     width,
                     height,
-                    cellColors: this.cellColors
+                    cellColors: this.cellColors,
+                    chip
                 });
             }
 
             // Render nextpnr document
-            this.viewer.showJson(json);
+            this.viewer.showJson(JSON.stringify(data));
         } catch (err) {
             this.handleError(err);
         }

@@ -80,8 +80,8 @@ class RTLTerminalTask extends BaseYosysTerminalTask {
         await vscode.workspace.fs.writeFile(uri, newContent);
     }
 
-    async handleEnd(project: Project, outputFiles: TaskOutputFile[]) {
-        await super.handleEnd(project, outputFiles);
+    async handleEnd(project: Project, workerOptions: YosysWorkerOptions, outputFiles: TaskOutputFile[]) {
+        await super.handleEnd(project, workerOptions, outputFiles);
 
         this.println('Updating output files...');
         await Promise.all(
