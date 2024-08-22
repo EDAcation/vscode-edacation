@@ -61,6 +61,8 @@ export class ProjectEditor extends BaseEditor {
             edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), message.document);
             await vscode.workspace.applyEdit(edit);
 
+            await document.save();
+
             return true;
         }
 
