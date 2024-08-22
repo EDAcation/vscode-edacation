@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -37,6 +38,6 @@ export const fs = () => requireModule('fs') as ModuleFS;
 export const os = () => requireModule('os') as ModuleOS;
 export const process = () => requireModule('process') as ModuleProcess;
 export const stream = () => requireModule('stream') as ModuleStream;
-export const which = () => requireModule('which') as ModuleWhich;
+export const which = () => require('which') as ModuleWhich;
 export const workerThreads = () => requireModule('worker_threads') as ModuleWorkerThreads;
 export const zlib = () => requireModule('zlib') as ModuleZLib;
