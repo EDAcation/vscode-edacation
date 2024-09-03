@@ -160,12 +160,14 @@ export default defineComponent({
                 Name
             </vscode-text-field>
 
+            <!-- TODO: Make this configurable again
             <vscode-text-field
                 placeholder="Output directory"
                 :value="target.directory || ''"
                 @input="handleDirectoryChange"
                 >Output directory</vscode-text-field
-            >
+            > -->
+            <div></div>
 
             <div></div>
 
