@@ -6,6 +6,9 @@ import type {GlobalStoreMessage, ViewMessage} from '../types.js';
 import {BaseEditor, type EditorWebviewArgs} from './base.js';
 
 export class ProjectEditor extends BaseEditor {
+    private static readonly SAVE_DEBOUNCE_WAIT = 1000;
+    private static saveDebounceTimer: ReturnType<typeof setTimeout> | undefined;
+
     public static getViewType() {
         return 'edacation.project';
     }
@@ -61,7 +64,8 @@ export class ProjectEditor extends BaseEditor {
             edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), message.document);
             await vscode.workspace.applyEdit(edit);
 
-            await document.save();
+            if (ProjectEditor.saveDebounceTimer) clearTimeout(ProjectEditor.saveDebounceTimer);
+            ProjectEditor.saveDebounceTimer = setTimeout(() => void document.save(), ProjectEditor.SAVE_DEBOUNCE_WAIT);
 
             return true;
         }
