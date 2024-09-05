@@ -85,8 +85,6 @@ export class ProjectEditor extends BaseEditor {
             return;
         }
 
-        await vscode.commands.executeCommand('edacation-projects.focus');
-
         const project = this.projects.get(document.uri);
 
         console.log('updating project', project);
