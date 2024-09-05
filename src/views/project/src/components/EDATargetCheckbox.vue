@@ -71,10 +71,6 @@ export default defineComponent({
             const projectConfig = this.state.project!.configuration;
             const targetId = this.target?.id;
 
-            console.log('getting options')
-            console.log(projectConfig)
-            console.log(targetId)
-
             if (!targetId) {
                 // Default configuration
                 if (this.workerId === 'yosys') return getYosysDefaultOptions(projectConfig)

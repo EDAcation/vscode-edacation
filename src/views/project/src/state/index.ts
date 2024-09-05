@@ -5,13 +5,13 @@ import {vscode} from '../../../vscode';
 
 export interface State {
     project?: ProjectState;
-    selectedTargetIndex: string;
+    selectedTargetIndex?: number;
     selectedTargetTabId: string;
 }
 
 export const DEFAULT_STATE = {
     project: undefined,
-    selectedTargetIndex: 'all',
+    selectedTargetIndex: undefined,
     selectedTargetTabId: 'tab-device'
 };
 
