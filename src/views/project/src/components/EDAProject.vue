@@ -34,6 +34,31 @@ export default defineComponent({
         };
     },
     methods: {
+        getNewTargetId(): string {
+            const takenIds = this.targets.map(target => target.id);
+
+            let index = this.targets.length + 1;
+            while (takenIds.includes(`target${index}`)) index++;
+
+            return `target${index}`;
+        },
+        getDuplicateTargetId(oldId: string): string {
+            const match = oldId.match(/^(.*)(\d)+$/)
+            let base: string;
+            let seq: number;
+            if (match) {
+                base = match[1];
+                seq = Number(match[2]) + 1;
+            } else {
+                base = oldId;
+                seq = 1;
+            }
+
+            const takenIds = this.targets.map(target => target.id);
+            while (takenIds.includes(`${base}${seq}`)) seq++;
+
+            return `${base}${seq}`;
+        },
         handleNameChange(event: Event) {
             if (!this.state.project || !event.target) {
                 return;
@@ -46,14 +71,30 @@ export default defineComponent({
                 return;
             }
 
-            const index = this.targets.length + 1;
             this.state.project.configuration.targets.push({
-                id: `target${index}`,
-                name: `Target ${index}`,
+                id: this.getNewTargetId(),
+                name: `Target ${this.targets.length + 1}`,
                 vendor: 'generic',
                 family: 'generic',
                 device: 'generic',
                 package: 'generic'
+            });
+            // TODO: This does not work, because does not yet exist, due to sync issues
+            // this.state.selectedTargetIndex = (index - 1).toString();
+        },
+        handleTargetDuplicate() {
+            const targetIndex = this.targetIndex;
+            if (!this.state.project || targetIndex === undefined) {
+                return;
+            }
+
+            const curTarget = this.targets[targetIndex];
+            if (!curTarget) return;
+
+            this.state.project.configuration.targets.push({
+                ...curTarget,
+                id: this.getDuplicateTargetId(curTarget.id),
+                name: `Target ${this.targets.length + 1}`
             });
             // TODO: This does not work, because does not yet exist, due to sync issues
             // this.state.selectedTargetIndex = (index - 1).toString();
@@ -90,8 +131,13 @@ export default defineComponent({
             Delete target
         </vscode-button>
 
-        <div>
+        <div style="display: flex; gap: 1rem">
             <vscode-button style="margin-top: 1rem" @click="handleTargetAdd">Add target</vscode-button>
+            <vscode-button
+                v-if="targetIndex !== undefined"
+                style="margin-top: 1rem"
+                @click="handleTargetDuplicate"
+            >Duplicate target</vscode-button>
         </div>
 
         <p v-if="targets.length === 0"><b>Error:</b> At least one target is required.</p>
