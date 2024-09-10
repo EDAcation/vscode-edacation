@@ -46,19 +46,19 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
             })
         );
         disposables.push(
+            vscode.workspace.onDidDeleteFiles((event) => {
+                if (event.files.map((uri) => uri.toString()).includes(document.uri.toString())) {
+                    void webviewPanel.dispose();
+                }
+            })
+        );
+        disposables.push(
             vscode.workspace.onDidSaveTextDocument((event) => {
                 if (event.uri.toString() === document.uri.toString()) {
                     this.onSave(document, webview);
                 }
             })
         );
-
-        // Create file system watcher
-        const watcher = vscode.workspace.createFileSystemWatcher(document.uri.fsPath);
-        watcher.onDidCreate(() => this.update(document, webview, true));
-        watcher.onDidChange(() => this.update(document, webview, true));
-        watcher.onDidDelete(() => this.update(document, webview, true));
-        disposables.push(watcher);
 
         // Add dispose listener
         webviewPanel.onDidDispose(() => {

@@ -1,13 +1,17 @@
 <script lang="ts">
-import type {
-    NextpnrConfiguration,
-    NextpnrOptions,
-    NextpnrTargetConfiguration,
-    TargetConfiguration,
-    WorkerId,
-    YosysConfiguration,
-    YosysOptions,
-    YosysTargetConfiguration
+import {
+    getNextpnrDefaultOptions,
+    getNextpnrOptions,
+    getYosysDefaultOptions,
+    getYosysOptions,
+    type NextpnrConfiguration,
+    type NextpnrOptions,
+    type NextpnrTargetConfiguration,
+    type TargetConfiguration,
+    type WorkerId,
+    type YosysConfiguration,
+    type YosysOptions,
+    type YosysTargetConfiguration,
 } from 'edacation';
 import {type PropType, defineComponent} from 'vue';
 
@@ -63,11 +67,27 @@ export default defineComponent({
             }
             return this.worker.options;
         },
-        config(): boolean | undefined {
-            if (!this.options) {
+        effectiveOptions(): YosysOptions | NextpnrOptions | null {
+            const projectConfig = this.state.project!.configuration;
+            const targetId = this.target?.id;
+
+            if (!targetId) {
+                // Default configuration
+                if (this.workerId === 'yosys') return getYosysDefaultOptions(projectConfig)
+                if (this.workerId === 'nextpnr') return getNextpnrDefaultOptions(projectConfig)
+                return null;
+            } else {
+                // Target configuration
+                if (this.workerId === 'yosys') return getYosysOptions(projectConfig, targetId)
+                if (this.workerId === 'nextpnr') return getNextpnrOptions(projectConfig, targetId)
+                return null;
+            }
+        },
+        effectiveConfig(): boolean | undefined {
+            if (!this.effectiveOptions) {
                 return undefined;
             }
-            return this.options[this.configId as keyof typeof this.options];
+            return this.effectiveOptions[this.configId as keyof typeof this.effectiveOptions];
         }
     },
     methods: {
@@ -109,6 +129,6 @@ export default defineComponent({
 
 <template>
     <div>
-        <vscode-checkbox :checked="config" @change="handleCheckboxChange">{{ configName }}</vscode-checkbox>
+        <vscode-checkbox :checked="effectiveConfig" @change="handleCheckboxChange">{{ configName }}</vscode-checkbox>
     </div>
 </template>

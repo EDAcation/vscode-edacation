@@ -1,22 +1,24 @@
 import type {ProjectState} from 'edacation';
-import {type WatchStopHandle, reactive, watch} from 'vue';
+import {type WatchStopHandle, nextTick, reactive, watch} from 'vue';
 
 import {vscode} from '../../../vscode';
 
 export interface State {
     project?: ProjectState;
-    selectedTargetIndex: string;
+    selectedTargetIndex?: number;
     selectedTargetTabId: string;
 }
 
 export const DEFAULT_STATE = {
     project: undefined,
-    selectedTargetIndex: 'all',
+    selectedTargetIndex: undefined,
     selectedTargetTabId: 'tab-device'
 };
 
 export let state = reactive<State>(DEFAULT_STATE);
 let unwatch: WatchStopHandle | undefined;
+
+let doIgnoreSave = false;
 
 export const setState = (newState: State) => {
     if (unwatch) {
@@ -25,12 +27,14 @@ export const setState = (newState: State) => {
 
     state = reactive(newState);
 
-    unwatch = watch(state, (newState) => {
+    unwatch = watch(state, () => {
         // TODO: debounce?
 
-        vscode.setState(newState);
+        if (doIgnoreSave) return;
 
-        const newDocument = `${JSON.stringify(newState.project, null, 4)}\n`;
+        vscode.setState(state);
+
+        const newDocument = `${JSON.stringify(state.project, null, 4)}\n`;
 
         vscode.postMessage({
             type: 'change',
@@ -57,4 +61,12 @@ export const initializeState = () => {
     }
 
     setState(state);
+};
+
+export const ignoreSave = (callback: () => void): void => {
+    doIgnoreSave = true;
+    callback();
+    void nextTick(() => {
+        doIgnoreSave = false;
+    });
 };

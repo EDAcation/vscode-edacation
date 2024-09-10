@@ -82,6 +82,12 @@ export default defineComponent({
                 prev[packageId] = vendorPackages[packageId] ?? packageId;
                 return prev;
             }, {} as Record<string, string>);
+        },
+        hasIdOverlap(): boolean {
+            if (!this.target) return false;
+
+            const targetIds = this.state.project!.configuration.targets.map(target => target.id);
+            return targetIds.filter(id => id === this.target?.id).length >= 2;
         }
     },
     data() {
@@ -154,18 +160,22 @@ export default defineComponent({
                 margin-bottom: 1rem;
             "
         >
-            <vscode-text-field placeholder="ID" :value="target.id" @input="handleIdChange">ID</vscode-text-field>
+            <vscode-text-field placeholder="ID" :value="target.id" @input="handleIdChange">
+                ID <span style="margin-inline: 2rem; color: red;" v-if="hasIdOverlap">Error: duplicate ID</span>
+            </vscode-text-field>
 
             <vscode-text-field placeholder="Name" :value="target.name" @input="handleNameChange">
                 Name
             </vscode-text-field>
 
+            <!-- TODO: Make this configurable again
             <vscode-text-field
                 placeholder="Output directory"
                 :value="target.directory || ''"
                 @input="handleDirectoryChange"
                 >Output directory</vscode-text-field
-            >
+            > -->
+            <div></div>
 
             <div></div>
 
