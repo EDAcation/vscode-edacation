@@ -7,7 +7,9 @@ import {BaseEditor, type EditorWebviewArgs} from './base.js';
 
 export class ProjectEditor extends BaseEditor {
     private static readonly SAVE_DEBOUNCE_WAIT = 1000;
-    private static saveDebounceTimer: ReturnType<typeof setTimeout> | undefined;
+    private saveDebounceTimer: ReturnType<typeof setTimeout> | undefined;
+
+    private doIgnoreSave = false;
 
     public static getViewType() {
         return 'edacation.project';
@@ -35,6 +37,12 @@ export class ProjectEditor extends BaseEditor {
         }
     }
 
+    private async whileIgnoreSave(callback: () => Promise<unknown>): Promise<void> {
+        this.doIgnoreSave = true;
+        await callback();
+        this.doIgnoreSave = false;
+    }
+
     protected async onDidReceiveMessage(
         document: vscode.TextDocument,
         webview: vscode.Webview,
@@ -60,12 +68,16 @@ export class ProjectEditor extends BaseEditor {
                 return true;
             }
 
-            const edit = new vscode.WorkspaceEdit();
-            edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), message.document);
-            await vscode.workspace.applyEdit(edit);
+            await this.whileIgnoreSave(async () => {
+                const edit = new vscode.WorkspaceEdit();
+                edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), message.document);
+                await vscode.workspace.applyEdit(edit);
+            });
 
-            if (ProjectEditor.saveDebounceTimer) clearTimeout(ProjectEditor.saveDebounceTimer);
-            ProjectEditor.saveDebounceTimer = setTimeout(() => void document.save(), ProjectEditor.SAVE_DEBOUNCE_WAIT);
+            if (this.saveDebounceTimer) clearTimeout(this.saveDebounceTimer);
+            this.saveDebounceTimer = setTimeout(() => {
+                void this.whileIgnoreSave(async () => await document.save());
+            }, ProjectEditor.SAVE_DEBOUNCE_WAIT);
 
             return true;
         }
@@ -84,10 +96,8 @@ export class ProjectEditor extends BaseEditor {
         // Do nothing
     }
 
-    protected async update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean) {
-        if (isDocumentChange) {
-            return;
-        }
+    protected async update(document: vscode.TextDocument, webview: vscode.Webview, _isDocumentChange: boolean) {
+        if (this.doIgnoreSave) return;
 
         const project = this.projects.get(document.uri);
 

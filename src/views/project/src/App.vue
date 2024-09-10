@@ -16,7 +16,7 @@ import {
 import {vscode} from '../../vscode';
 
 import EDAProject from './components/EDAProject.vue';
-import {state} from './state';
+import {ignoreSave, state} from './state';
 
 provideVSCodeDesignSystem().register(
     vsCodeButton(),
@@ -55,7 +55,9 @@ export default {
 
             switch (event.data.type) {
                 case 'project':
-                    this.state.project = event.data.project;
+                    ignoreSave(() => {
+                        this.state.project = event.data.project;
+                    })
                     break;
             }
         }
