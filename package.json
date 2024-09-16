@@ -123,6 +123,12 @@
                 "icon": "$(close)"
             },
             {
+                "command": "edacation.trashProject",
+                "category": "EDAcation",
+                "title": "Trash Project",
+                "icon": "$(trash)"
+            },
+            {
                 "command": "edacation.selectProject",
                 "category": "EDAcation",
                 "title": "Select Project",
@@ -252,6 +258,11 @@
             "view/item/context": [
                 {
                     "command": "edacation.closeProject",
+                    "when": "view == edacation-projects",
+                    "group": "inline"
+                },
+                {
+                    "command": "edacation.trashProject",
                     "when": "view == edacation-projects",
                     "group": "inline"
                 },
