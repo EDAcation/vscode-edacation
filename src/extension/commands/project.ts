@@ -34,7 +34,7 @@ export class NewProjectCommand extends BaseCommand {
                               uri: folder.uri,
                               label: `$(folder) ${folder.name}`,
                               description: folder.uri.fsPath
-                          } as WorkspaceItem)
+                          }) as WorkspaceItem
                   )
                 : [
                       {
@@ -149,7 +149,7 @@ export class OpenProjectCommand extends BaseCommand {
                               uri: folder.uri,
                               label: `$(folder) ${folder.name}`,
                               description: folder.uri.fsPath
-                          } as WorkspaceItem)
+                          }) as WorkspaceItem
                   )
                 : [
                       {
@@ -215,6 +215,28 @@ export class CloseProject extends BaseCommand {
 
     async execute(project: Project) {
         await this.projects.remove(project.getUri());
+    }
+}
+
+export class TrashProject extends BaseCommand {
+    static getID() {
+        return 'edacation.trashProject';
+    }
+
+    async execute(project: Project) {
+        const answer = await vscode.window.showInformationMessage(
+            `Trash project ${project.getName()}?`,
+            {
+                detail: `Are you sure you want to close and remove project '${project.getName()}'?`,
+                modal: true
+            },
+            'Yes',
+            'No'
+        );
+        if (answer !== 'Yes') return;
+
+        await this.projects.remove(project.getUri());
+        await vscode.workspace.fs.delete(project.getUri());
     }
 }
 
