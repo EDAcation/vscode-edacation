@@ -154,37 +154,34 @@ export class Project extends BaseProject {
 
     async addInputFileUris(fileUris: vscode.Uri[]): Promise<void> {
         const filePaths = [];
+        let askForCopy = true;
         for (let fileUri of fileUris) {
-            // eslint-disable-next-line prefer-const
             let [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
             if (!workspaceRelativePath) {
-                const copiedFileUri = await this.tryCopyFileIntoWorkspace(fileUri);
+                const [yesToAll, copiedFileUri] = await this.tryCopyFileIntoWorkspace(fileUri, askForCopy);
+                askForCopy = !yesToAll;
                 if (!copiedFileUri) continue;
 
                 fileUri = copiedFileUri;
                 folderRelativePath = path.relative(this.getRoot().path, fileUri.path);
             }
-            if (!folderRelativePath) continue;
+            if (!folderRelativePath || this.hasInputFile(folderRelativePath)) continue;
 
-            if (!this.hasInputFile(folderRelativePath)) {
-                filePaths.push(folderRelativePath);
-                this.inputFileInfo.set(folderRelativePath, {
-                    uri: fileUri,
-                    watcher: getFileWatcher(
-                        fileUri,
-                        () => void this.markOutputFilesStale(true),
-                        () => void this.removeInputFiles([folderRelativePath || ''])
-                    )
-                });
-            }
+            filePaths.push(folderRelativePath);
+            this.inputFileInfo.set(folderRelativePath, {
+                uri: fileUri,
+                watcher: getFileWatcher(
+                    fileUri,
+                    () => void this.markOutputFilesStale(true),
+                    () => void this.removeInputFiles([folderRelativePath || ''])
+                )
+            });
         }
+        if (filePaths.length === 0) return;
 
         super.addInputFiles(filePaths);
-
         this.projects.emitInputFileChange();
-
         await this.markOutputFilesStale(false);
-
         await this.save();
     }
 
@@ -212,60 +209,62 @@ export class Project extends BaseProject {
         await this.save();
     }
 
-    private async tryCopyFileIntoWorkspace(uri: vscode.Uri): Promise<vscode.Uri | undefined> {
+    private async tryCopyFileIntoWorkspace(
+        uri: vscode.Uri,
+        askForCopy = true
+    ): Promise<[boolean, vscode.Uri | undefined]> {
         if (!node.isAvailable()) {
             await vscode.window.showErrorMessage(`File must be in the a subfolder of the EDA project root.`, {
                 detail: `File "${uri.path}" is not in folder "${this.getRoot().path}".`,
                 modal: true
             });
-            return;
+            return [false, undefined];
         }
 
-        const answer = await vscode.window.showInformationMessage(
-            `Copy file into workspace?`,
-            {
-                detail: `File "${uri.path}" is not in folder "${
-                    this.getRoot().path
-                }". Do you want to copy it into the project workspace?`,
-                modal: true
-            },
-            'Yes',
-            'No'
-        );
-        if (answer === 'Yes') {
+        let answer: 'Only this file' | 'Yes to all' | 'No' = 'Yes to all';
+        if (askForCopy)
+            answer =
+                (await vscode.window.showInformationMessage(
+                    `Copy file into workspace?`,
+                    {
+                        detail: `The selected file "${uri.path}" is not in the workspace folder. 
+                        Do you want to copy it into the project workspace?`,
+                        modal: true
+                    },
+                    'Yes to all',
+                    'Only this file'
+                )) ?? 'No';
+
+        if (answer === 'Only this file' || answer === 'Yes to all') {
             const targetDir = vscode.Uri.joinPath(this.getRoot(), 'src');
             const target = vscode.Uri.joinPath(targetDir, path.basename(uri.path));
 
-            return new Promise((resolve, reject) => {
-                node.fs().mkdir(targetDir.fsPath, {recursive: true}, (err) => {
-                    if (err) {
-                        reject();
-                        void vscode.window.showErrorMessage(`Failed to copy file: ${err}`);
-                        return;
-                    }
+            const newUri: vscode.Uri | undefined = await new Promise(
+                (resolve: (newUri: vscode.Uri) => void, reject) => {
+                    node.fs().mkdir(targetDir.fsPath, {recursive: true}, (err) => {
+                        if (err) {
+                            reject();
+                            void vscode.window.showErrorMessage(`Failed to copy file: ${err}`);
+                            return;
+                        }
 
-                    node.fs().copyFile(uri.fsPath, target.fsPath, () => {
-                        resolve(target);
+                        node.fs().copyFile(uri.fsPath, target.fsPath, () => {
+                            resolve(target);
+                        });
                     });
-                });
-            });
+                }
+            );
+            return [answer === 'Yes to all', newUri];
         }
 
-        return;
+        return [false, undefined];
     }
 
     async addOutputFileUris(fileUris: vscode.Uri[], targetId: string): Promise<void> {
         const filePaths = [];
         for (let fileUri of fileUris) {
             // eslint-disable-next-line prefer-const
-            let [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
-            if (!workspaceRelativePath) {
-                const copiedFileUri = await this.tryCopyFileIntoWorkspace(fileUri);
-                if (!copiedFileUri) continue;
-
-                fileUri = copiedFileUri;
-                folderRelativePath = path.relative(this.getRoot().path, fileUri.path);
-            }
+            const [_workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
             if (!folderRelativePath) continue;
 
             filePaths.push(folderRelativePath);
