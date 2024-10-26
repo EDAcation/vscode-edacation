@@ -4,6 +4,7 @@ import type {NextpnrConfiguration, NextpnrTargetConfiguration, TargetConfigurati
 import {defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
+import {type PotentialError} from '../util';
 
 import EDATargetValueList from './EDATargetValueList.vue';
 
@@ -28,10 +29,22 @@ export default defineComponent({
             console.log('nextpnr target', this.target, this.targetIndex, nextpnr, nextpnr ?? {});
             return nextpnr ?? {};
         },
-        generated(): ReturnType<typeof generateNextpnrWorkerOptions> | null {
-            if (!this.target) return null;
+        generated(): PotentialError<ReturnType<typeof generateNextpnrWorkerOptions> | null> {
+            if (!this.target || !this.state.project) return {status: 'ok', res: null};
 
-            return generateNextpnrWorkerOptions(this.state.project!.configuration, this.target.id);
+            try {
+                const options = generateNextpnrWorkerOptions(this.state.project.configuration, this.target.id);
+                return {status: 'ok', res: options};
+            } catch (err: any) {
+                console.trace(`Error generating Nextpnr worker options: ${err}`);
+                return {status: 'error', err: err as Error};
+            }
+        },
+        generatedError(): Error | null {
+            return this.generated.status === 'error' ? this.generated.err : null;
+        },
+        generatedOptions(): ReturnType<typeof generateNextpnrWorkerOptions> | null {
+            return this.generated.status === 'ok' ? this.generated.res : null;
         }
     },
     data() {
@@ -48,9 +61,10 @@ export default defineComponent({
 <template>
     <template v-if="nextpnr">
         <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem">
+            <code v-if="generatedError" style="color: red; grid-column: span 2">{{ generatedError }}</code>
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generated?.arguments ?? []"
+                :generated="generatedOptions?.arguments ?? []"
                 :parse="parseNextpnrArguments"
                 workerId="nextpnr"
                 workerName="nextpnr"
@@ -63,7 +77,7 @@ export default defineComponent({
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generated?.inputFiles ?? []"
+                :generated="generatedOptions?.inputFiles ?? []"
                 workerId="nextpnr"
                 workerName="nextpnr"
                 configId="inputFiles"
@@ -76,7 +90,7 @@ export default defineComponent({
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generated?.outputFiles ?? []"
+                :generated="generatedOptions?.outputFiles ?? []"
                 workerId="nextpnr"
                 workerName="nextpnr"
                 configId="outputFiles"
