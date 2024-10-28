@@ -47,6 +47,7 @@ export default defineComponent({
             workerId="yosys"
             configId="topLevelModule"
             configName="Top-level module name"
+            placeholder="Automatic (Verilog only)"
         />
     </div>
 </template>

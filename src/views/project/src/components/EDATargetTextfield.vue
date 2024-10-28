@@ -34,6 +34,10 @@ export default defineComponent({
         configName: {
             type: String,
             required: true
+        },
+        placeholder: {
+            type: String,
+            required: false
         }
     },
     data() {
@@ -129,7 +133,7 @@ export default defineComponent({
 
 <template>
     <div>
-        <vscode-text-field placeholder="automatic" :value="effectiveConfig" @input="handleTextfieldChange">
+        <vscode-text-field :placeholder="placeholder" :value="effectiveConfig" @input="handleTextfieldChange">
             {{ configName }}
         </vscode-text-field>
     </div>

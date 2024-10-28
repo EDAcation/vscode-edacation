@@ -58,7 +58,7 @@ export default defineComponent({
 </script>
 
 <template>
-    <vscode-text-field placeholder="automatic" :value="topLevelModule" @input="handleTLMChange">
+    <vscode-text-field placeholder="Automatic (Verilog only)" :value="topLevelModule" @input="handleTLMChange">
         Top-level module
     </vscode-text-field>
 </template>
