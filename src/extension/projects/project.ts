@@ -192,6 +192,21 @@ export class Project extends BaseProject {
         if (doSave) await this.save();
     }
 
+    async setTopLevelModule(targetId: string, module: string) {
+        const target = this.getTarget(targetId);
+        if (!target) throw new Error(`Target "${targetId} does not exist!`);
+
+        // Ensure the config tree exists
+        // We don't care about setting missing defaults, as this is target-level configuration,
+        // so any missing properties will fallback to project-level config.
+        if (!target.yosys) target.yosys = {};
+        if (!target.yosys.options) target.yosys.options = {};
+
+        target.yosys.options.topLevelModule = module;
+
+        await this.save();
+    }
+
     async removeInputFiles(filePaths: string[]): Promise<void> {
         if (!filePaths.length) return;
 

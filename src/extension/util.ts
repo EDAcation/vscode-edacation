@@ -1,3 +1,4 @@
+import {FILE_EXTENSIONS_HDL} from 'edacation';
 import path from 'path';
 import * as vscode from 'vscode';
 
@@ -52,12 +53,9 @@ export const encodeJSON = (input: unknown, pretty = false) =>
 export const decodeText = (input: BufferSource): string => textDecoder.decode(input);
 export const decodeJSON = (input: BufferSource): unknown => JSON.parse(decodeText(input));
 
-export const FILE_EXTENSIONS_VERILOG = ['v', 'vh', 'sv', 'svh'];
-export const FILE_EXTENSIONS_VHDL = ['vhd'];
-
 export const FILE_FILTERS_HDL = {
     /* eslint-disable-next-line @typescript-eslint/naming-convention */
-    'HDL (*.v, *.vh, *.sv, *.svh, *.vhd)': [...FILE_EXTENSIONS_VERILOG, ...FILE_EXTENSIONS_VHDL]
+    'HDL (*.v, *.vh, *.sv, *.svh, *.vhd, *.vhdl)': FILE_EXTENSIONS_HDL
 };
 
 export const asWorkspaceRelativeFolderPath = (folderUri: vscode.Uri) =>
