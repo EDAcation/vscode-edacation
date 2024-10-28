@@ -1,12 +1,25 @@
 <script lang="ts">
-import {provideVSCodeDesignSystem, vsCodeButton, vsCodeDivider, vsCodeDropdown, vsCodeOption} from '@vscode/webview-ui-toolkit';
+import {
+    provideVSCodeDesignSystem,
+    vsCodeButton,
+    vsCodeDivider,
+    vsCodeDropdown,
+    vsCodeOption,
+    vsCodeTextField
+} from '@vscode/webview-ui-toolkit';
 
 import {vscode} from '../../vscode';
 
 import EDAProjectActions from './components/EDAProjectActions.vue';
 import {state} from './state';
 
-provideVSCodeDesignSystem().register(vsCodeButton(), vsCodeDropdown(), vsCodeOption(), vsCodeDivider());
+provideVSCodeDesignSystem().register(
+    vsCodeButton(),
+    vsCodeDropdown(),
+    vsCodeOption(),
+    vsCodeDivider(),
+    vsCodeTextField()
+);
 
 export default {
     components: {
