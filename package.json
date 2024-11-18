@@ -392,7 +392,7 @@
         "@types/which": "^3.0.4",
         "@typescript-eslint/eslint-plugin": "^8.5.0",
         "@typescript-eslint/parser": "^8.5.0",
-        "@vscode/test-web": "^0.0.60",
+        "@vscode/test-web": "^0.0.63",
         "@vue/compiler-sfc": "^3.4.13",
         "@vue/tsconfig": "^0.5.1",
         "assert": "^2.1.0",
@@ -421,7 +421,7 @@
         "path-browserify": "^1.0.1",
         "tar-fs": "^3.0.6",
         "vue": "^3.4.27",
-        "which": "^4.0.0",
+        "which": "^5.0.0",
         "yosys2digitaljs": "^0.8.0"
     }
 }
