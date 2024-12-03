@@ -1,7 +1,7 @@
 import '@vscode/codicons/dist/codicon.css';
 import {allComponents} from '@vscode/webview-ui-toolkit/dist/toolkit.js';
 import {getElementGroups} from 'edacation';
-import nextpnrViewer from 'nextpnr-viewer';
+import {NextPNRViewer} from 'nextpnr-viewer';
 
 import {vscode} from '../../vscode';
 
@@ -47,7 +47,7 @@ class View {
     private readonly root: HTMLDivElement;
     private state: State;
 
-    private viewer?: ReturnType<typeof nextpnrViewer>;
+    private viewer?: NextPNRViewer;
 
     private cellColors: Record<string, string> = {};
 
@@ -165,7 +165,9 @@ class View {
                 return;
             }
 
+            let didCreateViewer = false;
             if (!this.viewer) {
+                didCreateViewer = true;
                 // Clear root
                 this.root.replaceChildren();
 
@@ -175,7 +177,7 @@ class View {
                 // Render viewer
                 const elementViewer = document.createElement('div');
                 this.root.appendChild(elementViewer);
-                this.viewer = nextpnrViewer(elementViewer, {
+                this.viewer = new NextPNRViewer(elementViewer, {
                     width,
                     height,
                     cellColors: this.cellColors,
@@ -184,7 +186,13 @@ class View {
             }
 
             // Render nextpnr document
-            this.viewer.showJson(JSON.stringify(data));
+            const viewer = this.viewer;
+            viewer.showJson(JSON.stringify(data)).then(() => {
+                // Delay first render until after showJson is called, this allows for internal optimizations
+                if (didCreateViewer) {
+                    viewer.render();
+                }
+            });
         } catch (err) {
             this.handleError(err);
         }
