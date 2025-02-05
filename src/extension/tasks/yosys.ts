@@ -166,20 +166,21 @@ class YosysSynthTerminalTask extends BaseYosysTerminalTask {
     async handleEnd(project: Project, workerOptions: YosysWorkerOptions, outputFiles: TaskOutputFile[]) {
         await super.handleEnd(project, workerOptions, outputFiles);
 
-        // Find LUT file
-        const lutFile = outputFiles.find((file) => file.path.endsWith('luts.yosys.json'));
-        if (!lutFile) return;
-        const uri = vscode.Uri.joinPath(project.getRoot(), lutFile.path);
+        // Find synthesis file
+        const outFiles = outputFiles.filter((file) => file.path.endsWith('.json'));
+        if (outFiles.length !== 1) return;
+        const synthUri = vscode.Uri.joinPath(project.getRoot(), outFiles[0].path);
+        const lutUri = vscode.Uri.joinPath(project.getRoot(), 'luts.yosys.json');
 
-        // Update LUT file
-        const oldContent = await vscode.workspace.fs.readFile(uri);
+        // Write LUT file
+        const oldContent = await vscode.workspace.fs.readFile(synthUri);
         const newContent = encodeJSON({
             type: 'luts',
             data: decodeJSON(oldContent)
         });
-        await vscode.workspace.fs.writeFile(uri, newContent);
+        await vscode.workspace.fs.writeFile(lutUri, newContent);
 
         // Open LUT file
-        await vscode.commands.executeCommand('vscode.open', uri);
+        await vscode.commands.executeCommand('vscode.open', lutUri);
     }
 }
