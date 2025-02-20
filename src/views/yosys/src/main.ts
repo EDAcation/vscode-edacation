@@ -92,7 +92,7 @@ export class View {
         }
 
         if (fileData['type'] === 'rtl' || fileData['type'] === 'luts') {
-            return new DiagramViewer(this, fileData['data']);
+            return new DiagramViewer(this, fileData['data'], fileData['type']);
         } else if (fileData['type'] === 'stats') {
             return new StatsViewer(this, fileData['data']);
         } else {

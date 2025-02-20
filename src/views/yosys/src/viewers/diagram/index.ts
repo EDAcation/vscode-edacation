@@ -2,6 +2,7 @@ import {Circuit, getCellTypeStr} from 'digitaljs';
 import {getElementGroups} from 'edacation';
 import {yosys2digitaljs} from 'yosys2digitaljs';
 
+import type {View} from '../../main';
 import type {ForeignViewMessage} from '../../messages';
 import type {YosysRTL} from '../../types';
 import {BaseViewer} from '../base';
@@ -18,8 +19,10 @@ interface ButtonCallback {
 
 // type CellAttrDef = Record<string, CellAttrDef>;
 interface CellAttrDef {
-    [key: string]: CellAttrDef | string;
+    [key: string]: CellAttrDef | string | number;
 }
+
+export type DiagramType = 'rtl' | 'luts';
 
 const getSvg = (svgElem: Element, width: number, height: number): string => {
     // Filter conveniently labeled foreign objects from element
@@ -41,7 +44,8 @@ const getSvg = (svgElem: Element, width: number, height: number): string => {
 };
 
 export class DiagramViewer extends BaseViewer<YosysRTL> {
-    private subCircuitButtons = [
+    private readonly diagramType: DiagramType;
+    private readonly subCircuitButtons = [
         {
             id: 'exportSvg',
             buttonText: 'SVG',
@@ -59,6 +63,12 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
         }
     ];
 
+    constructor(mainView: View, initData: YosysRTL, diagramType: DiagramType) {
+        super(mainView, initData);
+
+        this.diagramType = diagramType;
+    }
+
     handleForeignViewMessage(message: ForeignViewMessage): void {
         console.log('Foreign message:');
         console.log(message);
@@ -71,13 +81,27 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
         // Generate table for custom cell colors
         const cellAttrs: Record<string, CellAttrDef> = {};
         for (const [name, group] of getElementGroups().entries()) {
-            const cellName = getCellTypeStr('$' + name);
+            const fullName = '$' + name;
+
+            cellAttrs[fullName] = {body: {fill: group.color}};
+
+            const cellName = getCellTypeStr('$' + fullName);
             if (!cellName) {
                 continue; // Not supported
             }
             cellAttrs[cellName] = {body: {fill: group.color}};
         }
-        cellAttrs['Subcircuit'] = {body: {stroke: 'blue'}};
+
+        if (this.diagramType === 'luts') {
+            // In LUTS mode all 'luts' are rendered as subcircuits.
+            // We explicitly hide the subcircuit 'peek' feature so that
+            // people do not look inside the cells, as this is not rendered properly.
+            cellAttrs['Subcircuit'] = {tooltip: {width: 0, height: 0}};
+        } else {
+            // In RTL mode, highlight all subcircuits instead to make it
+            // more clear that they can be opened and explored.
+            cellAttrs['Subcircuit'] = {body: {stroke: 'blue'}};
+        }
 
         // Initialize circuit
         const circuit = new Circuit(digitalJs, {subcircuitButtons: this.subCircuitButtons, cellAttributes: cellAttrs});
