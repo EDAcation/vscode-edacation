@@ -170,7 +170,7 @@ class YosysSynthTerminalTask extends BaseYosysTerminalTask {
         const outFiles = outputFiles.filter((file) => file.path.endsWith('.json'));
         if (outFiles.length !== 1) return;
         const synthUri = vscode.Uri.joinPath(project.getRoot(), outFiles[0].path);
-        const lutUri = vscode.Uri.joinPath(project.getRoot(), 'luts.yosys.json');
+        const lutUri = vscode.Uri.parse(path.join(path.dirname(synthUri.path), 'luts.yosys.json'));
 
         // Write LUT file
         const oldContent = await vscode.workspace.fs.readFile(synthUri);
@@ -179,6 +179,8 @@ class YosysSynthTerminalTask extends BaseYosysTerminalTask {
             data: decodeJSON(oldContent)
         });
         await vscode.workspace.fs.writeFile(lutUri, newContent);
+
+        await project.addOutputFileUris([lutUri], workerOptions.target.id);
 
         // Open LUT file
         await vscode.commands.executeCommand('vscode.open', lutUri);
