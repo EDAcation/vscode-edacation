@@ -109,24 +109,18 @@ export const offerSaveFile = async (
 
 export const getParentUri = (uri: vscode.Uri): vscode.Uri => vscode.Uri.file(path.dirname(uri.fsPath));
 
-export const findProjectRoot = (fileUri: vscode.Uri): vscode.Uri | undefined => {
+export const findProjectRoot = (fileUri: vscode.Uri): vscode.Uri | null => {
     const workspaces = vscode.workspace.workspaceFolders;
+    if (!workspaces) return null;
 
-    const workspaceUris = workspaces?.map((ws) => ws.uri.fsPath);
-    if (!workspaceUris) {
-        return;
-    }
-
-    let path = fileUri;
-    while (workspaceUris.indexOf(path.fsPath) === -1) {
-        const newPath = getParentUri(path);
-        if (newPath === path) {
-            // Prevent possible infinite loop
-            return;
+    for (const workspace of workspaces) {
+        const wuri = workspace.uri;
+        if (fileUri.fsPath.startsWith(wuri.fsPath)) {
+            return wuri;
         }
-        path = newPath;
     }
-    return path;
+
+    return null;
 };
 
 export const ensureEndOfLine = (input: string) => {
