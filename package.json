@@ -5,7 +5,7 @@
     "description": "Learning environment for digital hardware design with Yosys and nextpnr.",
     "repository": "github:EDAcation/vscode-edacation",
     "license": "MIT",
-    "version": "0.6.1",
+    "version": "0.7.3",
     "contributors": [
         "Danielle Huisman <danielle@huisman.me> (https://github.com/DanielleHuisman)",
         "Daan Middelkoop <daantje676@gmail.com>",
@@ -415,13 +415,13 @@
         "@vscode/codicons": "^0.0.36",
         "@vscode/webview-ui-toolkit": "^1.3.1",
         "digitaljs": "github:EDAcation/digitaljs#next",
-        "edacation": "^0.3.11",
+        "edacation": "^0.3.12",
         "nextpnr-viewer": "^0.7.3",
         "os-browserify": "^0.3.0",
         "path-browserify": "^1.0.1",
         "tar-fs": "^3.0.6",
         "vue": "^3.4.27",
         "which": "^5.0.0",
-        "yosys2digitaljs": "^0.8.0"
+        "yosys2digitaljs": "github:EDAcation/yosys2digitaljs#next"
     }
 }
