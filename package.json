@@ -28,6 +28,9 @@
     ],
     "main": "./dist/extension/extension.js",
     "browser": "./dist/extension/extension.js",
+    "extensionDependencies": [
+        "sndst00m.vscode-native-svg-preview"
+    ],
     "contributes": {
         "configuration": {
             "title": "EDAcation",
