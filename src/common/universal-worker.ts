@@ -67,8 +67,9 @@ export class UniversalWorker {
 
     public sendMessage(
         message: WorkerMessage,
-        transferList?: StructuredSerializeOptions & readonly TransferListItem[]
+        transferList?: ArrayBufferLike[]
     ) {
+        // @ts-ignore: node + web type clashing shenanigans
         this.worker.worker.postMessage(message, transferList);
     }
 }

@@ -1,6 +1,5 @@
 import {decodeText, encodeText} from 'edacation';
 import path from 'path';
-import type {TransferListItem} from 'worker_threads';
 
 import type {ExtensionMessage, MessageFile, WorkerMessage} from '../common/messages.js';
 import {importModule, onEvent, sendMessage} from '../common/universal-worker.js';
@@ -116,7 +115,8 @@ export class WorkerTool {
         onEvent('messageerror', this.handleMessageError.bind(this));
     }
 
-    protected send(message: ExtensionMessage, transferables: readonly TransferListItem[] & Transferable[] = []) {
+    protected send(message: ExtensionMessage, transferables: ArrayBufferLike[] = []) {
+        // @ts-ignore: node + web type clashing shenanigans
         sendMessage(message, transferables);
     }
 
