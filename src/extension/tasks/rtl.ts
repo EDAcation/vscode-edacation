@@ -1,5 +1,5 @@
 import {type YosysWorkerOptions, encodeText, generateYosysRTLCommands} from 'edacation';
-import {basename} from 'path-browserify';
+import {basename} from 'path';
 import * as vscode from 'vscode';
 
 import type {Project} from '../projects/index.js';

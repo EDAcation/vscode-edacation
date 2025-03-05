@@ -1,5 +1,5 @@
 import {type WorkerOptions as _WorkerOptions, decodeText} from 'edacation';
-import path from 'path-browserify';
+import path from 'path';
 import type * as vscode from 'vscode';
 
 import {type Project} from '../projects/index.js';
@@ -101,8 +101,7 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
 
         this.toolProvider.setRunContext({
             project,
-            command,
-            args,
+            steps: [{command, args}],
             inputFiles,
             outputFiles
         });

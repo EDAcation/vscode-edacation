@@ -4,7 +4,7 @@ import {
     generateYosysSynthPrepareCommands,
     getYosysWorkerOptions
 } from 'edacation';
-import path from 'path-browserify';
+import path from 'path';
 import * as vscode from 'vscode';
 
 import type {Project} from '../projects/index.js';

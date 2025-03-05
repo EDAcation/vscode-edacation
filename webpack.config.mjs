@@ -50,7 +50,7 @@ const extensionConfig = Object.assign({}, baseConfig, {
         alias: {},
         fallback: {
             assert: 'assert',
-            path: 'path-browserify'
+            path: 'path-browserify-win32'
         }
     },
     externals: {
@@ -106,7 +106,7 @@ const workerConfig = Object.assign({}, baseConfig, {
         },
         fallback: {
             crypto: false,
-            path: 'path-browserify'
+            path: 'path-browserify-win32'
         }
     },
     plugins: [
@@ -175,7 +175,7 @@ const viewsConfig = Object.assign({}, baseConfig, {
         },
         fallback: {
             crypto: false,
-            path: 'path-browserify',
+            path: 'path-browserify-win32',
             os: 'os-browserify'
         }
     },

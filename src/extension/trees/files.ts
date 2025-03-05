@@ -1,5 +1,5 @@
 import type {ProjectOutputFile, TargetConfiguration} from 'edacation';
-import {basename, extname} from 'path-browserify';
+import {basename, extname} from 'path';
 import * as vscode from 'vscode';
 
 import type {ProjectFile, Projects} from '../projects/index.js';
