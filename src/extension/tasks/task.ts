@@ -101,7 +101,8 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
 
         this.toolProvider.setRunContext({
             project,
-            steps: [{command, args}],
+            command,
+            args,
             inputFiles,
             outputFiles
         });
