@@ -1,4 +1,4 @@
-import {type NextpnrWorkerOptions, VENDORS, getNextpnrWorkerOptions} from 'edacation';
+import {type NextpnrWorkerOptions, VENDORS, WorkerStep, getNextpnrWorkerOptions} from 'edacation';
 import * as vscode from 'vscode';
 
 import type {Project} from '../projects/index.js';
@@ -38,12 +38,8 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
         return getNextpnrWorkerOptions(project, targetId);
     }
 
-    getInputCommand(workerOptions: NextpnrWorkerOptions): string {
-        return workerOptions.tool;
-    }
-
-    getInputArgs(workerOptions: NextpnrWorkerOptions): string[] {
-        return workerOptions.arguments;
+    getWorkerSteps(workerOptions: NextpnrWorkerOptions): WorkerStep[] {
+        return workerOptions.steps;
     }
 
     getInputFiles(workerOptions: NextpnrWorkerOptions): TaskIOFile[] {

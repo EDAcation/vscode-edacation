@@ -1,4 +1,5 @@
 import {
+    YosysStep,
     type YosysWorkerOptions,
     generateYosysSynthCommands,
     generateYosysSynthPrepareCommands,
@@ -32,12 +33,17 @@ export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOpti
         return getYosysWorkerOptions(project, targetId);
     }
 
-    getInputCommand(workerOptions: YosysWorkerOptions): string {
-        return workerOptions.tool;
-    }
+    getWorkerSteps(workerOptions: YosysWorkerOptions): YosysStep[] {
+        const step = workerOptions.steps[0];
+        if (step === undefined) throw new Error('No steps to execute in worker options!');
 
-    getInputArgs(workerOptions: YosysWorkerOptions): string[] {
-        return [path.join(workerOptions.target.directory ?? '.', 'temp', 'design.ys')];
+        return [
+            {
+                tool: step.tool,
+                arguments: [path.join(workerOptions.target.directory ?? '.', 'temp', 'design.ys')],
+                commands: step.commands
+            }
+        ];
     }
 
     getInputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
