@@ -200,7 +200,12 @@
             {
                 "command": "edacation.runNextpnr",
                 "category": "EDAcation",
-                "title": "Place and Route using nextpnr"
+                "title": "Place and Route using NextPNR"
+            },
+            {
+                "command": "edacation.runIverilog",
+                "category": "EDAcation",
+                "title": "Generate waveform using Icarus Verilog"
             }
         ],
         "customEditors": [

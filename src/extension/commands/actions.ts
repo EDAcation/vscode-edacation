@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 
 import {ProjectEditor} from '../editors/index.js';
 import type {Project} from '../projects/index.js';
-import {NextpnrTaskProvider, RTLTaskProvider, YosysTaskProvider} from '../tasks/index.js';
+import {IVerilogTaskProvider, NextpnrTaskProvider, RTLTaskProvider, YosysTaskProvider} from '../tasks/index.js';
 
 import {CurrentProjectCommand} from './base.js';
 
@@ -94,6 +94,18 @@ export class RunNextpnrCommand extends RunTaskCommand {
     getTaskFilter() {
         return {
             type: NextpnrTaskProvider.getType()
+        };
+    }
+}
+
+export class RunIVerilogCommand extends RunTaskCommand {
+    static getID() {
+        return 'edacation.runIverilog';
+    }
+
+    getTaskFilter() {
+        return {
+            type: IVerilogTaskProvider.getType()
         };
     }
 }
