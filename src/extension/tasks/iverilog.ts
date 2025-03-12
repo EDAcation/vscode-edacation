@@ -66,9 +66,9 @@ class NextpnrTerminalTask extends TerminalTask<IVerilogWorkerOptions> {
         );
         this.println();
 
-        const vddFile = outputFiles.find((file) => file.path.endsWith('.vdd'));
-        if (!vddFile) return;
-        const uri = vscode.Uri.joinPath(project.getRoot(), vddFile.path);
+        const vcdFile = outputFiles.find((file) => file.path.endsWith('.vcd'));
+        if (!vcdFile) return;
+        const uri = vscode.Uri.joinPath(project.getRoot(), vcdFile.path);
 
         // Open file in editor
         await vscode.commands.executeCommand('vscode.open', uri);
