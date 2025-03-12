@@ -11,6 +11,7 @@ interface Platform {
 interface AvailableTool {
     friendly_name: string;
     tool: string;
+    provides: string[];
     arch: string;
     version: string;
     download_url: string;
@@ -113,6 +114,18 @@ export class ManagedTool {
         private extensionContext: vscode.ExtensionContext,
         private tool: string
     ) {}
+
+    static async fromCommand(context: vscode.ExtensionContext, command: string): Promise<ManagedTool | null> {
+        const tools = await this.getLatestTools();
+
+        for (const tool of tools) {
+            if (tool.provides.includes(command)) {
+                return new ManagedTool(context, tool.tool);
+            }
+        }
+
+        return null;
+    }
 
     getId(): string {
         return this.tool;
@@ -252,7 +265,7 @@ export class ManagedTool {
         await vscode.workspace.fs.delete(toolDir, {recursive: true, useTrash: false});
     }
 
-    async getExecutionOptions(): Promise<NativeToolExecutionOptions | null> {
+    async getExecutionOptions(command: string = this.tool): Promise<NativeToolExecutionOptions | null> {
         const platform = await ManagedTool.getPlatform();
         const toolDir = await this.getDir();
 
@@ -261,7 +274,7 @@ export class ManagedTool {
         const existingPath = node.process().env['PATH'] ?? '';
         const pathStr = existingPath + pathSep + paths.join(`${pathSep}`);
 
-        const executableName = platform.os === 'windows' ? `${this.tool}.exe` : this.tool;
+        const executableName = platform.os === 'windows' ? `${command}.exe` : command;
 
         const entrypoint = vscode.Uri.joinPath(toolDir, 'bin', executableName);
         try {

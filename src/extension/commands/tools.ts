@@ -59,10 +59,17 @@ export class InstallToolCommand extends ManagedToolCommand {
         return 'edacation.installTool';
     }
 
-    override async exec(...toolNames: string[]): Promise<void> {
-        let tools: ManagedTool[];
-        if (toolNames.length) {
-            tools = toolNames.map((toolName) => new ManagedTool(this.context, toolName));
+    override async exec(...toolCommands: string[]): Promise<void> {
+        let tools: ManagedTool[] = [];
+        if (toolCommands.length) {
+            for (const command of toolCommands) {
+                const tool = await ManagedTool.fromCommand(this.context, command);
+                if (!tool) {
+                    void vscode.window.showErrorMessage(`Could not find managed tool providing "${command}"`);
+                    return;
+                }
+                tools.push(tool);
+            }
         } else {
             const suggestedTools = await vscode.window.withProgress(
                 {location: vscode.ProgressLocation.Window},
@@ -71,31 +78,31 @@ export class InstallToolCommand extends ManagedToolCommand {
             tools = await pickTools(suggestedTools, 'Select tools to (re)install');
         }
 
-        await Promise.all(
-            tools.map(async (tool) => {
-                try {
-                    let prevProgress = 0;
-                    await vscode.window.withProgress(
-                        {title: `Installing ${tool.getName()}...`, location: vscode.ProgressLocation.Notification},
-                        (msgProgress) =>
-                            tool.install((dlProgress) => {
-                                if (!dlProgress) return msgProgress.report({increment: undefined});
+        await Promise.all(tools.map((tool) => this.installTool(tool)));
+    }
 
-                                // Convert from 0 - 1 to 0 - 100
-                                const curProgress = dlProgress * 100;
-                                msgProgress.report({increment: curProgress - prevProgress});
-                                prevProgress = curProgress;
-                            })
-                    );
-                } catch (err) {
-                    void vscode.window.showErrorMessage(`Error while installing tool: ${err}`);
-                    console.error(err);
-                    return;
-                }
+    private async installTool(tool: ManagedTool) {
+        try {
+            let prevProgress = 0;
+            await vscode.window.withProgress(
+                {title: `Installing ${tool.getName()}...`, location: vscode.ProgressLocation.Notification},
+                (msgProgress) =>
+                    tool.install((dlProgress) => {
+                        if (!dlProgress) return msgProgress.report({increment: undefined});
 
-                void vscode.window.showInformationMessage(`Successfully installed ${tool.getName()}`);
-            })
-        );
+                        // Convert from 0 - 1 to 0 - 100
+                        const curProgress = dlProgress * 100;
+                        msgProgress.report({increment: curProgress - prevProgress});
+                        prevProgress = curProgress;
+                    })
+            );
+        } catch (err) {
+            void vscode.window.showErrorMessage(`Error while installing tool: ${err}`);
+            console.error(err);
+            return;
+        }
+
+        void vscode.window.showInformationMessage(`Successfully installed ${tool.getName()}`);
     }
 }
 

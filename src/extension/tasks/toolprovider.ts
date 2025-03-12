@@ -283,8 +283,13 @@ export class ManagedToolProvider extends NativeToolProvider {
     }
 
     protected async getToolInfoStatus(command: string): Promise<ToolInfoStatus> {
-        const tool = new ManagedTool(this.extensionContext, command);
-        const execOptions = await tool.getExecutionOptions();
+        const tool = await ManagedTool.fromCommand(this.extensionContext, command);
+        if (!tool)
+            return {
+                status: 'missing',
+                tool: command
+            };
+        const execOptions = await tool.getExecutionOptions(command);
 
         // If already installed & valid, return here
         if (execOptions)
@@ -304,7 +309,7 @@ export class ManagedToolProvider extends NativeToolProvider {
 
         const missingTools = statuses.filter((info) => info.status === 'missing');
         if (missingTools.length) {
-            const toolsStr = missingTools.map((tool) => tool.tool).join(', ');
+            const toolsStr = [...new Set(missingTools.map((tool) => tool.tool))].join(', ');
             this.println(`Installing missing tools: ${toolsStr}`);
             await vscode.commands.executeCommand('edacation.installTool', ...missingTools.map((info) => info.tool));
         }
