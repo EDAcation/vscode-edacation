@@ -1,4 +1,6 @@
 import {type IVerilogWorkerOptions, WorkerStep, getIVerilogWorkerOptions} from 'edacation';
+import {getTargetFile} from 'edacation/dist/project/target';
+import path from 'path';
 import * as vscode from 'vscode';
 
 import type {Project} from '../projects/index.js';
@@ -54,7 +56,7 @@ class IVerilogTerminalTask extends TerminalTask<IVerilogWorkerOptions> {
         this.println();
     }
 
-    async handleEnd(project: Project, _workerOptions: IVerilogWorkerOptions, outputFiles: TaskOutputFile[]) {
+    async handleEnd(project: Project, workerOptions: IVerilogWorkerOptions, outputFiles: TaskOutputFile[]) {
         this.println();
         this.println(
             `Finished generating waveform for EDA project "${project.getName()}" using Icarus Verilog.`,
@@ -65,9 +67,15 @@ class IVerilogTerminalTask extends TerminalTask<IVerilogWorkerOptions> {
 
         const vcdFile = outputFiles.find((file) => file.path.endsWith('.vcd'));
         if (!vcdFile) return;
-        const uri = vscode.Uri.joinPath(project.getRoot(), vcdFile.path);
+
+        // VPP places the file in the root directory with no real way to configure this,
+        // so we move it to its respective target directory first
+        const oldUri = project.getFileUri(path.basename(vcdFile.path));
+        const newUri = project.getFileUri(getTargetFile(workerOptions.target, path.basename(vcdFile.path)));
+
+        await vscode.workspace.fs.rename(oldUri, newUri, {overwrite: true});
 
         // Open file in editor
-        await vscode.commands.executeCommand('vscode.open', uri);
+        await vscode.commands.executeCommand('vscode.open', newUri);
     }
 }
