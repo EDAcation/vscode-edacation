@@ -22,22 +22,19 @@ export class IVerilogTaskProvider extends TaskProvider {
         definition: TaskDefinition
     ): TaskTerminal<IVerilogWorkerOptions> {
         const provider = getConfiguredProvider(this.context);
-        const task = new NextpnrTerminalTask(provider);
+        const task = new IVerilogTerminalTask(provider);
 
         return new TaskTerminal(this.projects, folder, definition, [task]);
     }
 }
 
-class NextpnrTerminalTask extends TerminalTask<IVerilogWorkerOptions> {
+class IVerilogTerminalTask extends TerminalTask<IVerilogWorkerOptions> {
     getName(): string {
         return IVerilogTaskProvider.getType();
     }
 
     getWorkerOptions(project: Project, targetId: string): IVerilogWorkerOptions {
-        // TODO: properly integrate this
-        const testbenches = project.getInputFileUris().filter((f) => f.path.endsWith('_tb.v'));
-        if (testbenches.length === 0) throw new Error('No testbench files!');
-        return getIVerilogWorkerOptions(project, targetId, '');
+        return getIVerilogWorkerOptions(project, targetId);
     }
 
     getWorkerSteps(workerOptions: IVerilogWorkerOptions): WorkerStep[] {

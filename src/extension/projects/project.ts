@@ -2,6 +2,7 @@ import {
     Project as BaseProject,
     DEFAULT_CONFIGURATION,
     type ProjectConfiguration,
+    ProjectInputFileState,
     type ProjectOutputFileState,
     type ProjectState
 } from 'edacation';
@@ -12,16 +13,6 @@ import * as node from '../../common/node-modules.js';
 import {asWorkspaceRelativeFolderPath, decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util.js';
 
 import type {Projects} from './projects.js';
-
-export interface ProjectFile {
-    path: string;
-    uri: vscode.Uri;
-}
-
-interface ProjectFileData {
-    uri: vscode.Uri;
-    watcher: vscode.FileSystemWatcher;
-}
 
 type FileWatcherCallback = (uri: vscode.Uri) => void;
 
@@ -41,14 +32,14 @@ export class Project extends BaseProject {
     private uri: vscode.Uri;
     private root: vscode.Uri;
     private relativeRoot: string;
-    private inputFileInfo: Map<string, ProjectFileData>;
-    private outputFileInfo: Map<string, ProjectFileData>;
+    private inputFileInfo: Map<string, vscode.FileSystemWatcher>;
+    private outputFileInfo: Map<string, vscode.FileSystemWatcher>;
 
     constructor(
         projects: Projects,
         uri: vscode.Uri,
         name?: string,
-        inputFiles: string[] = [],
+        inputFiles: string[] | ProjectInputFileState[] = [],
         outputFiles: string[] | ProjectOutputFileState[] = [],
         configuration: ProjectConfiguration = DEFAULT_CONFIGURATION
     ) {
@@ -63,17 +54,17 @@ export class Project extends BaseProject {
         this.relativeRoot = asWorkspaceRelativeFolderPath(this.root);
 
         this.inputFileInfo = new Map();
-        for (const file of inputFiles) {
-            const uri = vscode.Uri.joinPath(this.getRoot(), file);
-            const watcher = getFileWatcher(uri, undefined, () => void this.removeInputFiles([file]));
-            this.inputFileInfo.set(file, {uri, watcher});
+        for (const file of this.getInputFiles()) {
+            const uri = vscode.Uri.joinPath(this.getRoot(), file.path);
+            const watcher = getFileWatcher(uri, undefined, () => void this.removeInputFiles([file.path]));
+            this.inputFileInfo.set(file.path, watcher);
         }
 
         this.outputFileInfo = new Map();
         for (const file of this.getOutputFiles()) {
             const uri = vscode.Uri.joinPath(this.getRoot(), file.path);
             const watcher = getFileWatcher(uri, undefined, () => void this.removeOutputFiles([file.path]));
-            this.outputFileInfo.set(file.path, {uri, watcher});
+            this.outputFileInfo.set(file.path, watcher);
         }
 
         void this.cleanIOFiles();
@@ -95,20 +86,8 @@ export class Project extends BaseProject {
         return this.relativeRoot;
     }
 
-    getInputFileUris(): {path: string; uri: vscode.Uri}[] {
-        return Array.from(this.inputFileInfo.entries(), ([key, value]) => ({path: key, uri: value.uri}));
-    }
-
-    getInputFileUri(inputFile: string): vscode.Uri | undefined {
-        return this.inputFileInfo.get(inputFile)?.uri;
-    }
-
-    getOutputFileUris(): {path: string; uri: vscode.Uri}[] {
-        return Array.from(this.outputFileInfo.entries(), ([key, value]) => ({path: key, uri: value.uri}));
-    }
-
-    getOutputFileUri(outputFile: string): vscode.Uri | undefined {
-        return this.outputFileInfo.get(outputFile)?.uri;
+    getFileUri(path: string): vscode.Uri {
+        return vscode.Uri.joinPath(this.getRoot(), path);
     }
 
     getTargetDirectory(targetId: string): string {
@@ -120,22 +99,22 @@ export class Project extends BaseProject {
 
     private async cleanIOFiles() {
         const brokenInputFiles: string[] = [];
-        for (const [file, data] of this.inputFileInfo) {
+        for (const file of this.getInputFiles()) {
             try {
-                await vscode.workspace.fs.stat(data.uri);
+                await vscode.workspace.fs.stat(this.getFileUri(file.path));
             } catch {
-                console.warn(`Input file does not exist, removing: ${file}`);
-                brokenInputFiles.push(file);
+                console.warn(`Input file does not exist, removing: ${file.path}`);
+                brokenInputFiles.push(file.path);
             }
         }
 
         const brokenOutputFiles: string[] = [];
-        for (const [file, data] of this.outputFileInfo) {
+        for (const file of this.getOutputFiles()) {
             try {
-                await vscode.workspace.fs.stat(data.uri);
+                await vscode.workspace.fs.stat(this.getFileUri(file.path));
             } catch {
                 console.warn(`Output file does not exist, removing: ${file}`);
-                brokenOutputFiles.push(file);
+                brokenOutputFiles.push(file.path);
             }
         }
 
@@ -153,7 +132,7 @@ export class Project extends BaseProject {
     }
 
     async addInputFileUris(fileUris: vscode.Uri[]): Promise<void> {
-        const filePaths = [];
+        const files: {path: string; type: ProjectInputFileState['type']}[] = [];
         let askForCopy = true;
         for (let fileUri of fileUris) {
             let [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
@@ -167,19 +146,20 @@ export class Project extends BaseProject {
             }
             if (!folderRelativePath || this.hasInputFile(folderRelativePath)) continue;
 
-            filePaths.push(folderRelativePath);
-            this.inputFileInfo.set(folderRelativePath, {
-                uri: fileUri,
-                watcher: getFileWatcher(
+            // TODO: automatically set as testbench depending on file name
+            files.push({path: folderRelativePath, type: 'design'});
+            this.inputFileInfo.set(
+                folderRelativePath,
+                getFileWatcher(
                     fileUri,
                     () => void this.markOutputFilesStale(true),
                     () => void this.removeInputFiles([folderRelativePath || ''])
                 )
-            });
+            );
         }
-        if (filePaths.length === 0) return;
+        if (files.length === 0) return;
 
-        super.addInputFiles(filePaths);
+        super.addInputFiles(files);
         this.projects.emitInputFileChange();
         await this.markOutputFilesStale(false);
         await this.save();
@@ -211,7 +191,7 @@ export class Project extends BaseProject {
         if (!filePaths.length) return;
 
         for (const filePath of filePaths) {
-            this.inputFileInfo.get(filePath)?.watcher.dispose();
+            this.inputFileInfo.get(filePath)?.dispose();
             this.inputFileInfo.delete(filePath);
         }
 
@@ -285,14 +265,10 @@ export class Project extends BaseProject {
             filePaths.push(folderRelativePath);
 
             if (!this.hasOutputFile(folderRelativePath)) {
-                this.outputFileInfo.set(folderRelativePath, {
-                    uri: fileUri,
-                    watcher: getFileWatcher(
-                        fileUri,
-                        undefined,
-                        () => void this.removeOutputFiles([folderRelativePath || ''])
-                    )
-                });
+                this.outputFileInfo.set(
+                    folderRelativePath,
+                    getFileWatcher(fileUri, undefined, () => void this.removeOutputFiles([folderRelativePath || '']))
+                );
             }
         }
 
@@ -305,7 +281,7 @@ export class Project extends BaseProject {
 
     async removeOutputFiles(filePaths: string[]): Promise<void> {
         for (const filePath of filePaths) {
-            this.outputFileInfo.get(filePath)?.watcher.dispose();
+            this.outputFileInfo.get(filePath)?.dispose();
             this.outputFileInfo.delete(filePath);
         }
 

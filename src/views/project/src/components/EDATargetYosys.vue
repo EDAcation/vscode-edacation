@@ -1,5 +1,5 @@
 <script lang="ts">
-import {generateYosysWorkerOptions} from 'edacation';
+import {Project, generateYosysWorkerOptions} from 'edacation';
 import type {TargetConfiguration, YosysConfiguration, YosysTargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
@@ -33,9 +33,10 @@ export default defineComponent({
             if (!this.target || !this.state.project) return {status: 'ok', res: null};
 
             try {
+                const project = Project.deserialize(this.state.project);
                 const options = generateYosysWorkerOptions(
                     this.state.project.configuration,
-                    this.state.project.inputFiles,
+                    project.getInputFiles(),
                     this.target.id
                 );
                 return {status: 'ok', res: options};

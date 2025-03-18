@@ -1,19 +1,26 @@
-import type {ProjectOutputFile, TargetConfiguration} from 'edacation';
+import {ProjectInputFile, ProjectOutputFile, TargetConfiguration} from 'edacation';
 import {basename, extname} from 'path';
 import * as vscode from 'vscode';
 
-import type {ProjectFile, Projects} from '../projects/index.js';
+import type {Projects} from '../projects/index.js';
 
 import {BaseTreeDataProvider} from './base.js';
 
+type ProjectFile = ProjectInputFile | ProjectOutputFile;
+
 abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
     protected getFileTreeItem(file: ProjectFile, showPath = false): vscode.TreeItem {
+        const project = this.projects.getCurrent();
+        if (!project) {
+            return {};
+        }
+
         // Add 'stale' description if file is output file and stale
-        const outputFile = this.projects.getCurrent()?.getOutputFile(file.path) ?? null;
-        const isOld = outputFile && outputFile.stale;
+        const isOld = file instanceof ProjectOutputFile && file.stale;
+        const uri = project.getFileUri(file.path);
 
         return {
-            resourceUri: file.uri,
+            resourceUri: uri,
 
             label: basename(file.path),
             description: isOld ? '(stale)' : showPath,
@@ -25,7 +32,7 @@ abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
             command: {
                 title: 'Open file',
                 command: 'vscode.open',
-                arguments: [file.uri]
+                arguments: [uri]
             }
         };
     }
@@ -80,7 +87,7 @@ export class InputFilesProvider extends FilesProvider<ProjectFile> {
         // We do not want to nest input files
         if (element) return [];
 
-        return project.getInputFileUris().toSorted((a, b) => {
+        return project.getInputFiles().toSorted((a, b) => {
             if (a.path < b.path) return -1;
             if (a.path > b.path) return 1;
             return 0;
@@ -194,16 +201,13 @@ export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
                         if (fileType !== 'known' || file.targetId !== element.targetId) return [];
                     }
 
-                    const uri = project.getOutputFileUri(file.path);
+                    const uri = project.getFileUri(file.path);
                     if (!uri) return [];
 
                     return [
                         {
                             type: 'file',
-                            file: {
-                                path: file.path,
-                                uri
-                            }
+                            file
                         }
                     ];
                 })
@@ -222,16 +226,13 @@ export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
                 .getOutputFiles()
                 .filter((file) => getOutputFileType(file) === 'logs')
                 .flatMap((file): OutputFileTreeFile[] => {
-                    const uri = project.getOutputFileUri(file.path);
+                    const uri = project.getFileUri(file.path);
                     if (!uri) return [];
 
                     return [
                         {
                             type: 'file',
-                            file: {
-                                path: file.path,
-                                uri
-                            }
+                            file
                         }
                     ];
                 })

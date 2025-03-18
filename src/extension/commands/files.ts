@@ -1,6 +1,7 @@
+import {ProjectInputFile} from 'edacation';
 import * as vscode from 'vscode';
 
-import type {Project, ProjectFile} from '../projects/index.js';
+import type {Project} from '../projects/index.js';
 import {OutputFileTreeItem} from '../trees/files.js';
 import {FILE_FILTERS_HDL} from '../util.js';
 
@@ -59,7 +60,7 @@ export class RemoveInputFileCommand extends CurrentProjectCommand {
         return 'edacation.removeInputFile';
     }
 
-    async executeForCurrentProject(project: Project, file: ProjectFile) {
+    async executeForCurrentProject(project: Project, file: ProjectInputFile) {
         await project.removeInputFiles([file.path]);
     }
 }
@@ -93,7 +94,8 @@ export class TrashOutputFileCommand extends CurrentProjectCommand {
         await project.removeOutputFiles([treeItem.file.path]);
 
         try {
-            await vscode.workspace.fs.delete(treeItem.file.uri);
+            const uri = project.getFileUri(treeItem.file.path);
+            await vscode.workspace.fs.delete(uri);
         } catch {
             return;
         }
