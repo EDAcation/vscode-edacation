@@ -75,7 +75,7 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
 
         const pnrFile = outputFiles.find((file) => file.path.endsWith('routed.nextpnr.json'));
         if (!pnrFile) return;
-        const uri = vscode.Uri.joinPath(project.getRoot(), pnrFile.path);
+        const uri = project.getFileUri(pnrFile.path);
 
         const target = workerOptions.target;
         const deviceName = VENDORS[target.vendor]?.families[target.family].devices[target.device].device;

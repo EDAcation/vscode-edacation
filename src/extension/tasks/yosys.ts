@@ -175,7 +175,7 @@ class YosysSynthTerminalTask extends BaseYosysTerminalTask {
         // Find synthesis file
         const outFiles = outputFiles.filter((file) => file.path.endsWith('.json'));
         if (outFiles.length !== 1) return;
-        const synthUri = vscode.Uri.joinPath(project.getRoot(), outFiles[0].path);
+        const synthUri = project.getFileUri(outFiles[0].path);
         const lutUri = vscode.Uri.parse(path.join(path.dirname(synthUri.path), 'luts.yosys.json'));
 
         // Write LUT file

@@ -87,7 +87,7 @@ export class WebAssemblyToolProvider extends ToolProvider {
             if (file.data) {
                 files.push({path: file.path, data: file.data});
             } else {
-                const data = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(project.getRoot(), file.path));
+                const data = await vscode.workspace.fs.readFile(project.getFileUri(file.path));
 
                 files.push({
                     path: file.path,
@@ -173,7 +173,7 @@ abstract class NativeToolProvider extends ToolProvider {
         for (const file of ctx.inputFiles) {
             if (!file.data) continue;
 
-            const destUri = vscode.Uri.joinPath(ctx.project.getRoot(), file.path);
+            const destUri = ctx.project.getFileUri(file.path);
             await vscode.workspace.fs.writeFile(destUri, file.data);
         }
 

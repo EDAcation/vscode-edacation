@@ -291,7 +291,7 @@ export class TaskTerminal<WO extends WorkerOptions<any, any>> implements vscode.
                     for (const file of outputFiles) {
                         // Construct URI if missing
                         if (!file.uri) {
-                            file.uri = vscode.Uri.joinPath(this.curProject.getRoot(), file.path);
+                            file.uri = this.curProject.getFileUri(file.path);
                         }
 
                         // Save file data (if requested)

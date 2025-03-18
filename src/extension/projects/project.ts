@@ -56,15 +56,18 @@ export class Project extends BaseProject {
 
         this.inputFileInfo = new Map();
         for (const file of this.getInputFiles()) {
-            const uri = vscode.Uri.joinPath(this.getRoot(), file.path);
+            const uri = this.getFileUri(file.path);
             const watcher = getFileWatcher(uri, undefined, () => void this.removeInputFiles([file.path]));
             this.inputFileInfo.set(file.path, watcher);
         }
 
         this.outputFileInfo = new Map();
         for (const file of this.getOutputFiles()) {
-            const uri = vscode.Uri.joinPath(this.getRoot(), file.path);
-            const watcher = getFileWatcher(uri, undefined, () => void this.removeOutputFiles([file.path]));
+            const watcher = getFileWatcher(
+                this.getFileUri(file.path),
+                undefined,
+                () => void this.removeOutputFiles([file.path])
+            );
             this.outputFileInfo.set(file.path, watcher);
         }
 
@@ -245,7 +248,7 @@ export class Project extends BaseProject {
                 )) ?? 'No';
 
         if (answer === 'Only this file' || answer === 'Yes to all') {
-            const targetDir = vscode.Uri.joinPath(this.getRoot(), 'src');
+            const targetDir = this.getFileUri('src');
             const target = vscode.Uri.joinPath(targetDir, path.basename(uri.path));
 
             const newUri: vscode.Uri | undefined = await new Promise(
