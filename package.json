@@ -156,6 +156,12 @@
                 "icon": "$(remove)"
             },
             {
+                "command": "edacation.setInputFileType",
+                "category": "EDAcation",
+                "title": "Set Input File Type",
+                "icon": "$(arrow-swap)"
+            },
+            {
                 "command": "edacation.removeOutputFile",
                 "category": "EDAcation",
                 "title": "Remove Output File",
@@ -276,7 +282,12 @@
                 },
                 {
                     "command": "edacation.removeInputFile",
-                    "when": "view == edacation-inputFiles && viewItem == file",
+                    "when": "view == edacation-inputFiles && viewItem =~ /^file-/",
+                    "group": "inline"
+                },
+                {
+                    "command": "edacation.setInputFileType",
+                    "when": "view == edacation-inputFiles && viewItem =~ /^file-/",
                     "group": "inline"
                 },
                 {

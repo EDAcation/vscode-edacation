@@ -2,6 +2,7 @@ import {
     Project as BaseProject,
     DEFAULT_CONFIGURATION,
     type ProjectConfiguration,
+    ProjectInputFile,
     ProjectInputFileState,
     type ProjectOutputFileState,
     type ProjectState
@@ -128,6 +129,19 @@ export class Project extends BaseProject {
             directory: this.getTargetDirectory(target.id)
         }));
         this.updateConfiguration({targets: targets});
+        await this.save();
+    }
+
+    async setInputFileType(filePath: string, type: ProjectInputFile['type']) {
+        const file = this.getInputFile(filePath);
+        if (!file) {
+            console.warn(`Tried to set file type of missing input file: ${filePath}`);
+            return;
+        }
+
+        file.type = type;
+        this.projects.emitInputFileChange();
+
         await this.save();
     }
 

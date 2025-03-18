@@ -1,4 +1,4 @@
-import {ProjectInputFile, ProjectOutputFile, TargetConfiguration} from 'edacation';
+import {ProjectInputFile, ProjectInputFileState, ProjectOutputFile, TargetConfiguration} from 'edacation';
 import {basename, extname} from 'path';
 import * as vscode from 'vscode';
 
@@ -6,10 +6,12 @@ import type {Projects} from '../projects/index.js';
 
 import {BaseTreeDataProvider} from './base.js';
 
-type ProjectFile = ProjectInputFile | ProjectOutputFile;
-
 abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
-    protected getFileTreeItem(file: ProjectFile, showPath = false): vscode.TreeItem {
+    protected getFileTreeItem(
+        file: ProjectInputFile | ProjectOutputFile,
+        showPath = false,
+        ctxSuffix: string = ''
+    ): vscode.TreeItem {
         const project = this.projects.getCurrent();
         if (!project) {
             return {};
@@ -26,7 +28,7 @@ abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
             description: isOld ? '(stale)' : showPath,
             id: file.path,
 
-            contextValue: 'file',
+            contextValue: `file${ctxSuffix ? '-' + ctxSuffix : ''}`,
             collapsibleState: vscode.TreeItemCollapsibleState.None,
 
             command: {
@@ -36,29 +38,25 @@ abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
             }
         };
     }
-
-    getTargetTreeItem(target: TargetConfiguration | null): vscode.TreeItem {
-        return {
-            label: target?.name ?? 'Unknown targets',
-            id: target?.id,
-
-            contextValue: 'target',
-            collapsibleState: vscode.TreeItemCollapsibleState.Expanded
-        };
-    }
-
-    getLogsTreeItem(): vscode.TreeItem {
-        return {
-            label: 'Logs',
-            id: 'logs',
-
-            contextValue: 'logs',
-            collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
-        };
-    }
 }
 
-export class InputFilesProvider extends FilesProvider<ProjectFile> {
+interface InputFileTreeCategory {
+    type: 'category';
+    name: string;
+    category: ProjectInputFileState['type'];
+}
+
+interface InputFileTreeFile {
+    type: 'file';
+    category: ProjectInputFile['type'];
+    file: ProjectInputFile;
+}
+
+export type InputFileTreeItem = InputFileTreeCategory | InputFileTreeFile;
+
+export class InputFilesProvider extends FilesProvider<InputFileTreeItem> {
+    private changeEmitter = new vscode.EventEmitter<InputFileTreeItem | InputFileTreeItem[] | undefined>();
+
     static getViewID() {
         return 'edacation-inputFiles';
     }
@@ -66,32 +64,66 @@ export class InputFilesProvider extends FilesProvider<ProjectFile> {
     constructor(context: vscode.ExtensionContext, projects: Projects) {
         super(context, projects);
 
-        this.onDidChangeTreeData = projects.getInputFileEmitter().event;
+        // We "intercept" the change emitter and always emit undefined
+        // because a small input file change could change the entire tree structure.
+        // therefore we need to reload the entire tree on a change.
+        this.onDidChangeTreeData = this.changeEmitter.event;
+        projects.getInputFileEmitter().event((_file) => this.changeEmitter.fire(undefined));
     }
 
-    getTreeItem(element: ProjectFile): vscode.TreeItem {
-        const project = this.projects.getCurrent();
-        if (!project) {
-            throw new Error('Invalid state.');
+    getTreeItem(element: InputFileTreeItem): vscode.TreeItem {
+        if (element.type === 'category') {
+            return this.getCategoryTreeItem(element.category, element.name);
+        } else if (element.type === 'file') {
+            return this.getFileTreeItem(element.file, true, element.category);
         }
 
-        return this.getFileTreeItem(element, true);
+        throw new Error(`Invalid tree element: ${element}`);
     }
 
-    getChildren(element?: ProjectFile): ProjectFile[] {
+    getChildren(element?: InputFileTreeItem): InputFileTreeItem[] {
+        // Root: list categories
+        if (!element) {
+            const categories: InputFileTreeItem[] = [
+                {type: 'category', name: 'Design', category: 'design'},
+                {type: 'category', name: 'Testbench', category: 'testbench'}
+            ];
+            // Only show a category if it has any files
+            return categories.filter((c) => this.getChildren(c).length !== 0);
+        }
+
         const project = this.projects.getCurrent();
         if (!project) {
             return [];
         }
 
-        // We do not want to nest input files
-        if (element) return [];
+        // Category: list items
+        if (element.type === 'category') {
+            const files = project
+                .getInputFiles()
+                .filter((file) => file.type === element.category)
+                .toSorted((a, b) => {
+                    if (a.path < b.path) return -1;
+                    if (a.path > b.path) return 1;
+                    return 0;
+                });
+            return files.map((file) => ({type: 'file', category: element.category, file}));
+        }
 
-        return project.getInputFiles().toSorted((a, b) => {
-            if (a.path < b.path) return -1;
-            if (a.path > b.path) return 1;
-            return 0;
-        });
+        // Anything else: no children
+        return [];
+    }
+
+    private getCategoryTreeItem(type: ProjectInputFileState['type'], label: string) {
+        const collapsibleState = vscode.TreeItemCollapsibleState[type === 'design' ? 'Expanded' : 'Collapsed'];
+
+        return {
+            label,
+            id: type,
+
+            contextValue: 'inputCategory',
+            collapsibleState
+        };
     }
 }
 
@@ -106,7 +138,7 @@ interface OutputFileTreeLog {
 
 interface OutputFileTreeFile {
     type: 'file';
-    file: ProjectFile;
+    file: ProjectOutputFile;
 }
 
 export type OutputFileTreeItem = OutputFileTreeTarget | OutputFileTreeLog | OutputFileTreeFile;
@@ -141,13 +173,13 @@ export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
     }
 
     getTreeItem(element: OutputFileTreeItem): vscode.TreeItem {
-        const project = this.projects.getCurrent();
-        if (!project) {
-            throw new Error('Invalid state.');
-        }
-
         if (element.type === 'target') {
             // Target category
+            const project = this.projects.getCurrent();
+            if (!project) {
+                throw new Error('Could not build output file tree: no current project.');
+            }
+
             const target = element.targetId ? project.getTarget(element.targetId) : null;
             return this.getTargetTreeItem(target);
         } else if (element.type === 'logs') {
@@ -241,5 +273,25 @@ export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
 
         // below output files: nothing!
         return [];
+    }
+
+    getTargetTreeItem(target: TargetConfiguration | null): vscode.TreeItem {
+        return {
+            label: target?.name ?? 'Unknown targets',
+            id: target?.id,
+
+            contextValue: 'target',
+            collapsibleState: vscode.TreeItemCollapsibleState.Expanded
+        };
+    }
+
+    getLogsTreeItem(): vscode.TreeItem {
+        return {
+            label: 'Logs',
+            id: 'logs',
+
+            contextValue: 'logs',
+            collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
+        };
     }
 }
