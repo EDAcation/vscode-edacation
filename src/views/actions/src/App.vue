@@ -7,6 +7,7 @@ import {
     vsCodeOption,
     vsCodeTextField
 } from '@vscode/webview-ui-toolkit';
+import {defineComponent} from 'vue';
 
 import {vscode} from '../../vscode';
 
@@ -21,7 +22,7 @@ provideVSCodeDesignSystem().register(
     vsCodeTextField()
 );
 
-export default {
+export default defineComponent({
     components: {
         EDAProjectActions
     },
@@ -50,7 +51,7 @@ export default {
             }
         }
     }
-};
+});
 </script>
 
 <template>
