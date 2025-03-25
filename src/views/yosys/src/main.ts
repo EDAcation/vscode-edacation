@@ -1,5 +1,5 @@
+import '@vscode-elements/elements';
 import '@vscode/codicons/dist/codicon.css';
-import {allComponents} from '@vscode/webview-ui-toolkit/dist/toolkit.js';
 import 'jquery-ui/dist/jquery-ui.min.js';
 
 import {vscode} from '../../vscode';
@@ -9,9 +9,6 @@ import './main.css';
 import type {EditorMessage, ForeignViewMessage, GlobalStoreMessage, ViewMessage} from './messages';
 import type {YosysFile} from './types';
 import {type BaseViewer, DiagramViewer, StatsViewer} from './viewers';
-
-// Force bundler to include VS Code Webview UI Toolkit
-allComponents;
 
 interface State {
     document?: string;

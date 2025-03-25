@@ -1,3 +1,5 @@
+import type {VscodeTabHeader} from '@vscode-elements/elements';
+
 import {CustomElement} from './base';
 
 interface Tab<EventsDictionary> {
@@ -10,7 +12,7 @@ export class TabsContainer extends CustomElement<Record<string, never>> {
     protected rootElem: HTMLElement;
 
     private tabs: Map<string, Tab<unknown>>;
-    private tabHeaders: Map<string, HTMLElement>;
+    private tabHeaders: Map<string, VscodeTabHeader>;
 
     constructor(tabs: Tab<unknown>[]) {
         super();
@@ -25,21 +27,20 @@ export class TabsContainer extends CustomElement<Record<string, never>> {
     }
 
     private createRoot(): HTMLElement {
-        const root = document.createElement('vscode-panels');
+        const root = document.createElement('vscode-tabs');
 
         for (const [id, tab] of this.tabs.entries()) {
-            const tabElem = document.createElement('vscode-panel-tab');
-            tabElem.id = `tab-${id}`;
-            tabElem.textContent = tab.title;
-            root.appendChild(tabElem);
+            const header = document.createElement('vscode-tab-header');
+            header.slot = 'header';
+            header.textContent = tab.title;
+            root.appendChild(header);
 
-            this.tabHeaders.set(id, tabElem);
-        }
-        for (const [id, tab] of this.tabs.entries()) {
-            const view = document.createElement('vscode-panel-view');
-            view.id = `view-${id}`;
-            view.appendChild(tab.element.element);
-            root.appendChild(view);
+            const panel = document.createElement('vscode-tab-panel');
+            panel.style.height = '100%';
+            panel.appendChild(tab.element.element);
+            root.appendChild(panel);
+
+            this.tabHeaders.set(id, header);
         }
 
         return root;

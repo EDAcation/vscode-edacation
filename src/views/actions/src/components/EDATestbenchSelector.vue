@@ -1,5 +1,5 @@
 <script lang="ts">
-import {Dropdown} from '@vscode/webview-ui-toolkit';
+import {VscodeSingleSelect} from '@vscode-elements/elements';
 import {Project, ProjectInputFile, type TargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
@@ -20,7 +20,7 @@ export default defineComponent({
         handleTestbenchChange(event: Event) {
             if (!event.target) return;
 
-            const target = event.target as Dropdown;
+            const target = event.target as VscodeSingleSelect;
 
             console.log(target);
         }
@@ -47,11 +47,11 @@ export default defineComponent({
 </script>
 
 <template>
-    <vscode-dropdown @change="handleTestbenchChange">
+    <vscode-single-select @change="handleTestbenchChange" style="width: initial">
         <vscode-option v-for="(file, index) in testbenchFiles" :selected="file === selectedTestbench">
             {{ file }}
         </vscode-option>
-    </vscode-dropdown>
+    </vscode-single-select>
 </template>
 
 <style scoped></style>

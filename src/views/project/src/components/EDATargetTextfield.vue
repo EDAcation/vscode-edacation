@@ -1,5 +1,5 @@
 <script lang="ts">
-import type {TextField} from '@vscode/webview-ui-toolkit';
+import type {VscodeTextfield} from '@vscode-elements/elements';
 import {
     type IVerilogConfiguration,
     type IVerilogTargetConfiguration,
@@ -129,7 +129,7 @@ export default defineComponent({
             }
 
             (this.options as Record<string, string | undefined>)[this.configId] =
-                (event.target as TextField).currentValue || undefined;
+                (event.target as VscodeTextfield).value || undefined;
         }
     }
 });
@@ -137,8 +137,13 @@ export default defineComponent({
 
 <template>
     <div>
-        <vscode-text-field :placeholder="placeholder" :value="effectiveConfig" @input="handleTextfieldChange">
-            {{ configName }}
-        </vscode-text-field>
+        <vscode-form-group variant="vertical">
+            <vscode-label>{{ configName }}</vscode-label>
+            <vscode-textfield
+                :placeholder="placeholder"
+                :value="effectiveConfig"
+                @input="handleTextfieldChange"
+            ></vscode-textfield>
+        </vscode-form-group>
     </div>
 </template>

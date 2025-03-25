@@ -48,33 +48,32 @@ export default defineComponent({
         </h2>
         <h2 v-else>Defaults for all targets</h2>
 
-        <vscode-panels>
-            <vscode-panel-tab id="tab-general" v-if="target">General</vscode-panel-tab>
-            <vscode-panel-tab id="tab-synthesis">Synthesis</vscode-panel-tab>
-            <vscode-panel-tab id="tab-pnr">Placement & Routing</vscode-panel-tab>
-            <vscode-panel-tab id="tab-yosys">Yosys</vscode-panel-tab>
-            <vscode-panel-tab id="tab-nextpnr">nextpnr</vscode-panel-tab>
-
-            <vscode-panel-view id="tab-general" v-if="target">
+        <vscode-tabs>
+            <vscode-tab-header slot="header" v-if="target">General</vscode-tab-header>
+            <vscode-tab-panel v-if="target">
                 <EDATargetGeneral :targetIndex="targetIndex" />
-            </vscode-panel-view>
+            </vscode-tab-panel>
 
-            <vscode-panel-view id="view-synthesis">
+            <vscode-tab-header slot="header">Synthesis</vscode-tab-header>
+            <vscode-tab-panel>
                 <EDATargetSynthesis :targetIndex="targetIndex" />
-            </vscode-panel-view>
+            </vscode-tab-panel>
 
-            <vscode-panel-view id="view-pnr">
+            <vscode-tab-header slot="header">Placement & Routing</vscode-tab-header>
+            <vscode-tab-panel>
                 <EDATargetPlacementAndRouting :targetIndex="targetIndex" />
-            </vscode-panel-view>
+            </vscode-tab-panel>
 
-            <vscode-panel-view id="view-yosys">
+            <vscode-tab-header slot="header">Yosys</vscode-tab-header>
+            <vscode-tab-panel>
                 <EDATargetYosys :targetIndex="targetIndex" />
-            </vscode-panel-view>
+            </vscode-tab-panel>
 
-            <vscode-panel-view id="view-nextpnr">
+            <vscode-tab-header slot="header">nextpnr</vscode-tab-header>
+            <vscode-tab-panel>
                 <EDATargetNextpnr :targetIndex="targetIndex" />
-            </vscode-panel-view>
-        </vscode-panels>
+            </vscode-tab-panel>
+        </vscode-tabs>
     </template>
 </template>
 

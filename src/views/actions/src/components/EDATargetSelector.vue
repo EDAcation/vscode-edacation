@@ -1,7 +1,7 @@
 <script lang="ts">
-import {defineComponent} from 'vue';
+import {VscodeSingleSelect} from '@vscode-elements/elements';
 import {type TargetConfiguration} from 'edacation';
-import { Dropdown } from '@vscode/webview-ui-toolkit';
+import {defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
 
@@ -20,7 +20,7 @@ export default defineComponent({
         handleTargetChange(event: Event) {
             if (!event.target) return;
 
-            this.state.selectedTargetIndex = (event.target as Dropdown).selectedIndex;
+            this.state.selectedTargetIndex = (event.target as VscodeSingleSelect).selectedIndex;
             console.log(this.state.selectedTargetIndex);
         }
     },
@@ -33,11 +33,11 @@ export default defineComponent({
 </script>
 
 <template>
-    <vscode-dropdown @change="handleTargetChange">
+    <vscode-single-select @change="handleTargetChange" style="width: initial">
         <vscode-option v-for="(target, index) in targets" :selected="index === state.selectedTargetIndex">
             {{ target.name }}
         </vscode-option>
-    </vscode-dropdown>
+    </vscode-single-select>
 </template>
 
 <style scoped></style>

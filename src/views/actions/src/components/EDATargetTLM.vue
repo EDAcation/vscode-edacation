@@ -1,5 +1,5 @@
 <script lang="ts">
-import {TextField} from '@vscode/webview-ui-toolkit';
+import {VscodeTextfield} from '@vscode-elements/elements';
 import {type TargetConfiguration, type YosysOptions, getYosysDefaultOptions, getYosysOptions} from 'edacation';
 import {defineComponent} from 'vue';
 
@@ -21,7 +21,7 @@ export default defineComponent({
         handleTLMChange(event: Event) {
             if (!this.target) return;
 
-            const newTlm = (event.target as TextField).currentValue;
+            const newTlm = (event.target as VscodeTextfield).value;
             vscode.vscode.postMessage({
                 type: 'changeTlm',
                 module: newTlm,
@@ -58,9 +58,15 @@ export default defineComponent({
 </script>
 
 <template>
-    <vscode-text-field placeholder="Automatic (Verilog only)" :value="topLevelModule" @input="handleTLMChange">
-        Top-level module
-    </vscode-text-field>
+    <form>
+        <vscode-label>Top-level module</vscode-label>
+        <vscode-textfield
+            placeholder="Top-level module (optional)"
+            :value="topLevelModule"
+            @input="handleTLMChange"
+            style="width: 100%"
+        ></vscode-textfield>
+    </form>
 </template>
 
 <style scoped></style>

@@ -1,3 +1,5 @@
+import type {VscodeCheckbox, VscodeTable} from '@vscode-elements/elements';
+
 import {CustomElement} from './base';
 
 export type DataGridCellElem = Node | string;
@@ -13,7 +15,7 @@ export interface DataGridCell {
 }
 
 export class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
-    protected rootElem: HTMLElement;
+    protected rootElem: VscodeTable;
 
     protected cells: DataGridCell[][];
 
@@ -21,7 +23,7 @@ export class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
         super();
 
         this.cells = [headers.map((h) => ({elem: h}))];
-        this.rootElem = document.createElement('vscode-data-grid');
+        this.rootElem = document.createElement('vscode-table');
     }
 
     get width() {
@@ -94,11 +96,11 @@ export class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
     setCell(x: number, y: number, value: DataGridCell) {
         this.cells[y][x] = value;
 
-        const row = this.rootElem.querySelectorAll('vscode-data-grid-row')[y];
+        const row = this.rootElem.querySelectorAll('vscode-table-row')[y];
         if (!row) {
             return;
         }
-        const cell = row.querySelectorAll('vscode-data-grid-cell')[x] as HTMLElement;
+        const cell = row.querySelectorAll('vscode-table-cell')[x];
         if (!cell) {
             return;
         }
@@ -113,18 +115,19 @@ export class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
     }
 
     render() {
-        const newRoot = document.createElement('vscode-data-grid');
+        const newRoot = document.createElement('vscode-table');
         this.rootElem.replaceWith(newRoot);
         this.rootElem = newRoot;
 
+        newRoot.style.height = '100%';
+
         // Headers
-        const headerElem = document.createElement('vscode-data-grid-row');
-        headerElem.setAttribute('row-type', 'header');
+        const headerElem = document.createElement('vscode-table-header');
+        headerElem.slot = 'header';
 
         for (let i = 0; i < this.width; i++) {
-            const cell = document.createElement('vscode-data-grid-cell');
-            cell.setAttribute('cell-type', 'columnheader');
-            cell.setAttribute('grid-column', (i + 1).toString());
+            const cell = document.createElement('vscode-table-header-cell');
+            cell.style.overflow = 'visible'; // allow dropdowns to 'escape' the cell bounds
             cell.append(this.cells[0][i].elem);
             headerElem.appendChild(cell);
             this.setCellColor(i, 0, cell);
@@ -132,18 +135,19 @@ export class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
         this.rootElem.appendChild(headerElem);
 
         // Rows
+        const body = document.createElement('vscode-table-body');
         for (let rowi = 1; rowi < this.height; rowi++) {
-            const row = document.createElement('vscode-data-grid-row');
+            const row = document.createElement('vscode-table-row');
 
             for (let coli = 0; coli < this.width; coli++) {
-                const cell = document.createElement('vscode-data-grid-cell');
-                cell.setAttribute('grid-column', (coli + 1).toString());
+                const cell = document.createElement('vscode-table-cell');
                 cell.append(this.cells[rowi][coli].elem);
                 row.appendChild(cell);
                 this.setCellColor(coli, rowi, cell);
             }
-            this.rootElem.appendChild(row);
+            body.appendChild(row);
         }
+        this.rootElem.appendChild(body);
     }
 }
 
@@ -173,7 +177,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
 
     private actualRoot: HTMLElement | null;
 
-    private settingElems: Map<string, HTMLInputElement>;
+    private settingElems: Map<string, VscodeCheckbox>;
 
     constructor() {
         super();
@@ -185,7 +189,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
         // Create setting checkboxes (store references)
         this.settingElems = new Map();
         for (const setting of this.getSettings()) {
-            const checkbox = document.createElement('vscode-checkbox') as HTMLInputElement;
+            const checkbox = document.createElement('vscode-checkbox');
             checkbox.addEventListener('change', (_) => {
                 this.dispatchEvent('gridConfigUpdate', {config: this.getConfig()});
 
@@ -321,6 +325,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
     private createRoot() {
         const root = document.createElement('div');
         root.style.width = '100%';
+        root.style.height = '100%';
 
         // Custom content
         root.appendChild(this.getGridHeaderElement());
@@ -366,6 +371,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
         }
 
         const header = document.createElement('div');
+        header.style.display = 'flex';
 
         const delBtn = document.createElement('vscode-button');
         delBtn.innerHTML = /* html */ `<span class="codicon codicon-close"></span>`;
@@ -382,7 +388,7 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
         });
         header.appendChild(delBtn);
 
-        const dropdown = document.createElement('vscode-dropdown') as HTMLSelectElement;
+        const dropdown = document.createElement('vscode-single-select');
         for (const avOption of this.getAvailableOptions()) {
             const opt = document.createElement('vscode-option');
             opt.textContent = this.getOptionName(avOption);
