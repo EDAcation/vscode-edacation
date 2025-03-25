@@ -1,6 +1,8 @@
 <script lang="ts">
 import type {TextField} from '@vscode/webview-ui-toolkit';
 import {
+    type IVerilogConfiguration,
+    type IVerilogTargetConfiguration,
     type NextpnrConfiguration,
     type NextpnrOptions,
     type NextpnrTargetConfiguration,
@@ -52,7 +54,7 @@ export default defineComponent({
             }
             return this.state.project!.configuration.targets[this.targetIndex];
         },
-        defaultWorker(): YosysConfiguration | NextpnrConfiguration | undefined {
+        defaultWorker(): YosysConfiguration | NextpnrConfiguration | IVerilogConfiguration | undefined {
             if (!this.state.project!.configuration.defaults) {
                 return undefined;
             }
@@ -63,6 +65,8 @@ export default defineComponent({
             | YosysTargetConfiguration
             | NextpnrConfiguration
             | NextpnrTargetConfiguration
+            | IVerilogConfiguration
+            | IVerilogTargetConfiguration
             | undefined {
             return this.target ? this.target[this.workerId as WorkerId] : this.defaultWorker;
         },
