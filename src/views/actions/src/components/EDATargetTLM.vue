@@ -58,15 +58,12 @@ export default defineComponent({
 </script>
 
 <template>
-    <form>
-        <vscode-label>Top-level module</vscode-label>
-        <vscode-textfield
-            placeholder="Top-level module (optional)"
-            :value="topLevelModule"
-            @input="handleTLMChange"
-            style="width: 100%"
-        ></vscode-textfield>
-    </form>
+    <vscode-textfield
+        placeholder="Top-level module (optional)"
+        :value="topLevelModule"
+        @input="handleTLMChange"
+        style="width: 100%"
+    ></vscode-textfield>
 </template>
 
 <style scoped></style>
