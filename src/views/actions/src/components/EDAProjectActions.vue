@@ -87,7 +87,7 @@ export default defineComponent({
             <vscode-button @click="executeTargetCommand('runRTL')">Show RTL</vscode-button>
             <vscode-button @click="executeTargetCommand('runYosys')">Synthesize using Yosys</vscode-button>
             <vscode-button @click="executeTargetCommand('runNextpnr')">Place and Route using Nextpnr</vscode-button>
-            <vscode-button @click="executeTargetCommand('runIverilog')" v-if="testbenchFiles.length > 1"
+            <vscode-button @click="executeTargetCommand('runIverilog')" v-if="testbenchFiles.length > 0"
                 >Generate waveform using IVerilog</vscode-button
             >
         </template>

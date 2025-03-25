@@ -3,6 +3,7 @@ import {VscodeSingleSelect} from '@vscode-elements/elements';
 import {Project, ProjectInputFile, type TargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
+import * as vscode from '../../../vscode';
 import {state as globalState} from '../state';
 
 export default defineComponent({
@@ -21,8 +22,16 @@ export default defineComponent({
             if (!event.target) return;
 
             const target = event.target as VscodeSingleSelect;
+            this.setTestbench(target.value);
+        },
+        setTestbench(file: string) {
+            if (!this.target) return;
 
-            console.log(target);
+            vscode.vscode.postMessage({
+                type: 'changeTestbench',
+                testbenchPath: file,
+                targetId: this.target.id
+            });
         }
     },
     computed: {
@@ -39,8 +48,14 @@ export default defineComponent({
                 .filter((file) => file.type === 'testbench')
                 .map((file) => file.path);
         },
-        selectedTestbench(): string | undefined {
-            return this.target?.iverilog?.options?.testbenchFile;
+        selectedTestbench(): string | null {
+            let file = this.target?.iverilog?.options?.testbenchFile;
+            if (!file) {
+                file = this.testbenchFiles[0];
+                if (!file) return null; // no testbenches
+                this.setTestbench(file);
+            }
+            return file;
         }
     }
 });

@@ -204,6 +204,27 @@ export class Project extends BaseProject {
         await this.save();
     }
 
+    async setTestbenchPath(targetId: string, testbenchPath: string) {
+        const testbenchFiles = this.getInputFiles()
+            .filter((file) => file.type === 'testbench')
+            .map((file) => file.path);
+        if (!testbenchFiles.includes(testbenchPath))
+            throw new Error(`Testbench ${testbenchPath} is not marked as such!`);
+
+        const target = this.getTarget(targetId);
+        if (!target) throw new Error(`Target "${targetId} does not exist!`);
+
+        // Ensure the config tree exists
+        // We don't care about setting missing defaults, as this is target-level configuration,
+        // so any missing properties will fallback to project-level config.
+        if (!target.iverilog) target.iverilog = {};
+        if (!target.iverilog.options) target.iverilog.options = {};
+
+        target.iverilog.options.testbenchFile = testbenchPath;
+
+        await this.save();
+    }
+
     async removeInputFiles(filePaths: string[]): Promise<void> {
         if (!filePaths.length) return;
 

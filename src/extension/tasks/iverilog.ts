@@ -73,7 +73,19 @@ class IVerilogTerminalTask extends TerminalTask<IVerilogWorkerOptions> {
         const oldUri = project.getFileUri(path.basename(vcdFile.path));
         const newUri = project.getFileUri(getTargetFile(workerOptions.target, path.basename(vcdFile.path)));
 
-        await vscode.workspace.fs.rename(oldUri, newUri, {overwrite: true});
+        try {
+            await vscode.workspace.fs.rename(oldUri, newUri, {overwrite: true});
+        } catch (e) {
+            this.warn('Could not auto-detect the VCD file, so it could not be post-processed.');
+            this.warn(
+                "Your VCD may have ended up in the project root. It will not be added to EDAcation's output file list,"
+            );
+            this.warn('and will not be opened automatically in the waveform viewer.\n');
+
+            this.warn('In order to fix this, instruct the testbench to dump to a file named "<tb name>.vcd".');
+            this.warn('e.g., for a testbench named "testbench.v", write to a file named "testbench.vcd".');
+            return;
+        }
 
         // Open file in editor
         await vscode.commands.executeCommand('vscode.open', newUri);

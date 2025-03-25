@@ -21,7 +21,6 @@ export default defineComponent({
             if (!event.target) return;
 
             this.state.selectedTargetIndex = (event.target as VscodeSingleSelect).selectedIndex;
-            console.log(this.state.selectedTargetIndex);
         }
     },
     computed: {
