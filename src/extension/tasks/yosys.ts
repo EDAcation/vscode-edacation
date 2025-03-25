@@ -91,9 +91,11 @@ export class YosysTaskProvider extends TaskProvider {
         folder: vscode.WorkspaceFolder,
         definition: TaskDefinition
     ): TaskTerminal<YosysWorkerOptions> {
-        const provider = getConfiguredProvider(this.context);
-        const prepareTask = new YosysPrepareTerminalTask(provider);
-        const synthesisTask = new YosysSynthTerminalTask(provider);
+        const prepareProvider = getConfiguredProvider(this.context);
+        const prepareTask = new YosysPrepareTerminalTask(prepareProvider);
+
+        const synthProvider = getConfiguredProvider(this.context);
+        const synthesisTask = new YosysSynthTerminalTask(synthProvider);
 
         return new TaskTerminal(this.projects, folder, definition, [prepareTask, synthesisTask]);
     }
