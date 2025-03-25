@@ -1,4 +1,5 @@
 import {WorkerStep} from 'edacation';
+import path from 'path';
 import * as vscode from 'vscode';
 
 import type {ExtensionMessage, MessageFile} from '../../common/messages.js';
@@ -175,6 +176,12 @@ abstract class NativeToolProvider extends ToolProvider {
 
             const destUri = ctx.project.getFileUri(file.path);
             await vscode.workspace.fs.writeFile(destUri, file.data);
+        }
+
+        // Prepare output directories so the tools don't have to create them
+        for (const file of ctx.outputFiles) {
+            const outDir = ctx.project.getFileUri(path.dirname(file.path));
+            await vscode.workspace.fs.createDirectory(outDir);
         }
 
         if (!node.isAvailable()) {
