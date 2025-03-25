@@ -11,7 +11,7 @@ export class ActionsProvider extends BaseWebviewViewProvider {
     }
 
     protected getStylePaths() {
-        return [];
+        return [['dist', 'views', 'nextpnr', 'index.css']];
     }
 
     protected getScriptPaths() {
