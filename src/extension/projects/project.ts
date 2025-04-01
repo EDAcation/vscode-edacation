@@ -194,7 +194,7 @@ export class Project extends BaseProject {
 
     async setTopLevelModule(targetId: string, module: string) {
         const target = this.getTarget(targetId);
-        if (!target) throw new Error(`Target "${targetId} does not exist!`);
+        if (!target) throw new Error(`Target "${targetId}" does not exist!`);
 
         // Ensure the config tree exists
         // We don't care about setting missing defaults, as this is target-level configuration,
@@ -215,7 +215,7 @@ export class Project extends BaseProject {
             throw new Error(`Testbench ${testbenchPath} is not marked as such!`);
 
         const target = this.getTarget(targetId);
-        if (!target) throw new Error(`Target "${targetId} does not exist!`);
+        if (!target) throw new Error(`Target "${targetId}" does not exist!`);
 
         // Ensure the config tree exists
         // We don't care about setting missing defaults, as this is target-level configuration,
