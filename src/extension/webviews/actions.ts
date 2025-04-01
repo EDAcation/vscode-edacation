@@ -32,14 +32,17 @@ export class ActionsProvider extends BaseWebviewViewProvider {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         super.resolveWebviewView(webviewView, context, token);
 
-        this.projects.getProjectEmitter().event((_changed) => {
+        const update = () => {
             const project = this.projects.getCurrent();
 
             void webviewView.webview.postMessage({
                 type: 'project',
                 project: project ? Project.serialize(project) : undefined
             });
-        });
+        };
+
+        this.projects.getProjectEmitter().event(update);
+        this.projects.getInputFileEmitter().event(update);
     }
 
     protected async onDidReceiveMessage(webview: vscode.Webview, message: ViewMessage): Promise<void> {
