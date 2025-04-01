@@ -323,6 +323,13 @@ export class Project extends BaseProject {
     async addOutputFileUris(fileUris: vscode.Uri[], targetId: string): Promise<void> {
         const filePaths = [];
         for (let fileUri of fileUris) {
+            try {
+                await vscode.workspace.fs.stat(fileUri);
+            } catch {
+                console.warn(`Not adding output file since it does not exist: ${fileUri}`);
+                continue;
+            }
+
             // eslint-disable-next-line prefer-const
             const [_workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
             if (!folderRelativePath) continue;
