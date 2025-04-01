@@ -143,6 +143,8 @@ export class Project extends BaseProject {
         }
 
         file.type = type;
+
+        await this.ensureTestbenchPaths();
         this.projects.emitInputFileChange();
 
         await this.save();
@@ -177,6 +179,7 @@ export class Project extends BaseProject {
         if (files.length === 0) return;
 
         super.addInputFiles(files);
+        await this.ensureTestbenchPaths();
         this.projects.emitInputFileChange();
         await this.markOutputFilesStale(false);
         await this.save();
@@ -204,11 +207,11 @@ export class Project extends BaseProject {
         await this.save();
     }
 
-    async setTestbenchPath(targetId: string, testbenchPath: string) {
+    async setTestbenchPath(targetId: string, testbenchPath?: string, doSave = true) {
         const testbenchFiles = this.getInputFiles()
             .filter((file) => file.type === 'testbench')
             .map((file) => file.path);
-        if (!testbenchFiles.includes(testbenchPath))
+        if (testbenchPath && !testbenchFiles.includes(testbenchPath))
             throw new Error(`Testbench ${testbenchPath} is not marked as such!`);
 
         const target = this.getTarget(targetId);
@@ -222,7 +225,7 @@ export class Project extends BaseProject {
 
         target.iverilog.options.testbenchFile = testbenchPath;
 
-        await this.save();
+        if (doSave) await this.save();
     }
 
     async removeInputFiles(filePaths: string[]): Promise<void> {
@@ -235,10 +238,34 @@ export class Project extends BaseProject {
 
         super.removeInputFiles(filePaths);
 
+        await this.ensureTestbenchPaths();
+
         this.projects.emitInputFileChange();
 
         await this.markOutputFilesStale(false);
 
+        await this.save();
+    }
+
+    private async ensureTestbenchPaths() {
+        const testbenches = this.getInputFiles()
+            .filter((file) => file.type == 'testbench')
+            .map((file) => file.path);
+
+        for (const target of this.getConfiguration().targets) {
+            const tbPath = target.iverilog?.options?.testbenchFile;
+
+            if (tbPath && testbenches.includes(tbPath)) {
+                // testbench is configured and correct
+                continue;
+            } else if (!tbPath && testbenches.length === 0) {
+                // no path configured but also no testbenches present, so ok
+                continue;
+            }
+
+            const newTb = testbenches.length === 0 ? undefined : testbenches[0];
+            await this.setTestbenchPath(target.id, newTb, false);
+        }
         await this.save();
     }
 
