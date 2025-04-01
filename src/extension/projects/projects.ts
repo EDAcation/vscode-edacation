@@ -1,6 +1,7 @@
+import {ProjectInputFile, ProjectOutputFile} from 'edacation';
 import * as vscode from 'vscode';
 
-import {Project, type ProjectFile} from './project.js';
+import {Project} from './project.js';
 
 interface SavedProjects {
     curOpen: number | null;
@@ -11,8 +12,8 @@ export class Projects {
     protected readonly context: vscode.ExtensionContext;
 
     private projectEmitter = new vscode.EventEmitter<Project | Project[] | undefined>();
-    private inputFileEmitter = new vscode.EventEmitter<ProjectFile | ProjectFile[] | undefined>();
-    private outputFileEmitter = new vscode.EventEmitter<ProjectFile | ProjectFile[] | undefined>();
+    private inputFileEmitter = new vscode.EventEmitter<ProjectInputFile | ProjectInputFile[] | undefined>();
+    private outputFileEmitter = new vscode.EventEmitter<ProjectOutputFile | ProjectOutputFile[] | undefined>();
 
     private projects: Project[];
     private currentProject?: Project;
@@ -48,11 +49,11 @@ export class Projects {
         this.projectEmitter.fire(changed);
     }
 
-    emitInputFileChange(changed: ProjectFile | ProjectFile[] | undefined = undefined) {
+    emitInputFileChange(changed: ProjectInputFile | ProjectInputFile[] | undefined = undefined) {
         this.inputFileEmitter.fire(changed);
     }
 
-    emitOutputFileChange(changed: ProjectFile | ProjectFile[] | undefined = undefined) {
+    emitOutputFileChange(changed: ProjectOutputFile | ProjectOutputFile[] | undefined = undefined) {
         this.outputFileEmitter.fire(changed);
     }
 

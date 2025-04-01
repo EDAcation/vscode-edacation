@@ -38,6 +38,12 @@ interface ViewMessageChangeTLM {
     targetId: string;
 }
 
+interface ViewMessageChangeTestbench {
+    type: 'changeTestbench';
+    testbenchPath: string;
+    targetId: string;
+}
+
 interface ViewMessageRequestSave {
     type: 'requestSave';
     data: {
@@ -51,6 +57,7 @@ export type ViewMessage =
     | ViewMessageReady
     | ViewMessageCommand
     | ViewMessageChangeTLM
+    | ViewMessageChangeTestbench
     | ViewMessageChange
     | MessageBroadcast
     | ViewMessageRequestSave;

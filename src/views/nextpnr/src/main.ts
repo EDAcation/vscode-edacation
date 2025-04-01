@@ -1,14 +1,11 @@
 import '@vscode/codicons/dist/codicon.css';
-import {allComponents} from '@vscode/webview-ui-toolkit/dist/toolkit.js';
+import '@vscode-elements/elements';
 import {getElementGroups} from 'edacation';
 import {NextPNRViewer} from 'nextpnr-viewer';
 
 import {vscode} from '../../vscode';
 
 import './main.css';
-
-// Force bundler to include VS Code Webview UI Toolkit
-allComponents;
 
 // List supported chips (family: [device])
 const SUPPORTED = <const> {

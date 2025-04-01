@@ -11,7 +11,7 @@ export class ActionsProvider extends BaseWebviewViewProvider {
     }
 
     protected getStylePaths() {
-        return [];
+        return [['dist', 'views', 'nextpnr', 'index.css']];
     }
 
     protected getScriptPaths() {
@@ -32,14 +32,17 @@ export class ActionsProvider extends BaseWebviewViewProvider {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         super.resolveWebviewView(webviewView, context, token);
 
-        this.projects.getProjectEmitter().event((_changed) => {
+        const update = () => {
             const project = this.projects.getCurrent();
 
             void webviewView.webview.postMessage({
                 type: 'project',
                 project: project ? Project.serialize(project) : undefined
             });
-        });
+        };
+
+        this.projects.getProjectEmitter().event(update);
+        this.projects.getInputFileEmitter().event(update);
     }
 
     protected async onDidReceiveMessage(webview: vscode.Webview, message: ViewMessage): Promise<void> {
@@ -67,6 +70,17 @@ export class ActionsProvider extends BaseWebviewViewProvider {
                 await project.setTopLevelModule(message.targetId, message.module);
             } catch (err) {
                 console.log(`[actions] Error while updating TLM: ${err}`);
+            }
+        } else if (message.type === 'changeTestbench') {
+            const project = this.projects.getCurrent();
+            if (!project) return;
+
+            console.log('[actions] updating active testbench file');
+
+            try {
+                await project.setTestbenchPath(message.targetId, message.testbenchPath);
+            } catch (err) {
+                console.log(`[actions] Error while updating testbench file: ${err}`);
             }
         } else if (message.type === 'command') {
             await vscode.commands.executeCommand(message.command, ...(message.args ?? []));

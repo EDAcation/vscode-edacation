@@ -1,3 +1,5 @@
+import {WorkerStep} from 'edacation';
+import path from 'path';
 import * as vscode from 'vscode';
 
 import type {ExtensionMessage, MessageFile} from '../../common/messages.js';
@@ -9,10 +11,21 @@ import {ManagedTool, type NativeToolExecutionOptions} from './managedtool.js';
 import {type TaskOutputFile, TerminalMessageEmitter} from './messaging.js';
 import type {TaskIOFile} from './task.js';
 
+interface ToolInfoStatusOk {
+    status: 'ok';
+    execOptions: NativeToolExecutionOptions;
+}
+
+interface ToolInfoStatusMissing {
+    status: 'missing';
+    tool: string;
+}
+
+type ToolInfoStatus = ToolInfoStatusOk | ToolInfoStatusMissing;
+
 interface Context {
     project: Project;
-    command: string;
-    args: string[];
+    steps: WorkerStep[];
 
     inputFiles: TaskIOFile[];
     outputFiles: TaskIOFile[];
@@ -52,13 +65,17 @@ export class WebAssemblyToolProvider extends ToolProvider {
     async run(ctx: Context): Promise<void> {
         const inFiles = await this.readFiles(ctx.project, ctx.inputFiles);
 
+        if (ctx.steps.length !== 1) {
+            throw new Error('WebAssembly tool provider can only execute 1 step!');
+        }
+
         // Create & start worker
         const worker = this.createWorker();
         worker.sendMessage(
             {
                 type: 'input',
-                command: ctx.command,
-                args: ctx.args,
+                command: ctx.steps[0].tool,
+                args: ctx.steps[0].arguments,
                 inputFiles: inFiles
             },
             inFiles.map(({data}) => data.buffer)
@@ -71,7 +88,7 @@ export class WebAssemblyToolProvider extends ToolProvider {
             if (file.data) {
                 files.push({path: file.path, data: file.data});
             } else {
-                const data = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(project.getRoot(), file.path));
+                const data = await vscode.workspace.fs.readFile(project.getFileUri(file.path));
 
                 files.push({
                     path: file.path,
@@ -146,15 +163,25 @@ abstract class NativeToolProvider extends ToolProvider {
         };
     }
 
-    protected abstract getExecutionOptions(command: string): Promise<NativeToolExecutionOptions | null>;
+    protected abstract getToolInfoStatus(command: string): Promise<ToolInfoStatus>;
+
+    async getToolStatuses(ctx: Context): Promise<ToolInfoStatus[]> {
+        return await Promise.all(ctx.steps.map((step) => this.getToolInfoStatus(step.tool)));
+    }
 
     async run(ctx: Context): Promise<void> {
         // Write generated input files so the native process can load them
         for (const file of ctx.inputFiles) {
             if (!file.data) continue;
 
-            const destUri = vscode.Uri.joinPath(ctx.project.getRoot(), file.path);
+            const destUri = ctx.project.getFileUri(file.path);
             await vscode.workspace.fs.writeFile(destUri, file.data);
+        }
+
+        // Prepare output directories so the tools don't have to create them
+        for (const file of ctx.outputFiles) {
+            const outDir = ctx.project.getFileUri(path.dirname(file.path));
+            await vscode.workspace.fs.createDirectory(outDir);
         }
 
         if (!node.isAvailable()) {
@@ -164,27 +191,45 @@ abstract class NativeToolProvider extends ToolProvider {
             return;
         }
 
-        const execOptions = await this.getExecutionOptions(ctx.command);
-        if (!execOptions) {
-            this.error('Native tool is unavailable. Aborting.');
-            return;
-        }
+        const toolsInfo = await this.getToolStatuses(ctx);
+        const dispatchStep = (i: number) => {
+            const info = toolsInfo[i];
+            if (info.status === 'missing') {
+                this.error(`Native tool for '${ctx.steps[i].tool}' is unavailable. Aborting.`);
+                return;
+            }
 
+            const step = ctx.steps[i];
+            this.runStep(ctx, step, info.execOptions, (code, signal) => {
+                const isLastStep = i >= ctx.steps.length - 1;
+                const isOk = this.onProcessExit(ctx, code, signal, isLastStep); // only emit done signal if last step
+                if (isOk && !isLastStep) dispatchStep(i + 1); // only run next step if no error and not last
+            });
+        };
+
+        dispatchStep(0);
+    }
+
+    private runStep(
+        ctx: Context,
+        step: WorkerStep,
+        options: NativeToolExecutionOptions,
+        onComplete: (code: number | null, signal: string | null) => void
+    ): void {
         const spawnArgs = {
             cwd: ctx.project.getRoot().fsPath,
             env: process.env
         };
-        if (execOptions.path) {
-            spawnArgs['env']['PATH'] = execOptions.path;
+        if (options.path) {
+            spawnArgs['env']['PATH'] = options.path;
         }
 
-        const proc = node.childProcess().spawn(execOptions.entrypoint, ctx.args, spawnArgs);
-
-        proc.on('exit', this.onProcessExit.bind(this, ctx));
-        proc.on('error', this.onProcessError.bind(this));
+        const proc = node.childProcess().spawn(options.entrypoint, step.arguments, spawnArgs);
 
         proc.stdout.on('data', (data) => this.onProcessData(data as string, 'stdout'));
         proc.stderr.on('data', (data) => this.onProcessData(data as string, 'stderr'));
+        proc.on('error', this.onProcessError.bind(this));
+        proc.on('exit', onComplete);
     }
 
     private onProcessError(error: unknown) {
@@ -211,7 +256,7 @@ abstract class NativeToolProvider extends ToolProvider {
         }
     }
 
-    private onProcessExit(ctx: Context, code: number | null, signal: string | null) {
+    private onProcessExit(ctx: Context, code: number | null, signal: string | null, emitDone = true): boolean {
         // flush buffers to get all output on the terminal
         if (this.lineBuffer['stdout'].length > 0) {
             this.println(this.lineBuffer['stdout'], 'stdout');
@@ -220,15 +265,21 @@ abstract class NativeToolProvider extends ToolProvider {
             this.println(this.lineBuffer['stderr'], 'stderr');
         }
 
-        if (code === 0) {
+        const isOk = code === 0;
+        if (isOk && !emitDone) {
+            return true;
+        } else if (isOk) {
             const outputFiles = ctx.outputFiles;
             const writtenInputFiles = ctx.inputFiles.filter((file) => file.data);
 
             this.done(outputFiles.concat(writtenInputFiles).map((file) => ({path: file.path})));
+            return true;
         } else if (code !== null) {
             this.error(new Error(`Process exited with code ${code}`));
+            return false;
         } else {
             this.error(new Error(`Process was killed with signal: ${signal}`));
+            return false;
         }
     }
 }
@@ -238,18 +289,40 @@ export class ManagedToolProvider extends NativeToolProvider {
         return 'Native - Managed';
     }
 
-    async getExecutionOptions(command: string): Promise<NativeToolExecutionOptions | null> {
-        const tool = new ManagedTool(this.extensionContext, command);
-        const options = await tool.getExecutionOptions();
+    protected async getToolInfoStatus(command: string): Promise<ToolInfoStatus> {
+        const tool = await ManagedTool.fromCommand(this.extensionContext, command);
+        if (!tool)
+            return {
+                status: 'missing',
+                tool: command
+            };
+        const execOptions = await tool.getExecutionOptions(command);
 
-        // If already installed & valid, just return here
-        if (options) return options;
+        // If already installed & valid, return here
+        if (execOptions)
+            return {
+                status: 'ok',
+                execOptions
+            };
 
-        this.println('Installing native tool...\n');
+        return {
+            status: 'missing',
+            tool: tool.getId()
+        };
+    }
 
-        await vscode.commands.executeCommand('edacation.installTool', tool.getId());
+    override async getToolStatuses(ctx: Context): Promise<ToolInfoStatus[]> {
+        const statuses = await super.getToolStatuses(ctx);
 
-        return await tool.getExecutionOptions();
+        const missingTools = statuses.filter((info) => info.status === 'missing');
+        if (missingTools.length) {
+            const toolsStr = [...new Set(missingTools.map((tool) => tool.tool))].join(', ');
+            this.println(`Installing missing tools: ${toolsStr}`);
+            await vscode.commands.executeCommand('edacation.installTool', ...missingTools.map((info) => info.tool));
+        }
+
+        // Collect info again
+        return super.getToolStatuses(ctx);
     }
 }
 
@@ -258,11 +331,20 @@ export class HostToolProvider extends NativeToolProvider {
         return 'Native - Host';
     }
 
-    async getExecutionOptions(command: string): Promise<NativeToolExecutionOptions | null> {
+    protected async getToolInfoStatus(command: string): Promise<ToolInfoStatus> {
         const entrypoint = await node.which()(command, {nothrow: true});
-        if (!entrypoint) return null;
+        if (!entrypoint)
+            return {
+                status: 'missing',
+                tool: command
+            };
 
-        return {entrypoint};
+        return {
+            status: 'ok',
+            execOptions: {
+                entrypoint
+            }
+        };
     }
 }
 
@@ -272,31 +354,33 @@ export class AutomaticToolProvider extends ToolProvider {
     async getName(): Promise<string> {
         if (!this.ctx) return 'Automatic';
 
-        const provider = await this.getToolProvider(this.ctx.command);
+        const provider = await this.getToolProvider(this.ctx);
         return `Automatic [${await provider.getName()}]`;
     }
 
-    private async getToolProvider(command: string): Promise<ToolProvider> {
+    private async getToolProvider(ctx: Context): Promise<ToolProvider> {
         if (this.toolProvider) return this.toolProvider;
 
         // Always use Web provider in non-node environments
         const webProvider = new WebAssemblyToolProvider(this.extensionContext);
         if (!node.isAvailable()) return webProvider;
 
-        // Use host provider if tool is installed
+        // Use host provider if all tools are installed
         const hostProvider = new HostToolProvider(this.extensionContext);
-        if (await hostProvider.getExecutionOptions(command)) return hostProvider;
+        const hostToolStatuses = await hostProvider.getToolStatuses(ctx);
+        if (hostToolStatuses.every((tool) => tool.status === 'ok')) return hostProvider;
 
-        // Use managed provider, unless installation somehow fails
+        // Use managed provider, unless installation somehow fails for any of the tools
         const managedProvider = new ManagedToolProvider(this.extensionContext);
-        if (await managedProvider.getExecutionOptions(command)) return managedProvider;
+        const managedToolStatuses = await managedProvider.getToolStatuses(ctx);
+        if (managedToolStatuses.every((tool) => tool.status === 'ok')) return managedProvider;
 
         // Fall back to web provider
         return webProvider;
     }
 
     async run(ctx: Context): Promise<void> {
-        const provider = await this.getToolProvider(ctx.command);
+        const provider = await this.getToolProvider(ctx);
         provider.onMessage(this.fire.bind(this));
 
         provider.setRunContext(ctx);

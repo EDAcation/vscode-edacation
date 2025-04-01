@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
-import type {Project, ProjectFile} from '../projects/index.js';
-import {OutputFileTreeItem} from '../trees/files.js';
+import type {Project} from '../projects/index.js';
+import {InputFileTreeItem, OutputFileTreeItem} from '../trees/files.js';
 import {FILE_FILTERS_HDL} from '../util.js';
 
 import {CurrentProjectCommand} from './base.js';
@@ -59,8 +59,33 @@ export class RemoveInputFileCommand extends CurrentProjectCommand {
         return 'edacation.removeInputFile';
     }
 
-    async executeForCurrentProject(project: Project, file: ProjectFile) {
-        await project.removeInputFiles([file.path]);
+    async executeForCurrentProject(project: Project, treeItem: InputFileTreeItem) {
+        if (treeItem.type !== 'file') {
+            await vscode.window.showErrorMessage('Input file removal is not supported for this item');
+            return;
+        }
+        await project.removeInputFiles([treeItem.file.path]);
+    }
+}
+
+export class SetInputFileTypeCommand extends CurrentProjectCommand {
+    static getID() {
+        return 'edacation.setInputFileType';
+    }
+
+    async executeForCurrentProject(project: Project, treeItem: InputFileTreeItem) {
+        if (treeItem.type !== 'file') {
+            await vscode.window.showErrorMessage('Input file type switching is not supported for this item');
+            return;
+        }
+
+        if (treeItem.category === 'design') {
+            return await project.setInputFileType(treeItem.file.path, 'testbench');
+        } else if (treeItem.category === 'testbench') {
+            return await project.setInputFileType(treeItem.file.path, 'design');
+        }
+
+        throw new Error(`Invalid previous category: ${treeItem.category}`);
     }
 }
 
@@ -93,7 +118,8 @@ export class TrashOutputFileCommand extends CurrentProjectCommand {
         await project.removeOutputFiles([treeItem.file.path]);
 
         try {
-            await vscode.workspace.fs.delete(treeItem.file.uri);
+            const uri = project.getFileUri(treeItem.file.path);
+            await vscode.workspace.fs.delete(uri);
         } catch {
             return;
         }

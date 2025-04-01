@@ -1,5 +1,6 @@
 <script lang="ts">
-import type {TargetConfiguration} from 'edacation';
+import '@vscode/codicons/dist/codicon.css';
+import {Project, type TargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
 import * as vscode from '../../../vscode';
@@ -7,11 +8,13 @@ import {state as globalState} from '../state';
 
 import EDATargetSelector from './EDATargetSelector.vue';
 import EDATargetTLM from './EDATargetTLM.vue';
+import EDATestbenchSelector from './EDATestbenchSelector.vue';
 
 export default defineComponent({
     components: {
         EDATargetSelector,
-        EDATargetTLM
+        EDATargetTLM,
+        EDATestbenchSelector
     },
     data() {
         return {
@@ -43,23 +46,59 @@ export default defineComponent({
 
         selectedTarget(): TargetConfiguration | null {
             return this.targets[this.state.selectedTargetIndex] ?? null;
+        },
+
+        designFiles(): string[] {
+            if (!this.state.project) return [];
+
+            const project = Project.deserialize(this.state.project);
+            return project
+                .getInputFiles()
+                .filter((file) => file.type === 'design')
+                .map((file) => file.path);
+        },
+        testbenchFiles(): string[] {
+            if (!this.state.project) return [];
+
+            const project = Project.deserialize(this.state.project);
+            return project
+                .getInputFiles()
+                .filter((file) => file.type === 'testbench')
+                .map((file) => file.path);
         }
     }
 });
 </script>
 
 <template>
-    <div style="display: flex; flex-direction: column; align-items: stretch; gap: 0.75rem; margin: 0.5rem">
-        <vscode-button @click="executeCommand('openProjectConfiguration')"> Open Project Configuration </vscode-button>
+    <component is="style" lang="css">
+        .list { display: flex; align-items: stretch; gap: 0.75rem; } .list-vertical { flex-direction: column; }
+        .list-horizontal { flex-direction: row; }
+    </component>
 
-        <template v-if="targets.length !== 0">
-            <vscode-divider></vscode-divider>
-            <EDATargetSelector v-if="targets.length > 1" />
-            <EDATargetTLM :targetIndex="state.selectedTargetIndex" />
+    <div style="width: calc(100% - 40px)" class="list list-vertical">
+        <div class="list list-horizontal">
+            <vscode-button
+                @click="executeCommand('openProjectConfiguration')"
+                style="flex-grow: 1; display: flex; align-items: center"
+            >
+                <i class="codicon codicon-settings-gear" style="font-size: 1.5em; margin: 0"></i>
+            </vscode-button>
 
-            <vscode-button @click="executeTargetCommand('runRTL')">Show RTL</vscode-button>
-            <vscode-button @click="executeTargetCommand('runYosys')">Synthesize using Yosys</vscode-button>
-            <vscode-button @click="executeTargetCommand('runNextpnr')">Place and Route using nextpnr</vscode-button>
+            <div class="list list-vertical" v-if="targets.length !== 0" style="flex-grow: 2">
+                <EDATargetTLM :targetIndex="state.selectedTargetIndex" />
+                <EDATargetSelector v-if="targets.length > 1" />
+                <EDATestbenchSelector v-if="testbenchFiles.length > 1" />
+            </div>
+        </div>
+
+        <template v-if="targets.length > 0 && designFiles.length > 0">
+            <vscode-button @click="executeTargetCommand('runRTL')">Show RTL (Yosys)</vscode-button>
+            <vscode-button @click="executeTargetCommand('runIverilog')" v-if="testbenchFiles.length > 0"
+                >Generate waveform (IVerilog)</vscode-button
+            >
+            <vscode-button @click="executeTargetCommand('runYosys')">Synthesize (Yosys)</vscode-button>
+            <vscode-button @click="executeTargetCommand('runNextpnr')">Place and Route (Nextpnr)</vscode-button>
         </template>
     </div>
 </template>

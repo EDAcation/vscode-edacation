@@ -168,7 +168,7 @@ export default defineComponent({
             <p>{{ configDescription }}</p>
             <div v-if="target">
                 <vscode-checkbox
-                    :checked="config && 'useDefault' in config ? config?.useDefault ?? true : true"
+                    :checked="config && 'useDefault' in config ? (config?.useDefault ?? true) : true"
                     @change="handleUseDefaultChange"
                 >
                     Use default {{ configName }} (from "Defaults for all targets")
@@ -180,7 +180,7 @@ export default defineComponent({
                 </vscode-checkbox>
             </div>
             <div>
-                <vscode-text-area
+                <vscode-textarea
                     rows="10"
                     :placeholder="configNameTitle"
                     :value="(config?.values ?? []).join('\n')"
@@ -188,7 +188,7 @@ export default defineComponent({
                     style="width: 100%; margin-top: 1rem"
                 >
                     {{ configNameTitle }}{{ configNameOnePerLine ? ' (one per line)' : '' }}
-                </vscode-text-area>
+                </vscode-textarea>
             </div>
         </div>
         <div>

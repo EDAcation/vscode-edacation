@@ -1,4 +1,4 @@
-import {type WorkerOptions as _WorkerOptions} from 'edacation';
+import type {WorkerOptions} from 'edacation';
 import * as vscode from 'vscode';
 
 import {Project, type Projects} from '../projects/index.js';
@@ -10,10 +10,10 @@ import {type TaskDefinition, type TerminalTask} from './task.js';
 
 const PROJECT_PATTERN = '**/*.edaproject';
 
-interface JobDefinition<WorkerOptions extends _WorkerOptions> {
-    task: TerminalTask<WorkerOptions>;
+interface JobDefinition<WO extends WorkerOptions<any, any>> {
+    task: TerminalTask<WO>;
     targetId: string;
-    workerOptions?: WorkerOptions;
+    workerOptions?: WO;
 }
 
 export abstract class TaskProvider extends BaseTaskProvider {
@@ -68,7 +68,7 @@ export abstract class TaskProvider extends BaseTaskProvider {
     protected abstract createTaskTerminal(
         folder: vscode.WorkspaceFolder,
         definition: TaskDefinition
-    ): TaskTerminal<_WorkerOptions>;
+    ): TaskTerminal<WorkerOptions<any, any>>;
 
     private async findTasks(): Promise<vscode.Task[]> {
         const tasks: vscode.Task[] = [];
@@ -120,13 +120,13 @@ export abstract class TaskProvider extends BaseTaskProvider {
     }
 }
 
-export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscode.Pseudoterminal {
+export class TaskTerminal<WO extends WorkerOptions<any, any>> implements vscode.Pseudoterminal {
     protected projects: Projects;
     private folder: vscode.WorkspaceFolder;
     private definition: TaskDefinition;
 
-    private tasks: TerminalTask<WorkerOptions>[];
-    private curJob: JobDefinition<WorkerOptions> | null;
+    private tasks: TerminalTask<WO>[];
+    private curJob: JobDefinition<WO> | null;
 
     private curProject: Project | null;
 
@@ -143,7 +143,7 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
         projects: Projects,
         folder: vscode.WorkspaceFolder,
         definition: TaskDefinition,
-        tasks: TerminalTask<WorkerOptions>[]
+        tasks: TerminalTask<WO>[]
     ) {
         this.projects = projects;
         this.folder = folder;
@@ -185,24 +185,25 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
     protected async exit(code: number) {
         if (!this.curJob) return;
 
+        let uri: vscode.Uri | undefined = undefined;
         try {
             // Write logs
-            const uri = vscode.Uri.joinPath(
+            uri = vscode.Uri.joinPath(
                 this.curProject ? this.curProject.getRoot() : this.folder.uri,
                 'logs',
                 `${this.curJob.task.getName()}.log`
             );
             await vscode.workspace.fs.writeFile(uri, encodeText(this.logMessages.join('')));
-
-            if (this.curProject) {
-                // Add log to output files
-                await this.curProject.addOutputFileUris([uri], this.curJob.targetId);
-            }
         } catch (err) {
             console.error(err);
         }
 
         this.taskFinishEmitter.fire(code);
+
+        if (uri && this.curProject) {
+            // Add log to output files
+            await this.curProject.addOutputFileUris([uri], this.curJob.targetId);
+        }
     }
 
     protected async error(error: unknown) {
@@ -264,7 +265,7 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
         }
     }
 
-    private async handleMessage(job: JobDefinition<WorkerOptions>, message: TerminalMessage) {
+    private async handleMessage(job: JobDefinition<WO>, message: TerminalMessage) {
         if (!this.curProject) {
             console.warn(`Received message but no project active! ${JSON.stringify(message)}`);
             return;
@@ -291,7 +292,7 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
                     for (const file of outputFiles) {
                         // Construct URI if missing
                         if (!file.uri) {
-                            file.uri = vscode.Uri.joinPath(this.curProject.getRoot(), file.path);
+                            file.uri = this.curProject.getFileUri(file.path);
                         }
 
                         // Save file data (if requested)
@@ -301,12 +302,12 @@ export class TaskTerminal<WorkerOptions extends _WorkerOptions> implements vscod
                         }
                     }
 
+                    await job.task.handleEnd(this.curProject, job.workerOptions, outputFiles);
+                    job.task.cleanup();
+
                     // Add output files to project output
                     const uris = outputFiles.map((outp) => outp.uri).filter((outp): outp is vscode.Uri => !!outp);
                     await this.curProject.addOutputFileUris(uris, job.targetId);
-
-                    await job.task.handleEnd(this.curProject, job.workerOptions, outputFiles);
-                    job.task.cleanup();
 
                     await this.exit(0);
 

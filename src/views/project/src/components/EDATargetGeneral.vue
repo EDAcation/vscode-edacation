@@ -77,17 +77,20 @@ export default defineComponent({
                 return {};
             }
 
-            return this.device.packages.reduce((prev, packageId) => {
-                const vendorPackages: Record<string, string> = VENDORS[target.vendor as VendorId].packages;
-                prev[packageId] = vendorPackages[packageId] ?? packageId;
-                return prev;
-            }, {} as Record<string, string>);
+            return this.device.packages.reduce(
+                (prev, packageId) => {
+                    const vendorPackages: Record<string, string> = VENDORS[target.vendor as VendorId].packages;
+                    prev[packageId] = vendorPackages[packageId] ?? packageId;
+                    return prev;
+                },
+                {} as Record<string, string>
+            );
         },
         hasIdOverlap(): boolean {
             if (!this.target) return false;
 
-            const targetIds = this.state.project!.configuration.targets.map(target => target.id);
-            return targetIds.filter(id => id === this.target?.id).length >= 2;
+            const targetIds = this.state.project!.configuration.targets.map((target) => target.id);
+            return targetIds.filter((id) => id === this.target?.id).length >= 2;
         }
     },
     data() {
@@ -156,77 +159,69 @@ export default defineComponent({
                 grid-auto-flow: column;
                 grid-template-rows: repeat(4, 1fr);
                 grid-template-columns: repeat(2, minmax(320px, 1fr));
-                gap: 1rem;
+                column-gap: 1rem;
                 margin-bottom: 1rem;
             "
         >
-            <vscode-text-field placeholder="ID" :value="target.id" @input="handleIdChange">
-                ID <span style="margin-inline: 2rem; color: red;" v-if="hasIdOverlap">Error: duplicate ID</span>
-            </vscode-text-field>
+            <vscode-form-group variant="vertical">
+                <vscode-label>
+                    ID
+                    <span style="margin-inline: 2rem; color: red" v-if="hasIdOverlap">Error: duplicate ID</span>
+                </vscode-label>
+                <vscode-textfield placeholder="ID" :value="target.id" @input="handleIdChange"></vscode-textfield>
+            </vscode-form-group>
 
-            <vscode-text-field placeholder="Name" :value="target.name" @input="handleNameChange">
-                Name
-            </vscode-text-field>
+            <vscode-form-group variant="vertical">
+                <vscode-label>Name</vscode-label>
+                <vscode-textfield placeholder="Name" :value="target.name" @input="handleNameChange"></vscode-textfield>
+            </vscode-form-group>
 
             <!-- TODO: Make this configurable again
-            <vscode-text-field
+            <vscode-textfield
                 placeholder="Output directory"
                 :value="target.directory || ''"
                 @input="handleDirectoryChange"
-                >Output directory</vscode-text-field
+                >Output directory</vscode-textfield
             > -->
             <div></div>
 
             <div></div>
 
-            <div>
-                <label style="display: block; margin-bottom: 2px">Vendor</label>
-                <vscode-dropdown
-                    :value="target.vendor"
-                    @input="handleVendorChange"
-                    style="display: block; min-width: 20rem"
-                >
+            <vscode-form-group variant="vertical">
+                <vscode-label>Vendor</vscode-label>
+                <vscode-single-select :value="target.vendor" @input="handleVendorChange">
                     <vscode-option v-for="(vendor, vendorId) in vendors" :key="vendorId" :value="vendorId">
                         {{ vendor.name }}
                     </vscode-option>
-                </vscode-dropdown>
-            </div>
-            <div>
-                <label style="display: block; margin-bottom: 2px">Family</label>
-                <vscode-dropdown
-                    :value="target.family"
-                    @input="handleFamilyChange"
-                    style="display: block; min-width: 20rem"
-                >
+                </vscode-single-select>
+            </vscode-form-group>
+
+            <vscode-form-group variant="vertical">
+                <vscode-label>Family</vscode-label>
+                <vscode-single-select :value="target.family" @input="handleFamilyChange">
                     <vscode-option v-for="(family, familyId) in families" :key="familyId" :value="familyId">
                         {{ family.name }}
                     </vscode-option>
-                </vscode-dropdown>
-            </div>
-            <div>
-                <label style="display: block; margin-bottom: 2px">Device</label>
-                <vscode-dropdown
-                    :value="target.device"
-                    @input="handleDeviceChange"
-                    style="display: block; min-width: 20rem"
-                >
+                </vscode-single-select>
+            </vscode-form-group>
+
+            <vscode-form-group variant="vertical">
+                <vscode-label>Device</vscode-label>
+                <vscode-single-select :value="target.device" @input="handleDeviceChange">
                     <vscode-option v-for="(device, deviceId) in devices" :key="deviceId" :value="deviceId">
                         {{ device.name }}
                     </vscode-option>
-                </vscode-dropdown>
-            </div>
-            <div>
-                <label style="display: block; margin-bottom: 2px">Package</label>
-                <vscode-dropdown
-                    :value="target.package"
-                    @input="handlePackageChange"
-                    style="display: block; min-width: 20rem"
-                >
+                </vscode-single-select>
+            </vscode-form-group>
+
+            <vscode-form-group variant="vertical">
+                <vscode-label>Package</vscode-label>
+                <vscode-single-select :value="target.package" @input="handlePackageChange">
                     <vscode-option v-for="(packageName, packageId) in packages" :key="packageId" :value="packageId">
                         {{ packageName }}
                     </vscode-option>
-                </vscode-dropdown>
-            </div>
+                </vscode-single-select>
+            </vscode-form-group>
         </div>
     </template>
 </template>

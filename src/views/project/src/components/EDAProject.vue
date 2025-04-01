@@ -1,10 +1,11 @@
 <script lang="ts">
+import type {VscodeSingleSelect} from '@vscode-elements/elements';
+import type {TargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
 import {state as globalState} from '../state';
 
 import EDATarget from './EDATarget.vue';
-import type { TargetConfiguration } from 'edacation';
 
 export default defineComponent({
     components: {
@@ -35,7 +36,7 @@ export default defineComponent({
     },
     methods: {
         getNewTargetId(): string {
-            const takenIds = this.targets.map(target => target.id);
+            const takenIds = this.targets.map((target) => target.id);
 
             let index = this.targets.length + 1;
             while (takenIds.includes(`target${index}`)) index++;
@@ -43,7 +44,7 @@ export default defineComponent({
             return `target${index}`;
         },
         getDuplicateTargetId(oldId: string): string {
-            const match = oldId.match(/^(.*)(\d)+$/)
+            const match = oldId.match(/^(.*)(\d)+$/);
             let base: string;
             let seq: number;
             if (match) {
@@ -54,7 +55,7 @@ export default defineComponent({
                 seq = 1;
             }
 
-            const takenIds = this.targets.map(target => target.id);
+            const takenIds = this.targets.map((target) => target.id);
             while (takenIds.includes(`${base}${seq}`)) seq++;
 
             return `${base}${seq}`;
@@ -65,6 +66,9 @@ export default defineComponent({
             }
 
             this.state.project.name = (event.target as HTMLInputElement).value;
+        },
+        handleTargetChange(event: Event) {
+            this.state.selectedTargetIndex = (event.target as VscodeSingleSelect).selectedIndex;
         },
         handleTargetAdd() {
             if (!this.state.project) {
@@ -114,30 +118,27 @@ export default defineComponent({
 <template>
     <template v-if="state.project">
         <h1>Project</h1>
-        <vscode-text-field placeholder="Project name" :value="state.project.name" @input="handleNameChange">
+        <vscode-textfield placeholder="Project name" :value="state.project.name" @input="handleNameChange">
             Project name
-        </vscode-text-field>
+        </vscode-textfield>
 
         <h1>Targets</h1>
-        <p>Select target to configure</p>
-        <vscode-dropdown v-model.number="targetIndex" style="width: 20rem">
-            <vscode-option v-for="(target, index) in targets" :key="index" :value="index">
-                {{ target.name }}
-            </vscode-option>
-        </vscode-dropdown>
+        <vscode-form-group variant="vertical">
+            <vscode-label>Select target to configure</vscode-label>
+            <vscode-single-select @input="handleTargetChange">
+                <vscode-option v-for="(target, index) in targets" :selected="targetIndex === index">
+                    {{ target.name }}
+                </vscode-option>
+            </vscode-single-select>
+        </vscode-form-group>
 
-
-        <vscode-button v-if="targetIndex !== undefined" style="margin-start: 1rem" @click="handleTargetDelete">
-            Delete target
-        </vscode-button>
+        <vscode-button v-if="targetIndex !== undefined" @click="handleTargetDelete"> Delete target </vscode-button>
 
         <div style="display: flex; gap: 1rem">
             <vscode-button style="margin-top: 1rem" @click="handleTargetAdd">Add target</vscode-button>
-            <vscode-button
-                v-if="targetIndex !== undefined"
-                style="margin-top: 1rem"
-                @click="handleTargetDuplicate"
-            >Duplicate target</vscode-button>
+            <vscode-button v-if="targetIndex !== undefined" style="margin-top: 1rem" @click="handleTargetDuplicate"
+                >Duplicate target</vscode-button
+            >
         </div>
 
         <p v-if="targets.length === 0"><b>Error:</b> At least one target is required.</p>

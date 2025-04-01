@@ -5,6 +5,10 @@ import {getWebviewUri} from './util.js';
 export abstract class BaseWebview<Args = Record<string, never>> {
     protected readonly context: vscode.ExtensionContext;
 
+    public static getWebviewOptions(): vscode.WebviewPanelOptions {
+        return {retainContextWhenHidden: true};
+    }
+
     constructor(context: vscode.ExtensionContext) {
         this.context = context;
     }

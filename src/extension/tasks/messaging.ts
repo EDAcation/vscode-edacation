@@ -38,12 +38,27 @@ type MessageCallback = (m: TerminalMessage) => void;
 export abstract class TerminalMessageEmitter {
     private messageEvent: vscode.EventEmitter<TerminalMessage> = new vscode.EventEmitter();
 
+    private listenerAttached = false;
+    private readonly messageBuffer: TerminalMessage[] = [];
+
     public onMessage(callback: MessageCallback) {
         this.messageEvent.event(callback);
+
+        this.listenerAttached = true;
+
+        while (this.messageBuffer.length) {
+            const msg = this.messageBuffer.shift();
+            if (!msg) break;
+            this.fire(msg);
+        }
     }
 
     protected fire(message: TerminalMessage) {
-        this.messageEvent.fire(message);
+        if (!this.listenerAttached) {
+            this.messageBuffer.push(message);
+        } else {
+            this.messageEvent.fire(message);
+        }
     }
 
     protected println(line = '', stream: 'stdout' | 'stderr' = 'stdout', modifier?: AnsiModifier) {

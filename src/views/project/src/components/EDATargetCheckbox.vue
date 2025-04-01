@@ -1,9 +1,7 @@
 <script lang="ts">
 import {
-    getNextpnrDefaultOptions,
-    getNextpnrOptions,
-    getYosysDefaultOptions,
-    getYosysOptions,
+    type IVerilogConfiguration,
+    type IVerilogTargetConfiguration,
     type NextpnrConfiguration,
     type NextpnrOptions,
     type NextpnrTargetConfiguration,
@@ -12,6 +10,10 @@ import {
     type YosysConfiguration,
     type YosysOptions,
     type YosysTargetConfiguration,
+    getNextpnrDefaultOptions,
+    getNextpnrOptions,
+    getYosysDefaultOptions,
+    getYosysOptions
 } from 'edacation';
 import {type PropType, defineComponent} from 'vue';
 
@@ -47,7 +49,7 @@ export default defineComponent({
             }
             return this.state.project!.configuration.targets[this.targetIndex];
         },
-        defaultWorker(): YosysConfiguration | NextpnrConfiguration | undefined {
+        defaultWorker(): YosysConfiguration | NextpnrConfiguration | IVerilogConfiguration | undefined {
             if (!this.state.project!.configuration.defaults) {
                 return undefined;
             }
@@ -58,6 +60,8 @@ export default defineComponent({
             | YosysTargetConfiguration
             | NextpnrConfiguration
             | NextpnrTargetConfiguration
+            | IVerilogConfiguration
+            | IVerilogTargetConfiguration
             | undefined {
             return this.target ? this.target[this.workerId as WorkerId] : this.defaultWorker;
         },
@@ -73,13 +77,13 @@ export default defineComponent({
 
             if (!targetId) {
                 // Default configuration
-                if (this.workerId === 'yosys') return getYosysDefaultOptions(projectConfig)
-                if (this.workerId === 'nextpnr') return getNextpnrDefaultOptions(projectConfig)
+                if (this.workerId === 'yosys') return getYosysDefaultOptions(projectConfig);
+                if (this.workerId === 'nextpnr') return getNextpnrDefaultOptions(projectConfig);
                 return null;
             } else {
                 // Target configuration
-                if (this.workerId === 'yosys') return getYosysOptions(projectConfig, targetId)
-                if (this.workerId === 'nextpnr') return getNextpnrOptions(projectConfig, targetId)
+                if (this.workerId === 'yosys') return getYosysOptions(projectConfig, targetId);
+                if (this.workerId === 'nextpnr') return getNextpnrOptions(projectConfig, targetId);
                 return null;
             }
         },

@@ -38,7 +38,7 @@ const getTaskFilePaths = (files: TaskIOFile[], relDir: string = '.'): TaskIOFile
     });
 };
 
-export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends TerminalMessageEmitter {
+export abstract class TerminalTask<WorkerOptions extends _WorkerOptions<any, any>> extends TerminalMessageEmitter {
     private readonly toolProvider: ToolProvider;
 
     private isDisabled: boolean;
@@ -60,9 +60,7 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
 
     abstract getWorkerOptions(project: Project, targetId: string): WorkerOptions;
 
-    abstract getInputCommand(workerOptions: WorkerOptions): string;
-
-    abstract getInputArgs(workerOptions: WorkerOptions): string[];
+    abstract getWorkerSteps(workerOptions: WorkerOptions): WorkerOptions['steps'];
 
     abstract getInputFiles(workerOptions: WorkerOptions): TaskIOFile[];
 
@@ -75,8 +73,7 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
     async execute(project: Project, targetId: string): Promise<WorkerOptions> {
         const workerOptions = this.getWorkerOptions(project, targetId);
 
-        const command = this.getInputCommand(workerOptions);
-        const args = this.getInputArgs(workerOptions);
+        const steps = this.getWorkerSteps(workerOptions);
         const inputFiles = getTaskFilePaths(this.getInputFiles(workerOptions), workerOptions.target.directory);
         const outputFiles = getTaskFilePaths(this.getOutputFiles(workerOptions), workerOptions.target.directory);
 
@@ -101,16 +98,17 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions> extends
 
         this.toolProvider.setRunContext({
             project,
-            command,
-            args,
+            steps,
             inputFiles,
             outputFiles
         });
 
         // Print the tool provider and command to execute
         const toolName = await this.toolProvider.getName();
-        this.println(`Tool command (${toolName}):`, undefined, AnsiModifier.BOLD);
-        this.println(`  ${command} ${args.join(' ')}`);
+        this.println(`Tool commands (${toolName}):`, undefined, AnsiModifier.BOLD);
+        for (const step of steps) {
+            this.println(`  ${step.tool} ${step.arguments.join(' ')}`);
+        }
         this.println();
 
         await this.toolProvider.execute();

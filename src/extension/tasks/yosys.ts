@@ -1,4 +1,5 @@
 import {
+    YosysStep,
     type YosysWorkerOptions,
     generateYosysSynthCommands,
     generateYosysSynthPrepareCommands,
@@ -32,12 +33,17 @@ export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOpti
         return getYosysWorkerOptions(project, targetId);
     }
 
-    getInputCommand(workerOptions: YosysWorkerOptions): string {
-        return workerOptions.tool;
-    }
+    getWorkerSteps(workerOptions: YosysWorkerOptions): YosysStep[] {
+        const step = workerOptions.steps[0];
+        if (step === undefined) throw new Error('No steps to execute in worker options!');
 
-    getInputArgs(workerOptions: YosysWorkerOptions): string[] {
-        return [path.join(workerOptions.target.directory ?? '.', 'temp', 'design.ys')];
+        return [
+            {
+                tool: step.tool,
+                arguments: [path.join(workerOptions.target.directory ?? '.', 'temp', 'design.ys')],
+                commands: step.commands
+            }
+        ];
     }
 
     getInputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
@@ -85,9 +91,11 @@ export class YosysTaskProvider extends TaskProvider {
         folder: vscode.WorkspaceFolder,
         definition: TaskDefinition
     ): TaskTerminal<YosysWorkerOptions> {
-        const provider = getConfiguredProvider(this.context);
-        const prepareTask = new YosysPrepareTerminalTask(provider);
-        const synthesisTask = new YosysSynthTerminalTask(provider);
+        const prepareProvider = getConfiguredProvider(this.context);
+        const prepareTask = new YosysPrepareTerminalTask(prepareProvider);
+
+        const synthProvider = getConfiguredProvider(this.context);
+        const synthesisTask = new YosysSynthTerminalTask(synthProvider);
 
         return new TaskTerminal(this.projects, folder, definition, [prepareTask, synthesisTask]);
     }
@@ -169,7 +177,7 @@ class YosysSynthTerminalTask extends BaseYosysTerminalTask {
         // Find synthesis file
         const outFiles = outputFiles.filter((file) => file.path.endsWith('.json'));
         if (outFiles.length !== 1) return;
-        const synthUri = vscode.Uri.joinPath(project.getRoot(), outFiles[0].path);
+        const synthUri = project.getFileUri(outFiles[0].path);
         const lutUri = vscode.Uri.parse(path.join(path.dirname(synthUri.path), 'luts.yosys.json'));
 
         // Write LUT file

@@ -29,7 +29,8 @@
     "main": "./dist/extension/extension.js",
     "browser": "./dist/extension/extension.js",
     "extensionDependencies": [
-        "sndst00m.vscode-native-svg-preview"
+        "sndst00m.vscode-native-svg-preview",
+        "surfer-project.surfer"
     ],
     "contributes": {
         "configuration": {
@@ -104,6 +105,19 @@
                     "light": "./resources/icons/nextpnr.svg",
                     "dark": "./resources/icons/nextpnr-light.svg"
                 }
+            },
+            {
+                "id": "edacation-vcd",
+                "extensions": [
+                    ".vcd"
+                ],
+                "aliases": [
+                    "Value Change Dump File"
+                ],
+                "icon": {
+                    "light": "./resources/icons/testbench.svg",
+                    "dark": "./resources/icons/testbench-light.svg"
+                }
             }
         ],
         "commands": [
@@ -156,6 +170,12 @@
                 "icon": "$(remove)"
             },
             {
+                "command": "edacation.setInputFileType",
+                "category": "EDAcation",
+                "title": "Set Input File Type",
+                "icon": "$(arrow-swap)"
+            },
+            {
                 "command": "edacation.removeOutputFile",
                 "category": "EDAcation",
                 "title": "Remove Output File",
@@ -200,7 +220,12 @@
             {
                 "command": "edacation.runNextpnr",
                 "category": "EDAcation",
-                "title": "Place and Route using nextpnr"
+                "title": "Place and Route using NextPNR"
+            },
+            {
+                "command": "edacation.runIverilog",
+                "category": "EDAcation",
+                "title": "Generate waveform using Icarus Verilog"
             }
         ],
         "customEditors": [
@@ -271,7 +296,12 @@
                 },
                 {
                     "command": "edacation.removeInputFile",
-                    "when": "view == edacation-inputFiles && viewItem == file",
+                    "when": "view == edacation-inputFiles && viewItem =~ /^file-/",
+                    "group": "inline"
+                },
+                {
+                    "command": "edacation.setInputFileType",
+                    "when": "view == edacation-inputFiles && viewItem =~ /^file-/",
                     "group": "inline"
                 },
                 {
@@ -415,10 +445,10 @@
         "webpack-cli": "^5.1.4"
     },
     "dependencies": {
+        "@vscode-elements/elements": "^1.14.0",
         "@vscode/codicons": "^0.0.36",
-        "@vscode/webview-ui-toolkit": "^1.3.1",
         "digitaljs": "github:EDAcation/digitaljs#next",
-        "edacation": "^0.3.12",
+        "edacation": "^0.4.0",
         "nextpnr-viewer": "^0.7.3",
         "os-browserify": "^0.3.0",
         "path-browserify-win32": "^2.0.1",
