@@ -26,7 +26,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
         const editor = new editorType(context, projects);
         context.subscriptions.push(
             vscode.window.registerCustomEditorProvider(editorType.getViewType(), editor, {
-                webviewOptions: {retainContextWhenHidden: true}
+                webviewOptions: editorType.getWebviewOptions()
             })
         );
     }
@@ -48,7 +48,11 @@ export const activate = async (context: vscode.ExtensionContext) => {
     // Register webview providers
     for (const webviewType of Object.values(webviews)) {
         const webview = new webviewType(context, projects);
-        context.subscriptions.push(vscode.window.registerWebviewViewProvider(webviewType.getViewID(), webview));
+        context.subscriptions.push(
+            vscode.window.registerWebviewViewProvider(webviewType.getViewID(), webview, {
+                webviewOptions: webviewType.getWebviewOptions()
+            })
+        );
     }
 
     await projects.load();
