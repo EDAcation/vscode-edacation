@@ -29,7 +29,8 @@
     "main": "./dist/extension/extension.js",
     "browser": "./dist/extension/extension.js",
     "extensionDependencies": [
-        "sndst00m.vscode-native-svg-preview"
+        "sndst00m.vscode-native-svg-preview",
+        "surfer-project.surfer"
     ],
     "contributes": {
         "configuration": {
@@ -103,6 +104,19 @@
                 "icon": {
                     "light": "./resources/icons/nextpnr.svg",
                     "dark": "./resources/icons/nextpnr-light.svg"
+                }
+            },
+            {
+                "id": "edacation-vcd",
+                "extensions": [
+                    ".vcd"
+                ],
+                "aliases": [
+                    "Value Change Dump File"
+                ],
+                "icon": {
+                    "light": "./resources/icons/testbench.svg",
+                    "dark": "./resources/icons/testbench-light.svg"
                 }
             }
         ],
