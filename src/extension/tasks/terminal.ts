@@ -185,24 +185,25 @@ export class TaskTerminal<WO extends WorkerOptions<any, any>> implements vscode.
     protected async exit(code: number) {
         if (!this.curJob) return;
 
+        let uri: vscode.Uri | undefined = undefined;
         try {
             // Write logs
-            const uri = vscode.Uri.joinPath(
+            uri = vscode.Uri.joinPath(
                 this.curProject ? this.curProject.getRoot() : this.folder.uri,
                 'logs',
                 `${this.curJob.task.getName()}.log`
             );
             await vscode.workspace.fs.writeFile(uri, encodeText(this.logMessages.join('')));
-
-            if (this.curProject) {
-                // Add log to output files
-                await this.curProject.addOutputFileUris([uri], this.curJob.targetId);
-            }
         } catch (err) {
             console.error(err);
         }
 
         this.taskFinishEmitter.fire(code);
+
+        if (uri && this.curProject) {
+            // Add log to output files
+            await this.curProject.addOutputFileUris([uri], this.curJob.targetId);
+        }
     }
 
     protected async error(error: unknown) {
@@ -301,12 +302,12 @@ export class TaskTerminal<WO extends WorkerOptions<any, any>> implements vscode.
                         }
                     }
 
+                    await job.task.handleEnd(this.curProject, job.workerOptions, outputFiles);
+                    job.task.cleanup();
+
                     // Add output files to project output
                     const uris = outputFiles.map((outp) => outp.uri).filter((outp): outp is vscode.Uri => !!outp);
                     await this.curProject.addOutputFileUris(uris, job.targetId);
-
-                    await job.task.handleEnd(this.curProject, job.workerOptions, outputFiles);
-                    job.task.cleanup();
 
                     await this.exit(0);
 
