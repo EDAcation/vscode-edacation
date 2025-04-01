@@ -48,6 +48,15 @@ export default defineComponent({
             return this.targets[this.state.selectedTargetIndex] ?? null;
         },
 
+        designFiles(): string[] {
+            if (!this.state.project) return [];
+
+            const project = Project.deserialize(this.state.project);
+            return project
+                .getInputFiles()
+                .filter((file) => file.type === 'design')
+                .map((file) => file.path);
+        },
         testbenchFiles(): string[] {
             if (!this.state.project) return [];
 
@@ -83,13 +92,13 @@ export default defineComponent({
             </div>
         </div>
 
-        <template v-if="targets.length !== 0">
-            <vscode-button @click="executeTargetCommand('runRTL')">Show RTL</vscode-button>
-            <vscode-button @click="executeTargetCommand('runYosys')">Synthesize using Yosys</vscode-button>
-            <vscode-button @click="executeTargetCommand('runNextpnr')">Place and Route using Nextpnr</vscode-button>
+        <template v-if="targets.length > 0 && designFiles.length > 0">
+            <vscode-button @click="executeTargetCommand('runRTL')">Show RTL (Yosys)</vscode-button>
             <vscode-button @click="executeTargetCommand('runIverilog')" v-if="testbenchFiles.length > 0"
-                >Generate waveform using IVerilog</vscode-button
+                >Generate waveform (IVerilog)</vscode-button
             >
+            <vscode-button @click="executeTargetCommand('runYosys')">Synthesize (Yosys)</vscode-button>
+            <vscode-button @click="executeTargetCommand('runNextpnr')">Place and Route (Nextpnr)</vscode-button>
         </template>
     </div>
 </template>
