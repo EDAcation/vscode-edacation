@@ -2,6 +2,7 @@
 import type {VscodeTextfield} from '@vscode-elements/elements';
 import {
     type IVerilogConfiguration,
+    type IVerilogOptions,
     type IVerilogTargetConfiguration,
     type NextpnrConfiguration,
     type NextpnrOptions,
@@ -11,6 +12,8 @@ import {
     type YosysConfiguration,
     type YosysOptions,
     type YosysTargetConfiguration,
+    getIVerilogDefaultOptions,
+    getIVerilogOptions,
     getNextpnrDefaultOptions,
     getNextpnrOptions,
     getYosysDefaultOptions,
@@ -26,11 +29,11 @@ export default defineComponent({
             type: Number
         },
         workerId: {
-            type: String as PropType<'yosys' | 'nextpnr'>,
+            type: String as PropType<'yosys' | 'nextpnr' | 'iverilog'>,
             required: true
         },
         configId: {
-            type: String as PropType<keyof YosysOptions | keyof NextpnrOptions>,
+            type: String as PropType<keyof YosysOptions | keyof NextpnrOptions | keyof IVerilogOptions>,
             required: true
         },
         configName: {
@@ -76,7 +79,7 @@ export default defineComponent({
             }
             return this.worker.options;
         },
-        effectiveOptions(): YosysOptions | NextpnrOptions | null {
+        effectiveOptions(): YosysOptions | NextpnrOptions | IVerilogOptions | null {
             const projectConfig = this.state.project!.configuration;
             const targetId = this.target?.id;
 
@@ -84,11 +87,13 @@ export default defineComponent({
                 // Default configuration
                 if (this.workerId === 'yosys') return getYosysDefaultOptions(projectConfig);
                 if (this.workerId === 'nextpnr') return getNextpnrDefaultOptions(projectConfig);
+                if (this.workerId === 'iverilog') return getIVerilogDefaultOptions(projectConfig);
                 return null;
             } else {
                 // Target configuration
                 if (this.workerId === 'yosys') return getYosysOptions(projectConfig, targetId);
                 if (this.workerId === 'nextpnr') return getNextpnrOptions(projectConfig, targetId);
+                if (this.workerId === 'iverilog') return getIVerilogOptions(projectConfig, targetId);
                 return null;
             }
         },

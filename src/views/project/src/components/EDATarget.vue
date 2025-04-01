@@ -8,6 +8,7 @@ import EDATargetGeneral from './EDATargetGeneral.vue';
 import EDATargetNextpnr from './EDATargetNextpnr.vue';
 import EDATargetPlacementAndRouting from './EDATargetPlacementAndRouting.vue';
 import EDATargetSynthesis from './EDATargetSynthesis.vue';
+import EDATargetTesting from './EDATargetTesting.vue';
 import EDATargetYosys from './EDATargetYosys.vue';
 
 export default defineComponent({
@@ -16,6 +17,7 @@ export default defineComponent({
         EDATargetYosys,
         EDATargetNextpnr,
         EDATargetSynthesis,
+        EDATargetTesting,
         EDATargetPlacementAndRouting
     },
     props: {
@@ -59,6 +61,11 @@ export default defineComponent({
                 <EDATargetSynthesis :targetIndex="targetIndex" />
             </vscode-tab-panel>
 
+            <vscode-tab-header slot="header">Testing</vscode-tab-header>
+            <vscode-tab-panel>
+                <EDATargetTesting :targetIndex="targetIndex" />
+            </vscode-tab-panel>
+
             <vscode-tab-header slot="header">Placement & Routing</vscode-tab-header>
             <vscode-tab-panel>
                 <EDATargetPlacementAndRouting :targetIndex="targetIndex" />
@@ -69,7 +76,7 @@ export default defineComponent({
                 <EDATargetYosys :targetIndex="targetIndex" />
             </vscode-tab-panel>
 
-            <vscode-tab-header slot="header">nextpnr</vscode-tab-header>
+            <vscode-tab-header slot="header">Nextpnr</vscode-tab-header>
             <vscode-tab-panel>
                 <EDATargetNextpnr :targetIndex="targetIndex" />
             </vscode-tab-panel>
