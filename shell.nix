@@ -1,9 +1,12 @@
-{ pkgs ? import <nixpkgs> {}}:
+{
+  pkgs ? import <nixpkgs> { },
+}:
 
 pkgs.mkShell {
   packages = with pkgs; [
     nodejs_20
     yarn
+    vsce
   ];
 
   shellHook = ''
@@ -11,7 +14,7 @@ pkgs.mkShell {
     CACHE_PATH="$CACHE_DIR/npm_cache"
 
     hash () { sha256sum $1 | awk '{print $1}'; }
-    
+
     cur_hash="$(hash package.json)-$(hash package-lock.json)"
 
     if [[ ! -f "$CACHE_PATH" || "$(cat $CACHE_PATH)" != $cur_hash ]]; then
