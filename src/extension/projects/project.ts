@@ -1,6 +1,7 @@
 import {
     Project as BaseProject,
     DEFAULT_CONFIGURATION,
+    FILE_EXTENSIONS_HDL,
     type ProjectConfiguration,
     ProjectInputFile,
     ProjectInputFileState,
@@ -165,8 +166,11 @@ export class Project extends BaseProject {
             }
             if (!folderRelativePath || this.hasInputFile(folderRelativePath)) continue;
 
-            // TODO: automatically set as testbench depending on file name
-            files.push({path: folderRelativePath, type: 'design'});
+            const parsedPath = path.parse(fileUri.path);
+            const isTestbench =
+                parsedPath.name.endsWith('_tb') && FILE_EXTENSIONS_HDL.includes(parsedPath.ext.substring(1));
+
+            files.push({path: folderRelativePath, type: isTestbench ? 'testbench' : 'design'});
             this.inputFileInfo.set(
                 folderRelativePath,
                 getFileWatcher(
