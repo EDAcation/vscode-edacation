@@ -1,28 +1,46 @@
-# EDAcation for VS Code
+<p align="right">
+  <a href="https://marketplace.visualstudio.com/items?itemName=edacation.edacation"><img src="https://img.shields.io/visual-studio-marketplace/v/edacation.edacation?label=VSCode%20Marketplace"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=edacation.edacation"><img src="https://img.shields.io/visual-studio-marketplace/d/edacation.edacation"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=edacation.edacation"><img src="https://img.shields.io/visual-studio-marketplace/r/edacation.edacation"></a>
+</p>
+<p align="right">
+  <a href="https://open-vsx.org/extension/edacation/edacation"><img src="https://img.shields.io/open-vsx/v/edacation/edacation?label=Open-VSX"></a>
+  <a href="https://open-vsx.org/extension/edacation/edacation"><img src="https://img.shields.io/open-vsx/dt/edacation/edacation"></a>
+  <a href="https://open-vsx.org/extension/edacation/edacation"><img src="https://img.shields.io/open-vsx/rating/edacation/edacation"></a>
+</p>
 
-EDAcation is a learning environment for digital hardware design. It can be used with [Visual Studio Code](https://code.visualstudio.com) or [Visual Studio Code for the Web](https://vscode.dev/).
+<p align="center">
+  <img src="resources/icons/edacation.png"></img>
+  <h1 align="center">EDAcation for VSCode</h1>
+  <p align="center">Insert catchphrase here</p>
+</p>
+<br><br>
 
-The following open source EDA tools are used:
+EDAcation is a learning environment for digital hardware design. It can be used with [Visual Studio Code](https://code.visualstudio.com) and [Visual Studio Code for the Web](https://vscode.dev/).
+
+We aim to provide an easy to use front-end to several existing free and open source (FOSS) tools. These include:
 
 -   [Yosys](https://github.com/YosysHQ/yosys) - RTL synthesis
--   [nextpnr](https://github.com/YosysHQ/nextpnr) - FPGA place and route
+-   [Nextpnr](https://github.com/YosysHQ/nextpnr) - FPGA place and route
 -   [DigitalJS](https://github.com/tilk/digitaljs) - Digital circuit simulator
+-   [Icarus Verilog](https://github.com/steveicarus/iverilog) - Waveform generation
 
-## Features
+## Demo
 
-_TODO: feature list and screenshot(s)_
+Just getting started? View a quickstart demo/tutorial [here](https://edacation.github.io/assets/tutorial.mp4).
 
 ## Documentation
 
-The documentation is available [here](docs/index.md).
+Documentation is coming soon!
 
 ## Contributing
 
+We are open to contributions! However, please open an issue first before submitting large changes. This way we can discuss
 See the [development documentation](docs/development.md). In the future more specific guidelines for contributing could be drafted.
 
 ## License
 
-This project is available under the [MIT license](LICENSE.md). Note that some dependencies have different licenses.
+This project is available under the [MIT license](LICENSE.md). Note that some dependencies may have different licenses.
 
 ## Other projects
 
@@ -30,6 +48,5 @@ EDAcation consists of several projects:
 
 -   [vscode-edacation](https://github.com/EDAcation/vscode-edacation) - VS Code extension
 -   [edacation](https://github.com/EDAcation/edacation) - Libary and CLI
--   [yosys.js](https://github.com/EDAcation/yosys.js) - WebAssembly version of Yosys
--   [nextpnr.js](https://github.com/EDAcation/nextpnr.js) - WebAssembly version of nextpnr
 -   [nextpnr-viewer](https://github.com/EDAcation/nextpnr-viewer) - FPGA viewer for nextpnr
+-   [native-fpga-tools](https://github.com/EDAcation/native-fpga-tools) - Minimal, native FPGA tool bundles
