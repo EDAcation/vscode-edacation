@@ -366,6 +366,7 @@ export class Project extends BaseProject {
 
     private async save() {
         await Project.store(this);
+        this.projects.emitProjectChange();
     }
 
     static serialize(project: Project): ProjectState {
