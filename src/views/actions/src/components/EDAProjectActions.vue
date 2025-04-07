@@ -43,9 +43,17 @@ export default defineComponent({
         targets(): TargetConfiguration[] {
             return this.state.project?.configuration.targets ?? [];
         },
+        targetIndex(): number | undefined {
+            if (this.targets.length === 0) return undefined;
 
+            let selectedIndex = this.state.selectedTargetIndex ?? 0;
+            if (selectedIndex < 0) return 0;
+            if (selectedIndex >= this.targets.length) return this.targets.length - 1;
+            return selectedIndex;
+        },
         selectedTarget(): TargetConfiguration | null {
-            return this.targets[this.state.selectedTargetIndex] ?? null;
+            if (this.targetIndex === undefined) return null;
+            return this.targets[this.targetIndex] ?? null;
         },
 
         designFiles(): string[] {
@@ -86,9 +94,9 @@ export default defineComponent({
             </vscode-button>
 
             <div class="list list-vertical" v-if="targets.length !== 0" style="flex-grow: 2">
-                <EDATargetTLM :targetIndex="state.selectedTargetIndex" />
-                <EDATargetSelector v-if="targets.length > 1" />
-                <EDATestbenchSelector v-if="testbenchFiles.length > 1" />
+                <EDATargetSelector :targetIndex="targetIndex" v-if="targets.length > 1" />
+                <EDATargetTLM :targetIndex="targetIndex" />
+                <EDATestbenchSelector :targetIndex="targetIndex" v-if="testbenchFiles.length > 1" />
             </div>
         </div>
 

@@ -8,8 +8,8 @@ import {state as globalState} from '../state';
 
 export default defineComponent({
     props: {
-        testbenchPath: {
-            type: String
+        targetIndex: {
+            type: Number
         }
     },
     data() {
@@ -36,8 +36,9 @@ export default defineComponent({
     },
     computed: {
         target(): TargetConfiguration | undefined {
+            if (this.targetIndex === undefined) return undefined;
             const targets = this.state.project?.configuration.targets ?? [];
-            return targets[this.state.selectedTargetIndex];
+            return targets[this.targetIndex];
         },
         testbenchFiles(): string[] {
             if (!this.state.project) return [];
@@ -62,8 +63,8 @@ export default defineComponent({
 </script>
 
 <template>
-    <vscode-single-select @change="handleTestbenchChange" style="width: initial">
-        <vscode-option v-for="(file, index) in testbenchFiles" :selected="file === selectedTestbench">
+    <vscode-single-select @change="handleTestbenchChange" :value="selectedTestbench" style="width: initial">
+        <vscode-option v-for="file in testbenchFiles" :value="file">
             {{ file }}
         </vscode-option>
     </vscode-single-select>

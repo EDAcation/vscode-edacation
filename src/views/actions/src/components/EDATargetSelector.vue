@@ -33,7 +33,7 @@ export default defineComponent({
 
 <template>
     <vscode-single-select @change="handleTargetChange" style="width: initial">
-        <vscode-option v-for="(target, index) in targets" :selected="index === state.selectedTargetIndex">
+        <vscode-option v-for="(target, index) in targets" :selected="index === targetIndex">
             {{ target.name }}
         </vscode-option>
     </vscode-single-select>
