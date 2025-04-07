@@ -115,14 +115,12 @@ export class InputFilesProvider extends FilesProvider<InputFileTreeItem> {
     }
 
     private getCategoryTreeItem(type: ProjectInputFileState['type'], label: string) {
-        const collapsibleState = vscode.TreeItemCollapsibleState[type === 'design' ? 'Expanded' : 'Collapsed'];
-
         return {
             label,
             id: type,
 
             contextValue: 'inputCategory',
-            collapsibleState
+            collapsibleState: vscode.TreeItemCollapsibleState.Expanded
         };
     }
 }
