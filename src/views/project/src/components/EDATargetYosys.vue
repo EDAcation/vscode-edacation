@@ -1,5 +1,10 @@
 <script lang="ts">
-import {Project, generateYosysWorkerOptions} from 'edacation';
+import {
+    Project,
+    generateYosysSynthCommands,
+    generateYosysSynthPrepareCommands,
+    generateYosysWorkerOptions
+} from 'edacation';
 import type {TargetConfiguration, YosysConfiguration, YosysTargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
@@ -50,6 +55,14 @@ export default defineComponent({
         },
         generatedOptions(): ReturnType<typeof generateYosysWorkerOptions> | null {
             return this.generated.status === 'ok' ? this.generated.res : null;
+        },
+        generatedSynthCommands(): string[] {
+            if (!this.generatedOptions) return [];
+
+            const prepareCmds = generateYosysSynthPrepareCommands(this.generatedOptions);
+            const synthCmds = generateYosysSynthCommands(this.generatedOptions);
+
+            return prepareCmds.concat(synthCmds);
         }
     },
     data() {
@@ -66,7 +79,7 @@ export default defineComponent({
             <code v-if="generatedError" style="color: red; grid-column: span 2">{{ generatedError }}</code>
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generatedOptions?.commands ?? []"
+                :generated="generatedSynthCommands"
                 workerId="yosys"
                 workerName="Yosys"
                 configId="commands"
