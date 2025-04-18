@@ -177,6 +177,20 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
             circuit.scaleAndRefreshPaper(mainPaper, zoomLevel);
         });
 
+        // Ctrl + wheel zooming
+        addEventListener('wheel', (ev) => {
+            if (!ev.ctrlKey) return;
+
+            ev.preventDefault();
+            if (ev.deltaY < 0) {
+                zoomLevel += 1;
+                circuit.scaleAndRefreshPaper(mainPaper, zoomLevel);
+            } else if (ev.deltaY > 0) {
+                zoomLevel -= 1;
+                circuit.scaleAndRefreshPaper(mainPaper, zoomLevel);
+            }
+        });
+
         this.root.appendChild(elementCircuit);
     }
 
