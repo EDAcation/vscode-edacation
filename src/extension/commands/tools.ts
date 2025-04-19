@@ -1,48 +1,71 @@
 import * as vscode from 'vscode';
 
 import * as node from '../../common/node-modules.js';
-import {ManagedTool, getInstalledTools, getSuggestedTools} from '../tasks/managedtool';
+import {ManagedTool, RemoteTool, ToolRepository} from '../tools';
 
 import {BaseCommand} from './base';
 
-const pickTools = async (tools: ManagedTool[], prompt = 'Select tools'): Promise<ManagedTool[]> => {
-    const pickItems: vscode.QuickPickItem[] = [];
-    for (const tool of tools) {
-        if (!(await tool.isInstalled())) {
-            // Not installed
-            const latestVersion = await tool.getLatestVersion();
-            pickItems.push({
-                label: tool.getName(),
-                description: latestVersion ?? undefined,
-                detail: 'Installable'
-            });
-        } else if (await tool.isUpdateAvailable()) {
-            // Installed, but updateable
-            const curVersion = await tool.getInstalledVersion();
-            const latestVersion = await tool.getLatestVersion();
-            pickItems.push({
-                label: tool.getName(),
-                description: `${curVersion} => ${latestVersion}`,
-                detail: 'Updateable'
-            });
-        } else {
-            // Installed and up-to-date
-            const curVersion = await tool.getInstalledVersion();
-            pickItems.push({
-                label: tool.getName(),
-                description: curVersion ?? undefined,
-                detail: 'Up-to-date'
-            });
-        }
+abstract class ManagedToolCommand extends BaseCommand {
+    protected getRepository() {
+        return ToolRepository.get(this.context);
     }
 
-    const picks = (await vscode.window.showQuickPick(pickItems, {title: prompt, canPickMany: true})) ?? [];
-    const selectedToolNames = picks.map((pick) => pick.label);
+    // protected async pickLocalTools(tools: ManagedTool[], prompt?: string): Promise<ManagedTool[]> {
+    //     const remoteTools = await Promise.all(tools.map((tool) => this.getRepository().getRemoteToolById(tool.id)));
 
-    return tools.filter((tool) => selectedToolNames.includes(tool.getName()));
-};
+    //     const picked = await this.pickRemoteTools(
+    //         remoteTools.filter((tool) => tool !== null),
+    //         prompt
+    //     );
+    // }
 
-abstract class ManagedToolCommand extends BaseCommand {
+    protected async pickTools<T extends ManagedTool | RemoteTool>(tools: T[], prompt = 'Select tools'): Promise<T[]> {
+        const pickItems: vscode.QuickPickItem[] = [];
+        for (const tool of tools) {
+            let localTool: ManagedTool | null;
+            let remoteTool: RemoteTool | null;
+            if (tool instanceof ManagedTool) {
+                localTool = tool;
+                remoteTool = await this.getRepository().getRemoteToolById(tool.id);
+            } else {
+                localTool = await this.getRepository().getLocalToolById(tool.tool);
+                remoteTool = tool;
+            }
+
+            if (localTool === null && remoteTool !== null) {
+                // Not installed, but available
+                pickItems.push({
+                    label: remoteTool.friendly_name,
+                    description: remoteTool.version,
+                    detail: 'Installable'
+                });
+            } else if (localTool !== null && (await localTool.isUpdateAvailable())) {
+                // Installed, but updateable
+                const latestVersion = await localTool.getLatestVersion();
+                pickItems.push({
+                    label: localTool.name,
+                    description: `${localTool.version} => ${latestVersion}`,
+                    detail: 'Updateable'
+                });
+            } else if (localTool !== null) {
+                // Installed and up-to-date
+                pickItems.push({
+                    label: localTool.name,
+                    description: localTool.version,
+                    detail: 'Up-to-date'
+                });
+            }
+        }
+
+        const picks = (await vscode.window.showQuickPick(pickItems, {title: prompt, canPickMany: true})) ?? [];
+        const selectedToolNames = picks.map((pick) => pick.label);
+
+        return tools.filter((tool) => {
+            const toolName = tool instanceof ManagedTool ? tool.name : tool.friendly_name;
+            return selectedToolNames.includes(toolName);
+        });
+    }
+
     abstract exec(...args: unknown[]): Promise<void>;
 
     async execute(...args: unknown[]) {
@@ -60,10 +83,10 @@ export class InstallToolCommand extends ManagedToolCommand {
     }
 
     override async exec(...toolCommands: string[]): Promise<void> {
-        let tools: ManagedTool[] = [];
+        let tools: RemoteTool[] = [];
         if (toolCommands.length) {
             for (const command of toolCommands) {
-                const tool = await ManagedTool.fromCommand(this.context, command);
+                const tool = await this.getRepository().getRemoteToolFromCommand(command);
                 if (!tool) {
                     void vscode.window.showErrorMessage(`Could not find managed tool providing "${command}"`);
                     return;
@@ -71,23 +94,24 @@ export class InstallToolCommand extends ManagedToolCommand {
                 tools.push(tool);
             }
         } else {
-            const suggestedTools = await vscode.window.withProgress(
-                {location: vscode.ProgressLocation.Window},
-                (_prog) => getSuggestedTools(this.context)
+            const remoteTools = await vscode.window.withProgress({location: vscode.ProgressLocation.Window}, (_prog) =>
+                this.getRepository().getRemoteTools()
             );
-            tools = await pickTools(suggestedTools, 'Select tools to (re)install');
+            tools = await this.pickTools(remoteTools, 'Select tools to (re)install');
         }
 
         await Promise.all(tools.map((tool) => this.installTool(tool)));
     }
 
-    private async installTool(tool: ManagedTool) {
+    private async installTool(tool: RemoteTool) {
+        let managedTool: ManagedTool;
+
         try {
             let prevProgress = 0;
-            await vscode.window.withProgress(
-                {title: `Installing ${tool.getName()}...`, location: vscode.ProgressLocation.Notification},
+            managedTool = await vscode.window.withProgress(
+                {title: `Installing ${tool.friendly_name}...`, location: vscode.ProgressLocation.Notification},
                 (msgProgress) =>
-                    tool.install((dlProgress) => {
+                    this.getRepository().installTool(tool, (dlProgress) => {
                         if (!dlProgress) return msgProgress.report({increment: undefined});
 
                         // Convert from 0 - 1 to 0 - 100
@@ -102,7 +126,7 @@ export class InstallToolCommand extends ManagedToolCommand {
             return;
         }
 
-        void vscode.window.showInformationMessage(`Successfully installed ${tool.getName()}`);
+        void vscode.window.showInformationMessage(`Successfully installed ${managedTool.name}`);
     }
 }
 
@@ -111,31 +135,43 @@ export class UninstallToolCommand extends ManagedToolCommand {
         return 'edacation.uninstallTool';
     }
 
-    override async exec(...toolNames: string[]): Promise<void> {
-        let tools: ManagedTool[];
-        if (toolNames.length) {
-            tools = toolNames.map((toolName) => new ManagedTool(this.context, toolName));
+    override async exec(...toolIds: string[]): Promise<void> {
+        let tools: ManagedTool[] = [];
+        if (toolIds.length) {
+            for (const id of toolIds) {
+                const tool = await this.getRepository().getLocalToolById(id);
+                if (!tool) {
+                    await vscode.window.showErrorMessage(`Unable to find tool to uninstall: ${id}`);
+                    continue;
+                }
+                tools.push(tool);
+            }
         } else {
-            const installedTools = await getInstalledTools(this.context);
+            const installedTools = await this.getRepository().getLocalTools();
             if (!installedTools.length) {
                 await vscode.window.showErrorMessage('No tools are currently installed!');
                 return;
             }
 
-            tools = await pickTools(installedTools, 'Select tool(s) to uninstall');
+            tools = await this.pickTools(installedTools, 'Select tool(s) to uninstall');
         }
 
         await Promise.all(
             tools.map(async (tool) => {
-                try {
-                    await tool.uninstall();
-                } catch (err) {
-                    void vscode.window.showErrorMessage(`Error while uninstalling tool: ${err}`);
-                    console.error(err);
+                if (!tool) {
+                    await vscode.window.showErrorMessage(`Could not find tool`);
                     return;
                 }
 
-                void vscode.window.showInformationMessage(`Successfully uninstalled ${tool.getName()}`);
+                try {
+                    await tool.uninstall();
+                } catch (err) {
+                    console.error(err);
+                    await vscode.window.showErrorMessage(`Error while uninstalling tool: ${err}`);
+                    return;
+                }
+
+                await vscode.window.showInformationMessage(`Successfully uninstalled ${tool.name}`);
             })
         );
     }
@@ -149,7 +185,7 @@ export class CheckToolUpdateCommand extends ManagedToolCommand {
     override async exec(..._args: unknown[]): Promise<void> {
         // Filter out updateable tools
         const updateableTools: ManagedTool[] = [];
-        for (const tool of await getInstalledTools(this.context)) {
+        for (const tool of await this.getRepository().getLocalTools()) {
             if (await tool.isUpdateAvailable()) updateableTools.push(tool);
         }
 
@@ -157,17 +193,17 @@ export class CheckToolUpdateCommand extends ManagedToolCommand {
 
         let infoMessage: string;
         if (updateableTools.length === 1) {
-            const toolsStr = updateableTools[0].getName();
+            const toolsStr = updateableTools[0].name;
             infoMessage = `The following tool has an update available: ${toolsStr}. Do you want to install it?`;
         } else {
-            const toolsStr = updateableTools.map((tool) => tool.getName()).join(', ');
+            const toolsStr = updateableTools.map((tool) => tool.name).join(', ');
             infoMessage = `The following tools have updates available: ${toolsStr}. Do you want to install them?`;
         }
 
         const resp = await vscode.window.showInformationMessage(infoMessage, 'Yes', 'No');
         if (resp === 'Yes') {
             await Promise.all(
-                updateableTools.map((tool) => vscode.commands.executeCommand('edacation.installTool', tool.getId()))
+                updateableTools.map((tool) => vscode.commands.executeCommand('edacation.installTool', tool.id))
             );
         }
     }
