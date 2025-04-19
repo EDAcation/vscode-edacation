@@ -28,7 +28,7 @@ export interface ToolSettings {
     id: string;
     name: string;
     version: string;
-    directory: vscode.Uri;
+    directory: string;
     providesCommands: string[];
 }
 
@@ -127,11 +127,11 @@ export class ToolRepository {
     private static remoteToolsCache: RemoteToolRegistry | null = null;
 
     private extensionContext: vscode.ExtensionContext;
-    private installedTools: Record<string, ManagedTool>;
+    private installedTools: Record<string, ManagedTool> | null;
 
     constructor(extensionContext: vscode.ExtensionContext) {
         this.extensionContext = extensionContext;
-        this.installedTools = {};
+        this.installedTools = null;
     }
 
     public static get(extensionContext: vscode.ExtensionContext) {
@@ -141,16 +141,7 @@ export class ToolRepository {
     }
 
     public async getLocalTools(): Promise<ManagedTool[]> {
-        if (this.installedTools !== null) return Object.values(this.installedTools);
-
-        // Build from state
-        const state = await this.getToolsState();
-        this.installedTools = {};
-        for (const tool of Object.values(state.installedTools)) {
-            this.installedTools[tool.id] = new ManagedTool(this, tool);
-        }
-
-        return Object.values(this.installedTools);
+        return Object.values(await this.getInstalledTools());
     }
 
     public async getLocalToolById(id: string): Promise<ManagedTool | null> {
@@ -205,10 +196,10 @@ export class ToolRepository {
             id: tool.tool,
             name: tool.friendly_name,
             version: tool.version,
-            directory: targetDir,
+            directory: targetDir.fsPath,
             providesCommands: tool.provides
         });
-        this.installedTools[localTool.id] = localTool;
+        (await this.getInstalledTools())[localTool.id] = localTool;
 
         await this.updateToolsState();
 
@@ -220,7 +211,7 @@ export class ToolRepository {
         if (!tool) return; // not installed
 
         await vscode.workspace.fs.delete(tool.directory, {recursive: true, useTrash: false});
-        delete this.installedTools[tool.id];
+        delete (await this.getInstalledTools())[tool.id];
 
         await this.updateToolsState();
     }
@@ -234,6 +225,19 @@ export class ToolRepository {
 
     private async getToolDir(id: string): Promise<vscode.Uri> {
         return vscode.Uri.joinPath(await this.getToolsDir(), id);
+    }
+
+    private async getInstalledTools(): Promise<Record<string, ManagedTool>> {
+        if (this.installedTools !== null) return this.installedTools;
+
+        // Build from state
+        const state = await this.getToolsState();
+        this.installedTools = {};
+        for (const tool of Object.values(state.installedTools)) {
+            this.installedTools[tool.id] = new ManagedTool(this, tool);
+        }
+
+        return this.installedTools;
     }
 
     private async getToolsState(): Promise<ToolsState> {

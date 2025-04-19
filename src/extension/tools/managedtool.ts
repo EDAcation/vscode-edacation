@@ -31,7 +31,7 @@ export class ManagedTool {
     }
 
     get directory(): vscode.Uri {
-        return this.settings.directory;
+        return vscode.Uri.file(this.settings.directory);
     }
 
     get providesCommands(): string[] {
