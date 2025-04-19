@@ -38,6 +38,10 @@ export class ManagedTool {
         return this.settings.providesCommands;
     }
 
+    public getBinPaths(): vscode.Uri[] {
+        return ['bin', 'lib'].map((path) => vscode.Uri.joinPath(this.directory, path));
+    }
+
     public async getLatestVersion(): Promise<string> {
         const remoteTool = await this.getRemoteTool();
         if (!remoteTool) return this.version; // unavailable remotely, so treat this as latest version

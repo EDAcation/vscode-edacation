@@ -201,7 +201,7 @@ export class ToolRepository {
         });
         (await this.getInstalledTools())[localTool.id] = localTool;
 
-        await this.updateToolsState();
+        await this.saveState();
 
         return localTool;
     }
@@ -213,7 +213,20 @@ export class ToolRepository {
         await vscode.workspace.fs.delete(tool.directory, {recursive: true, useTrash: false});
         delete (await this.getInstalledTools())[tool.id];
 
-        await this.updateToolsState();
+        await this.saveState();
+    }
+
+    public async applyTerminalContributions(): Promise<void> {
+        const localTools = await this.getLocalTools();
+
+        const platform = await getPlatform();
+        const pathSep = platform.os === 'windows' ? ';' : ':';
+        const pathPrependStr =
+            localTools
+                .flatMap((tool) => tool.getBinPaths())
+                .map((path) => path.fsPath)
+                .join(pathSep) + pathSep;
+        this.extensionContext.environmentVariableCollection.prepend('PATH', pathPrependStr);
     }
 
     // ---- helper methods ----
@@ -245,7 +258,7 @@ export class ToolRepository {
         return state ?? {};
     }
 
-    private async updateToolsState(): Promise<void> {
+    private async saveState(): Promise<void> {
         const newState: ToolsState = {
             installedTools: {}
         };
@@ -254,6 +267,8 @@ export class ToolRepository {
         for (const tool of await this.getLocalTools()) {
             newState.installedTools[tool.id] = tool.getSettings();
         }
+
+        await this.applyTerminalContributions();
 
         await this.extensionContext.globalState.update(ToolRepository.GLOBAL_STATE_KEY, newState);
     }
