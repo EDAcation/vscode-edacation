@@ -91,6 +91,10 @@ export class InstallToolCommand extends ManagedToolCommand {
                     void vscode.window.showErrorMessage(`Could not find managed tool providing "${command}"`);
                     return;
                 }
+                if (tools.map((tool) => tool.tool).includes(tool.tool)) {
+                    // Command already provided by a tool marked for install
+                    continue;
+                }
                 tools.push(tool);
             }
         } else {
