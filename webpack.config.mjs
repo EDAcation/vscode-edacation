@@ -50,7 +50,8 @@ const extensionConfig = Object.assign({}, baseConfig, {
         alias: {},
         fallback: {
             assert: 'assert',
-            path: 'path-browserify-win32'
+            path: 'path-browserify-win32',
+            process: 'process/browser'
         }
     },
     externals: {
@@ -76,7 +77,7 @@ const extensionConfig = Object.assign({}, baseConfig, {
             maxChunks: 1
         }),
         new webpack.ProvidePlugin({
-            process: 'process/browser'
+            process: 'process'
         })
     ]
 });
