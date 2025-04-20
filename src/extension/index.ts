@@ -6,6 +6,7 @@ import * as commands from './commands/index.js';
 import * as editors from './editors/index.js';
 import {Projects} from './projects/index.js';
 import * as tasks from './tasks/index.js';
+import {ToolRepository} from './tools/repository.js';
 import type {BaseTreeDataProvider} from './trees/base.js';
 import * as trees from './trees/index.js';
 import * as webviews from './webviews/index.js';
@@ -56,6 +57,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
     }
 
     await projects.load();
+
+    await ToolRepository.get(context).applyTerminalContributions();
 
     // Managed tool update checker
     const doUpdateCheck = vscode.workspace.getConfiguration('edacation').get('checkToolUpdatesOnStartup') as boolean;

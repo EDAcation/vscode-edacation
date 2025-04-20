@@ -6,8 +6,8 @@ import type {ExtensionMessage, MessageFile} from '../../common/messages.js';
 import * as node from '../../common/node-modules.js';
 import {UniversalWorker} from '../../common/universal-worker.js';
 import {type Project} from '../projects/index.js';
+import {type NativeToolExecutionOptions, ToolRepository} from '../tools';
 
-import {ManagedTool, type NativeToolExecutionOptions} from './managedtool.js';
 import {type TaskOutputFile, TerminalMessageEmitter} from './messaging.js';
 import type {TaskIOFile} from './task.js';
 
@@ -290,7 +290,7 @@ export class ManagedToolProvider extends NativeToolProvider {
     }
 
     protected async getToolInfoStatus(command: string): Promise<ToolInfoStatus> {
-        const tool = await ManagedTool.fromCommand(this.extensionContext, command);
+        const tool = await ToolRepository.get(this.extensionContext).getLocalToolFromCommand(command);
         if (!tool)
             return {
                 status: 'missing',
@@ -307,7 +307,7 @@ export class ManagedToolProvider extends NativeToolProvider {
 
         return {
             status: 'missing',
-            tool: tool.getId()
+            tool: tool.id
         };
     }
 
