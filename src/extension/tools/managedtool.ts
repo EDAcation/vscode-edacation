@@ -76,7 +76,7 @@ export class ManagedTool {
         const paths = ['bin/', 'lib/'].map((path) => vscode.Uri.joinPath(this.directory, path).fsPath);
         const pathSep = platform.os === 'windows' ? ';' : ':';
         const existingPath = node.process().env['PATH'] ?? '';
-        const pathStr = existingPath + pathSep + paths.join(`${pathSep}`);
+        const pathStr = paths.join(`${pathSep}`) + pathSep + existingPath;
 
         const executableName = platform.os === 'windows' ? `${command}.exe` : command;
 
