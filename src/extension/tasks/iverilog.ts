@@ -44,7 +44,7 @@ class IVerilogTerminalTask extends TerminalTask<IVerilogWorkerOptions> {
     }
 
     getInputFiles(workerOptions: IVerilogWorkerOptions): TaskIOFile[] {
-        return workerOptions.inputFiles.map((path) => ({type: 'artifact', path}));
+        return workerOptions.inputFiles.map((path) => ({type: 'user', path}));
     }
 
     getOutputFiles(workerOptions: IVerilogWorkerOptions): TaskIOFile[] {
