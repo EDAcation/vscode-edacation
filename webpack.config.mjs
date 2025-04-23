@@ -77,7 +77,7 @@ const extensionConfig = Object.assign({}, baseConfig, {
             maxChunks: 1
         }),
         new webpack.ProvidePlugin({
-            process: 'process'
+            process: [path.join(currentDirectory, 'src/common/node-modules.js'), 'csProcess']
         })
     ]
 });

@@ -9,13 +9,18 @@ type Module = any; // TODO: refine?
 
 const moduleCache = new Map<string, Module>();
 
-const requireModule = (module: string): Module => {
-    if (!isAvailable()) throw new Error('Native features cannot be used in a web environment!');
+const requireModule = (module: string, fallbackModule?: Module): Module => {
+    if (!isAvailable()) {
+        if (!fallbackModule) throw new Error('Native features cannot be used in a web environment!');
+
+        console.log(`Using module fallback for ${module}`);
+        return fallbackModule;
+    }
 
     const cached = moduleCache.get(module);
     if (cached) return cached;
 
-    console.log(`Requiring node module (CommonJS): ${module}`);
+    console.log(`Requiring node module: ${module}`);
 
     const mod = __non_webpack_require__(module);
     moduleCache.set(module, mod);
@@ -41,3 +46,7 @@ export const stream = () => requireModule('stream') as ModuleStream;
 export const which = () => require('which') as ModuleWhich;
 export const workerThreads = () => requireModule('worker_threads') as ModuleWorkerThreads;
 export const zlib = () => requireModule('zlib') as ModuleZLib;
+
+// Conditional shims - resolve to native module where possible, fallback otherwise
+// Practically identical to Webpack's fallback functionality, except this allows us to create globals through ProvidePlugin
+export const csProcess = requireModule('process', require('process/browser'));

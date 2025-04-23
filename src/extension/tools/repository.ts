@@ -217,6 +217,9 @@ export class ToolRepository {
     }
 
     public async applyTerminalContributions(): Promise<void> {
+        // no-op when native tools are unavailable
+        if (!node.isAvailable()) return;
+
         const localTools = await this.getLocalTools();
 
         const platform = await getPlatform();
