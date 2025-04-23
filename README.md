@@ -12,7 +12,7 @@
 <p align="center">
   <img src="resources/icons/edacation.png"></img>
   <h1 align="center">EDAcation for VSCode</h1>
-  <p align="center">Insert catchphrase here</p>
+  <p align="center">Digital hardware design, without headaches</p>
 </p>
 <br><br>
 
@@ -35,8 +35,8 @@ Documentation is coming soon!
 
 ## Contributing
 
-We are open to contributions! However, please open an issue first before submitting large changes. This way we can discuss
-See the [development documentation](docs/development.md). In the future more specific guidelines for contributing could be drafted.
+We are open to contributions! However, please open an issue first before submitting large changes. This way we can discuss the change before you spend a lot of time on it.
+See the [development documentation](docs/development.md) for more information.
 
 ## License
 
