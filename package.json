@@ -451,7 +451,7 @@
         "edacation": "^0.4.0",
         "nextpnr-viewer": "^0.7.3",
         "os-browserify": "^0.3.0",
-        "path-browserify-win32": "^2.0.1",
+        "path-browserify-win32": "github:EDAcation/path-browserify-win32",
         "tar-fs": "^3.0.6",
         "vue": "^3.4.27",
         "which": "^5.0.0",
