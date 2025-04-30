@@ -190,6 +190,8 @@ export class CheckToolUpdateCommand extends ManagedToolCommand {
         // Filter out updateable tools
         const updateableTools = await this.getRepository().getUpdatableTools();
 
+        await this.getRepository().markUpdateCheckDone();
+
         if (!updateableTools.length) return;
 
         let infoMessage: string;
