@@ -58,16 +58,13 @@ export const activate = async (context: vscode.ExtensionContext) => {
 
     await projects.load();
 
-    await ToolRepository.get(context).applyTerminalContributions();
+    const toolRepo = ToolRepository.get(context);
 
-    // Managed tool update checker
-    const doUpdateCheck = vscode.workspace.getConfiguration('edacation').get('checkToolUpdatesOnStartup') as boolean;
-    if (doUpdateCheck && node.isAvailable()) {
-        try {
-            await vscode.commands.executeCommand('edacation.checkToolUpdates');
-        } catch (err) {
-            console.trace(err);
-        }
+    await toolRepo.applyTerminalContributions();
+
+    if (toolRepo.shouldDoUpdateCheck() && node.isAvailable()) {
+        // Check environment availability early, because the command might show an error to the user otherwise
+        vscode.commands.executeCommand('edacation.checkToolUpdates');
     }
 };
 

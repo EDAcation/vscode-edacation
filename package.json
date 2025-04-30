@@ -59,10 +59,22 @@
                         "Use WebAssembly versions of Yosys & Nextpnr. This option requires an active internet connection. Slower, but available on all platforms and environments."
                     ]
                 },
-                "edacation.checkToolUpdatesOnStartup": {
-                    "type": "boolean",
-                    "description": "Whether to check for managed tool updates on startup.",
-                    "default": true
+                "edacation.managedToolUpdateFrequency": {
+                    "type": "string",
+                    "markdownDescription": "How often EDAcation will check for managed tool updates. [Learn more](https://github.com/EDAcation/vscode-edacation/blob/main/docs/managed-tools.md)",
+                    "default": "weekly",
+                    "enum": [
+                        "daily",
+                        "weekly",
+                        "monthly",
+                        "never"
+                    ],
+                    "enumItemLabels": [
+                        "Daily",
+                        "Weekly",
+                        "Monthly",
+                        "Never"
+                    ]
                 }
             }
         },
