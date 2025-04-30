@@ -6,7 +6,7 @@ import {ManagedTool, RemoteTool, ToolRepository} from '../tools';
 import {BaseCommand} from './base';
 
 abstract class ManagedToolCommand extends BaseCommand {
-    protected getRepository() {
+    protected get repository() {
         return ToolRepository.get(this.context);
     }
 
@@ -26,9 +26,9 @@ abstract class ManagedToolCommand extends BaseCommand {
             let remoteTool: RemoteTool | null;
             if (tool instanceof ManagedTool) {
                 localTool = tool;
-                remoteTool = await this.getRepository().getRemoteToolById(tool.id);
+                remoteTool = await this.repository.getRemoteToolById(tool.id);
             } else {
-                localTool = await this.getRepository().getLocalToolById(tool.tool);
+                localTool = await this.repository.getLocalToolById(tool.tool);
                 remoteTool = tool;
             }
 
@@ -86,7 +86,7 @@ export class InstallToolCommand extends ManagedToolCommand {
         let tools: RemoteTool[] = [];
         if (toolCommands.length) {
             for (const command of toolCommands) {
-                const tool = await this.getRepository().getRemoteToolFromCommand(command);
+                const tool = await this.repository.getRemoteToolFromCommand(command);
                 if (!tool) {
                     void vscode.window.showErrorMessage(`Could not find managed tool providing "${command}"`);
                     return;
@@ -99,7 +99,7 @@ export class InstallToolCommand extends ManagedToolCommand {
             }
         } else {
             const remoteTools = await vscode.window.withProgress({location: vscode.ProgressLocation.Window}, (_prog) =>
-                this.getRepository().getRemoteTools()
+                this.repository.getRemoteTools()
             );
             tools = await this.pickTools(remoteTools, 'Select tools to (re)install');
         }
@@ -115,7 +115,7 @@ export class InstallToolCommand extends ManagedToolCommand {
             managedTool = await vscode.window.withProgress(
                 {title: `Installing ${tool.friendly_name}...`, location: vscode.ProgressLocation.Notification},
                 (msgProgress) =>
-                    this.getRepository().installTool(tool, (dlProgress) => {
+                    this.repository.installTool(tool, (dlProgress) => {
                         if (!dlProgress) return msgProgress.report({increment: undefined});
 
                         // Convert from 0 - 1 to 0 - 100
@@ -143,7 +143,7 @@ export class UninstallToolCommand extends ManagedToolCommand {
         let tools: ManagedTool[] = [];
         if (toolIds.length) {
             for (const id of toolIds) {
-                const tool = await this.getRepository().getLocalToolById(id);
+                const tool = await this.repository.getLocalToolById(id);
                 if (!tool) {
                     await vscode.window.showErrorMessage(`Unable to find tool to uninstall: ${id}`);
                     continue;
@@ -151,7 +151,7 @@ export class UninstallToolCommand extends ManagedToolCommand {
                 tools.push(tool);
             }
         } else {
-            const installedTools = await this.getRepository().getLocalTools();
+            const installedTools = await this.repository.getLocalTools();
             if (!installedTools.length) {
                 await vscode.window.showErrorMessage('No tools are currently installed!');
                 return;
@@ -188,9 +188,9 @@ export class CheckToolUpdateCommand extends ManagedToolCommand {
 
     override async exec(..._args: unknown[]): Promise<void> {
         // Filter out updateable tools
-        const updateableTools = await this.getRepository().getUpdatableTools();
+        const updateableTools = await this.repository.getUpdatableTools();
 
-        await this.getRepository().markUpdateCheckDone();
+        await this.repository.markUpdateCheckDone();
 
         if (!updateableTools.length) return;
 
