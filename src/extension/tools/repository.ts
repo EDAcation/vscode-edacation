@@ -10,11 +10,6 @@ interface Platform {
     arch: string;
 }
 
-interface RemoteToolRegistry {
-    version: string;
-    tools: RemoteTool[];
-}
-
 export interface RemoteTool {
     friendly_name: string;
     tool: string;
@@ -22,6 +17,16 @@ export interface RemoteTool {
     arch: string;
     version: string;
     download_url: string;
+}
+
+interface RemoteToolRegistry {
+    version: string;
+    tools: RemoteTool[];
+}
+
+interface RemoteToolCache {
+    savedAt: Date;
+    registry: RemoteToolRegistry;
 }
 
 export interface ToolSettings {
@@ -34,17 +39,10 @@ export interface ToolSettings {
 
 interface ToolsState {
     installedTools: Record<string, ToolSettings>;
+    lastUpdateCheck?: Date;
 }
 
-const getDateString = (): string => {
-    const now = new Date();
-
-    const year = now.getUTCFullYear();
-    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(now.getUTCDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
-};
+type UpdateCheckFrequency = 'daily' | 'weekly' | 'monthly' | 'never';
 
 export const getPlatform = async (): Promise<Platform> => {
     // get OS ('win32' -> 'windows' for correct bucket name)
@@ -122,16 +120,19 @@ export class ToolRepository {
         'https://github.com/edacation/native-fpga-tools/releases/latest/download/tools.json';
     private static readonly GLOBAL_STATE_KEY = 'managedTools';
     private static readonly TOOL_SUBDIR = 'managedTools';
+    private static readonly CACHE_EXPIRE_HRS = 12;
 
     private static instance: ToolRepository;
-    private static remoteToolsCache: RemoteToolRegistry | null = null;
+    private static remoteToolsCache: RemoteToolCache | null = null;
 
     private extensionContext: vscode.ExtensionContext;
-    private installedTools: Record<string, ManagedTool> | null;
+    private state: ToolsState;
 
     constructor(extensionContext: vscode.ExtensionContext) {
         this.extensionContext = extensionContext;
-        this.installedTools = null;
+        this.state = this.extensionContext.globalState.get<ToolsState>(ToolRepository.GLOBAL_STATE_KEY) ?? {
+            installedTools: {}
+        };
     }
 
     public static get(extensionContext: vscode.ExtensionContext) {
@@ -141,7 +142,7 @@ export class ToolRepository {
     }
 
     public async getLocalTools(): Promise<ManagedTool[]> {
-        return Object.values(await this.getInstalledTools());
+        return Object.values(this.state.installedTools).map((tool) => new ManagedTool(this, tool));
     }
 
     public async getLocalToolById(id: string): Promise<ManagedTool | null> {
@@ -156,7 +157,13 @@ export class ToolRepository {
 
     public async getRemoteTools(): Promise<RemoteTool[]> {
         const cache = ToolRepository.remoteToolsCache;
-        if (cache && cache.version == getDateString()) return cache.tools;
+        if (cache) {
+            const now = new Date();
+            const cacheHourDelta = (now.getTime() - cache.savedAt.getTime()) / (1000 * 60 * 60);
+            if (cacheHourDelta < ToolRepository.CACHE_EXPIRE_HRS) {
+                return cache.registry.tools;
+            }
+        }
 
         const platform = await getPlatform();
         const toolRegistry = await fetch(ToolRepository.TOOLS_URL)
@@ -173,7 +180,11 @@ export class ToolRepository {
         // Other os-arch combinations are irrelevant
         toolRegistry.tools = toolRegistry.tools.filter((tool) => tool.arch === `${platform.os}-${platform.arch}`);
 
-        ToolRepository.remoteToolsCache = toolRegistry;
+        ToolRepository.remoteToolsCache = {
+            savedAt: new Date(),
+            registry: toolRegistry
+        };
+
         return toolRegistry.tools;
     }
 
@@ -192,18 +203,19 @@ export class ToolRepository {
 
         await downloadTool(tool.download_url, targetDir.fsPath, onProgress);
 
-        const localTool = new ManagedTool(this, {
+        const settings: ToolSettings = {
             id: tool.tool,
             name: tool.friendly_name,
             version: tool.version,
             directory: targetDir.fsPath,
             providesCommands: tool.provides
-        });
-        (await this.getInstalledTools())[localTool.id] = localTool;
+        };
+        this.state.installedTools[settings.id] = settings;
 
         await this.saveState();
+        await this.applyTerminalContributions();
 
-        return localTool;
+        return new ManagedTool(this, settings);
     }
 
     public async uninstallTool(id: string): Promise<void> {
@@ -211,7 +223,46 @@ export class ToolRepository {
         if (!tool) return; // not installed
 
         await vscode.workspace.fs.delete(tool.directory, {recursive: true, useTrash: false});
-        delete (await this.getInstalledTools())[tool.id];
+        delete this.state.installedTools[tool.id];
+
+        await this.saveState();
+        await this.applyTerminalContributions();
+    }
+
+    public shouldDoUpdateCheck(): boolean {
+        const lastCheck = this.state.lastUpdateCheck ?? new Date(0);
+        const now = new Date();
+        const dayDelta = (now.getTime() - lastCheck.getTime()) / (1000 * 60 * 60 * 24);
+
+        const frequency =
+            vscode.workspace.getConfiguration('edacation').get<UpdateCheckFrequency>('managedToolUpdateFrequency') ??
+            'weekly';
+
+        switch (frequency) {
+            case 'daily':
+                return dayDelta >= 1;
+            case 'weekly':
+                return dayDelta >= 7;
+            case 'monthly':
+                return dayDelta >= 30;
+            default: // never or unknown
+                return false;
+        }
+    }
+
+    public async getUpdatableTools(): Promise<ManagedTool[]> {
+        const updatable: ManagedTool[] = [];
+
+        const tools = await this.getLocalTools();
+        for (const tool of tools) {
+            if (await tool.isUpdateAvailable()) updatable.push(tool);
+        }
+
+        return updatable;
+    }
+
+    public async markUpdateCheckDone(): Promise<void> {
+        this.state.lastUpdateCheck = new Date();
 
         await this.saveState();
     }
@@ -243,24 +294,6 @@ export class ToolRepository {
         return vscode.Uri.joinPath(await this.getToolsDir(), id);
     }
 
-    private async getInstalledTools(): Promise<Record<string, ManagedTool>> {
-        if (this.installedTools !== null) return this.installedTools;
-
-        // Build from state
-        const state = await this.getToolsState();
-        this.installedTools = {};
-        for (const tool of Object.values(state.installedTools)) {
-            this.installedTools[tool.id] = new ManagedTool(this, tool);
-        }
-
-        return this.installedTools;
-    }
-
-    private async getToolsState(): Promise<ToolsState> {
-        const state = (await this.extensionContext.globalState.get(ToolRepository.GLOBAL_STATE_KEY)) as ToolsState;
-        return state ?? {};
-    }
-
     private async saveState(): Promise<void> {
         const newState: ToolsState = {
             installedTools: {}
@@ -270,8 +303,6 @@ export class ToolRepository {
         for (const tool of await this.getLocalTools()) {
             newState.installedTools[tool.id] = tool.getSettings();
         }
-
-        await this.applyTerminalContributions();
 
         await this.extensionContext.globalState.update(ToolRepository.GLOBAL_STATE_KEY, newState);
     }

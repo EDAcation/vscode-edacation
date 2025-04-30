@@ -188,10 +188,7 @@ export class CheckToolUpdateCommand extends ManagedToolCommand {
 
     override async exec(..._args: unknown[]): Promise<void> {
         // Filter out updateable tools
-        const updateableTools: ManagedTool[] = [];
-        for (const tool of await this.getRepository().getLocalTools()) {
-            if (await tool.isUpdateAvailable()) updateableTools.push(tool);
-        }
+        const updateableTools = await this.getRepository().getUpdatableTools();
 
         if (!updateableTools.length) return;
 
