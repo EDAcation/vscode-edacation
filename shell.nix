@@ -1,3 +1,6 @@
+let
+  unstable = import (fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-unstable") { };
+in
 {
   pkgs ? import <nixpkgs> { },
 }:
@@ -7,6 +10,7 @@ pkgs.mkShell {
     nodejs_20
     yarn
     vsce
+    unstable.bun
   ];
 
   shellHook = ''
@@ -15,13 +19,13 @@ pkgs.mkShell {
 
     hash () { sha256sum $1 | awk '{print $1}'; }
 
-    cur_hash="$(hash package.json)-$(hash package-lock.json)"
+    cur_hash="$(hash package.json)-$(hash bun.lock)"
 
     if [[ ! -f "$CACHE_PATH" || "$(cat $CACHE_PATH)" != $cur_hash ]]; then
       echo "Installing Node.js dependencies..."
-      npm i
+      bun i
 
-      cur_hash="$(hash package.json)-$(hash package-lock.json)"
+      cur_hash="$(hash package.json)-$(hash bun.lock)"
       echo "$cur_hash" > $CACHE_PATH
     fi
   '';
