@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import type {Project} from '../projects/index.js';
 import {decodeJSON, encodeJSON} from '../util.js';
 
-import {AnsiModifier, type TaskOutputFile} from './messaging.js';
+import {AnsiModifier, type TaskOutputFile, type TerminalMessage} from './messaging.js';
 import {type TaskDefinition, type TaskIOFile, TerminalTask} from './task.js';
 import {TaskProvider, TaskTerminal} from './terminal.js';
 import {getConfiguredProvider} from './toolprovider.js';
@@ -50,12 +50,13 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
         return workerOptions.outputFiles.map((path) => ({type: 'artifact', path}));
     }
 
-    protected println(line = '', stream: 'stdout' | 'stderr' = 'stdout', modifier?: AnsiModifier) {
+    protected fire(message: TerminalMessage) {
         // Force informational messages to go to stdout
-        if (line.toLowerCase().startsWith('info:')) {
-            return super.println(line, 'stdout');
+        if (message.type === 'println' && message.line?.toLowerCase().startsWith('info: ')) {
+            if (message.line) message.line = message.line.slice(6); // slice off "info: "
+            message.stream = 'stdout';
         }
-        return super.println(line, stream, modifier);
+        return super.fire(message);
     }
 
     async handleStart(project: Project) {
