@@ -36,6 +36,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
       - name: Install Dependencies
         run: bun install
       - name: Package Extension
