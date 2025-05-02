@@ -418,6 +418,9 @@
             }
         ]
     },
+    "trustedDependencies": [
+        "yosys2digitaljs"
+    ],
     "scripts": {
         "postinstall": "sed -i \"s/require('topsort');/require('topsort').default;/\" node_modules/yosys2digitaljs/dist/index.js",
         "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. .",
