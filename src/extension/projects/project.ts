@@ -5,6 +5,7 @@ import {
     type ProjectConfiguration,
     ProjectInputFile,
     ProjectInputFileState,
+    ProjectOutputFile,
     type ProjectOutputFileState,
     type ProjectState
 } from 'edacation';
@@ -16,26 +17,11 @@ import {asWorkspaceRelativeFolderPath, decodeJSON, encodeJSON, getWorkspaceRelat
 
 import type {Projects} from './projects.js';
 
-type FileWatcherCallback = (uri: vscode.Uri) => void;
-
-const getFileWatcher = (
-    uri: vscode.Uri,
-    onDidChange?: FileWatcherCallback,
-    onDidDelete?: FileWatcherCallback
-): vscode.FileSystemWatcher => {
-    const watcher = vscode.workspace.createFileSystemWatcher(uri.fsPath, true, !onDidChange, !onDidDelete);
-    watcher.onDidChange((uri) => onDidChange && onDidChange(uri));
-    watcher.onDidDelete((uri) => onDidDelete && onDidDelete(uri));
-    return watcher;
-};
-
 export class Project extends BaseProject {
     private readonly projects: Projects;
     private uri: vscode.Uri;
     private root: vscode.Uri;
     private relativeRoot: string;
-    private inputFileInfo: Map<string, vscode.FileSystemWatcher>;
-    private outputFileInfo: Map<string, vscode.FileSystemWatcher>;
 
     constructor(
         projects: Projects,
@@ -45,7 +31,11 @@ export class Project extends BaseProject {
         outputFiles: string[] | ProjectOutputFileState[] = [],
         configuration: ProjectConfiguration = DEFAULT_CONFIGURATION
     ) {
-        super(name ? name : path.basename(uri.path, '.edaproject'), inputFiles, outputFiles, configuration);
+        super(name ? name : path.basename(uri.path, '.edaproject'), inputFiles, outputFiles, configuration, {
+            onInputFileChange: (files) => this.onInputFileChange(files),
+            onOutputFileChange: (files) => this.onOutputFileChange(files),
+            onConfigurationChange: (config) => this.onConfigurationChange(config)
+        });
 
         this.projects = projects;
 
@@ -54,23 +44,6 @@ export class Project extends BaseProject {
             path: path.dirname(this.uri.path)
         });
         this.relativeRoot = asWorkspaceRelativeFolderPath(this.root);
-
-        this.inputFileInfo = new Map();
-        for (const file of this.getInputFiles()) {
-            const uri = this.getFileUri(file.path);
-            const watcher = getFileWatcher(uri, undefined, () => void this.removeInputFiles([file.path]));
-            this.inputFileInfo.set(file.path, watcher);
-        }
-
-        this.outputFileInfo = new Map();
-        for (const file of this.getOutputFiles()) {
-            const watcher = getFileWatcher(
-                this.getFileUri(file.path),
-                undefined,
-                () => void this.removeOutputFiles([file.path])
-            );
-            this.outputFileInfo.set(file.path, watcher);
-        }
 
         void this.cleanIOFiles();
     }
@@ -102,38 +75,12 @@ export class Project extends BaseProject {
         return `./out/${this.getName()}/${target.id}/`;
     }
 
-    private async cleanIOFiles() {
-        const brokenInputFiles: string[] = [];
-        for (const file of this.getInputFiles()) {
-            try {
-                await vscode.workspace.fs.stat(this.getFileUri(file.path));
-            } catch {
-                console.warn(`Input file does not exist, removing: ${file.path}`);
-                brokenInputFiles.push(file.path);
-            }
-        }
-
-        const brokenOutputFiles: string[] = [];
-        for (const file of this.getOutputFiles()) {
-            try {
-                await vscode.workspace.fs.stat(this.getFileUri(file.path));
-            } catch {
-                console.warn(`Output file does not exist, removing: ${file}`);
-                brokenOutputFiles.push(file.path);
-            }
-        }
-
-        if (brokenInputFiles.length) await this.removeInputFiles(brokenInputFiles);
-        if (brokenOutputFiles.length) await this.removeOutputFiles(brokenOutputFiles);
-    }
-
     async updateTargetDirectories() {
         const targets = this.getConfiguration()['targets'].map((target) => ({
             ...target,
             directory: this.getTargetDirectory(target.id)
         }));
         this.updateConfiguration({targets: targets});
-        await this.save();
     }
 
     async setInputFileType(filePath: string, type: ProjectInputFile['type']) {
@@ -144,11 +91,6 @@ export class Project extends BaseProject {
         }
 
         file.type = type;
-
-        await this.ensureTestbenchPaths();
-        this.projects.emitInputFileChange();
-
-        await this.save();
     }
 
     async addInputFileUris(fileUris: vscode.Uri[]): Promise<void> {
@@ -171,29 +113,10 @@ export class Project extends BaseProject {
                 parsedPath.name.endsWith('_tb') && FILE_EXTENSIONS_HDL.includes(parsedPath.ext.substring(1));
 
             files.push({path: folderRelativePath, type: isTestbench ? 'testbench' : 'design'});
-            this.inputFileInfo.set(
-                folderRelativePath,
-                getFileWatcher(
-                    fileUri,
-                    () => void this.markOutputFilesStale(true),
-                    () => void this.removeInputFiles([folderRelativePath || ''])
-                )
-            );
         }
         if (files.length === 0) return;
 
         super.addInputFiles(files);
-        await this.ensureTestbenchPaths();
-        this.projects.emitInputFileChange();
-        await this.markOutputFilesStale(false);
-        await this.save();
-    }
-
-    async markOutputFilesStale(doSave = true) {
-        this.expireOutputFiles();
-        this.projects.emitOutputFileChange();
-
-        if (doSave) await this.save();
     }
 
     async setTopLevelModule(targetId: string, module: string) {
@@ -207,11 +130,9 @@ export class Project extends BaseProject {
         if (!target.yosys.options) target.yosys.options = {};
 
         target.yosys.options.topLevelModule = module;
-
-        await this.save();
     }
 
-    async setTestbenchPath(targetId: string, testbenchPath?: string, doSave = true) {
+    async setTestbenchPath(targetId: string, testbenchPath?: string) {
         const testbenchFiles = this.getInputFiles()
             .filter((file) => file.type === 'testbench')
             .map((file) => file.path);
@@ -228,27 +149,6 @@ export class Project extends BaseProject {
         if (!target.iverilog.options) target.iverilog.options = {};
 
         target.iverilog.options.testbenchFile = testbenchPath;
-
-        if (doSave) await this.save();
-    }
-
-    async removeInputFiles(filePaths: string[]): Promise<void> {
-        if (!filePaths.length) return;
-
-        for (const filePath of filePaths) {
-            this.inputFileInfo.get(filePath)?.dispose();
-            this.inputFileInfo.delete(filePath);
-        }
-
-        super.removeInputFiles(filePaths);
-
-        await this.ensureTestbenchPaths();
-
-        this.projects.emitInputFileChange();
-
-        await this.markOutputFilesStale(false);
-
-        await this.save();
     }
 
     private async ensureTestbenchPaths() {
@@ -268,9 +168,8 @@ export class Project extends BaseProject {
             }
 
             const newTb = testbenches.length === 0 ? undefined : testbenches[0];
-            await this.setTestbenchPath(target.id, newTb, false);
+            await this.setTestbenchPath(target.id, newTb);
         }
-        await this.save();
     }
 
     private async tryCopyFileIntoWorkspace(
@@ -339,38 +238,67 @@ export class Project extends BaseProject {
             if (!folderRelativePath) continue;
 
             filePaths.push(folderRelativePath);
-
-            if (!this.hasOutputFile(folderRelativePath)) {
-                this.outputFileInfo.set(
-                    folderRelativePath,
-                    getFileWatcher(fileUri, undefined, () => void this.removeOutputFiles([folderRelativePath || '']))
-                );
-            }
         }
 
         super.addOutputFiles(filePaths.map((path) => ({path, targetId})));
-
-        this.projects.emitOutputFileChange();
-
-        await this.save();
     }
 
-    async removeOutputFiles(filePaths: string[]): Promise<void> {
-        for (const filePath of filePaths) {
-            this.outputFileInfo.get(filePath)?.dispose();
-            this.outputFileInfo.delete(filePath);
+    private async cleanIOFiles() {
+        const brokenInputFiles: string[] = [];
+        for (const file of this.getInputFiles()) {
+            try {
+                await vscode.workspace.fs.stat(this.getFileUri(file.path));
+            } catch {
+                console.warn(`Input file does not exist, removing: ${file.path}`);
+                brokenInputFiles.push(file.path);
+            }
         }
 
-        super.removeOutputFiles(filePaths);
+        const brokenOutputFiles: string[] = [];
+        for (const file of this.getOutputFiles()) {
+            try {
+                await vscode.workspace.fs.stat(this.getFileUri(file.path));
+            } catch {
+                console.warn(`Output file does not exist, removing: ${file}`);
+                brokenOutputFiles.push(file.path);
+            }
+        }
 
-        this.projects.emitOutputFileChange();
+        if (brokenInputFiles.length) this.removeInputFiles(brokenInputFiles);
+        if (brokenOutputFiles.length) this.removeOutputFiles(brokenOutputFiles);
+    }
+
+    private async onInputFileChange(files: ProjectInputFile[]) {
+        console.log('[EDAcation] Input file change!');
+
+        await this.cleanIOFiles();
+        this.expireOutputFiles();
+        this.ensureTestbenchPaths();
 
         await this.save();
+        this.projects.emitInputFileChange(files);
+    }
+
+    private async onOutputFileChange(files: ProjectOutputFile[]) {
+        console.log('[EDAcation] Output file change!');
+
+        await this.cleanIOFiles();
+
+        await this.save();
+        this.projects.emitOutputFileChange(files);
+    }
+
+    private async onConfigurationChange(_configuration: ProjectConfiguration) {
+        console.log('[EDAcation] Configuration change!');
+
+        this.ensureTestbenchPaths();
+
+        await this.save();
+        this.projects.emitProjectChange(this);
     }
 
     private async save() {
         await Project.store(this);
-        this.projects.emitProjectChange();
     }
 
     static serialize(project: Project): ProjectState {
