@@ -9,11 +9,8 @@ export interface EditorWebviewArgs {
 }
 
 export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implements vscode.CustomTextEditorProvider {
-    protected readonly projects: Projects;
-
     constructor(context: vscode.ExtensionContext, projects: Projects) {
-        super(context);
-        this.projects = projects;
+        super(context, projects);
     }
 
     static getViewType(): string {

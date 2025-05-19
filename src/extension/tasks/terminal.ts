@@ -80,7 +80,7 @@ export abstract class TaskProvider extends BaseTaskProvider {
         for (const folder of vscode.workspace.workspaceFolders) {
             const paths = await vscode.workspace.findFiles(PROJECT_PATTERN);
             for (const path of paths) {
-                const project = await Project.load(this.projects, path);
+                const project = await Project.load(path);
                 const targets = project.getConfiguration().targets;
 
                 for (const target of targets) {

@@ -13,23 +13,33 @@ import path from 'path';
 import * as vscode from 'vscode';
 
 import * as node from '../../common/node-modules.js';
+import {Exchange, ExchangeChannel} from '../exchange.js';
 import {asWorkspaceRelativeFolderPath, decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util.js';
 
-import type {Projects} from './projects.js';
+export type ProjectEventType = 'full' | 'config' | 'inputFile' | 'outputFile';
+
+export interface ProjectEvent {
+    event: ProjectEventType;
+    project: Project;
+}
+
+export type ProjectEventChannel = ExchangeChannel<ProjectEvent>;
+export type ProjectEventExchange = Exchange<ProjectEvent>;
 
 export class Project extends BaseProject {
-    private readonly projects: Projects;
+    private readonly channel?: ProjectEventChannel;
+
     private uri: vscode.Uri;
     private root: vscode.Uri;
     private relativeRoot: string;
 
     constructor(
-        projects: Projects,
         uri: vscode.Uri,
         name?: string,
         inputFiles: string[] | ProjectInputFileState[] = [],
         outputFiles: string[] | ProjectOutputFileState[] = [],
-        configuration: ProjectConfiguration = DEFAULT_CONFIGURATION
+        configuration: ProjectConfiguration = DEFAULT_CONFIGURATION,
+        channel?: ProjectEventChannel
     ) {
         super(name ? name : path.basename(uri.path, '.edaproject'), inputFiles, outputFiles, configuration, {
             onInputFileChange: (files) => this.onInputFileChange(files),
@@ -37,13 +47,13 @@ export class Project extends BaseProject {
             onConfigurationChange: (config) => this.onConfigurationChange(config)
         });
 
-        this.projects = projects;
-
         this.uri = uri;
         this.root = this.uri.with({
             path: path.dirname(this.uri.path)
         });
         this.relativeRoot = asWorkspaceRelativeFolderPath(this.root);
+
+        this.channel = channel;
 
         void this.cleanIOFiles();
     }
@@ -268,7 +278,7 @@ export class Project extends BaseProject {
         if (brokenOutputFiles.length) this.removeOutputFiles(brokenOutputFiles);
     }
 
-    private async onInputFileChange(files: ProjectInputFile[]) {
+    private async onInputFileChange(_files: ProjectInputFile[]) {
         console.log('[EDAcation] Input file change!');
 
         await this.cleanIOFiles();
@@ -276,16 +286,16 @@ export class Project extends BaseProject {
         this.ensureTestbenchPaths();
 
         await this.save();
-        this.projects.emitInputFileChange(files);
+        this.emitEvent('inputFile');
     }
 
-    private async onOutputFileChange(files: ProjectOutputFile[]) {
+    private async onOutputFileChange(_files: ProjectOutputFile[]) {
         console.log('[EDAcation] Output file change!');
 
         await this.cleanIOFiles();
 
         await this.save();
-        this.projects.emitOutputFileChange(files);
+        this.emitEvent('outputFile');
     }
 
     private async onConfigurationChange(_configuration: ProjectConfiguration) {
@@ -294,7 +304,11 @@ export class Project extends BaseProject {
         this.ensureTestbenchPaths();
 
         await this.save();
-        this.projects.emitProjectChange(this);
+        this.emitEvent('config');
+    }
+
+    private emitEvent(event: ProjectEventType) {
+        if (this.channel) this.channel.submit({event, project: this});
     }
 
     private async save() {
@@ -305,18 +319,18 @@ export class Project extends BaseProject {
         return BaseProject.serialize(project);
     }
 
-    static deserialize(data: ProjectState, projects: Projects, uri: vscode.Uri): Project {
+    static deserialize(data: ProjectState, uri: vscode.Uri, channel?: ProjectEventChannel): Project {
         const name = data.name;
         const inputFiles = data.inputFiles ?? [];
         const outputFiles = data.outputFiles ?? [];
         const configuration = data.configuration ?? ({} as ProjectConfiguration);
 
-        return new Project(projects, uri, name, inputFiles, outputFiles, configuration);
+        return new Project(uri, name, inputFiles, outputFiles, configuration, channel);
     }
 
-    static async load(projects: Projects, uri: vscode.Uri): Promise<Project> {
+    static async load(uri: vscode.Uri, channel?: ProjectEventChannel): Promise<Project> {
         const data = decodeJSON(await vscode.workspace.fs.readFile(uri));
-        const project = Project.deserialize(data as ProjectState, projects, uri);
+        const project = Project.deserialize(data as ProjectState, uri, channel);
         return project;
     }
 

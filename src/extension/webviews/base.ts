@@ -5,11 +5,8 @@ import {type ViewMessage} from '../types.js';
 import {BaseWebview} from '../webview.js';
 
 export abstract class BaseWebviewViewProvider extends BaseWebview implements vscode.WebviewViewProvider {
-    protected readonly projects: Projects;
-
     constructor(context: vscode.ExtensionContext, projects: Projects) {
-        super(context);
-        this.projects = projects;
+        super(context, projects);
     }
 
     static getViewID(): string {

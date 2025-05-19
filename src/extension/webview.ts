@@ -1,16 +1,24 @@
 import type * as vscode from 'vscode';
 
+import {ProjectEventChannel} from './projects/project.js';
+import {OpenProjectsChannel, Projects} from './projects/projects.js';
 import {getWebviewUri} from './util.js';
 
 export abstract class BaseWebview<Args = Record<string, never>> {
     protected readonly context: vscode.ExtensionContext;
+    protected readonly projects: Projects;
+    protected readonly projectEventChannel: ProjectEventChannel;
+    protected readonly openProjectsChannel: OpenProjectsChannel;
 
     public static getWebviewOptions(): vscode.WebviewPanelOptions {
         return {retainContextWhenHidden: true};
     }
 
-    constructor(context: vscode.ExtensionContext) {
+    constructor(context: vscode.ExtensionContext, projects: Projects) {
         this.context = context;
+        this.projects = projects;
+        this.projectEventChannel = this.projects.createProjectEventChannel();
+        this.openProjectsChannel = this.projects.createOpenProjectsChannel();
     }
 
     protected getHtmlForWebview(webview: vscode.Webview, args: Args): string {

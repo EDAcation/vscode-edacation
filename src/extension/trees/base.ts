@@ -1,16 +1,21 @@
-import type * as vscode from 'vscode';
+import * as vscode from 'vscode';
 
-import type {Projects} from '../projects/index.js';
+import type {OpenProjectsChannel, ProjectEventChannel, Projects} from '../projects/index.js';
 
 export abstract class BaseTreeDataProvider<T> implements vscode.TreeDataProvider<T> {
     protected readonly context: vscode.ExtensionContext;
     protected readonly projects: Projects;
+    protected readonly projectEventChannel: ProjectEventChannel;
+    protected readonly openProjectsChannel: OpenProjectsChannel;
 
-    onDidChangeTreeData?: vscode.Event<T | T[] | undefined>;
+    protected readonly changeEmitter = new vscode.EventEmitter<T | T[] | undefined>();
+    onDidChangeTreeData = this.changeEmitter.event;
 
     constructor(context: vscode.ExtensionContext, projects: Projects) {
         this.context = context;
         this.projects = projects;
+        this.projectEventChannel = this.projects.createProjectEventChannel();
+        this.openProjectsChannel = this.projects.createOpenProjectsChannel();
     }
 
     static getViewID(): string {
