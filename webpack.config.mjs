@@ -149,7 +149,7 @@ const workerConfig = Object.assign({}, baseConfig, {
 /** @type WebpackConfig */
 const viewsConfig = Object.assign({}, baseConfig, {
     entry: {
-        actions: './src/views/actions/src/main.ts',
+        actions: './src/views/actions/main.ts',
         nextpnr: './src/views/nextpnr/src/main.ts',
         yosys: './src/views/yosys/src/main.ts',
         project: './src/views/project/src/main.ts'

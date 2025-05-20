@@ -1,7 +1,7 @@
 import {createApp} from 'vue';
 
 import App from './App.vue';
-import {initializeState} from './state/index.js';
+import {initializeState} from './state.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     initializeState();

@@ -3,7 +3,7 @@ import '@vscode-elements/elements';
 import {getElementGroups} from 'edacation';
 import {NextPNRViewer} from 'nextpnr-viewer';
 
-import {vscode} from '../../vscode';
+import {vscode} from '../../vscode-wrapper';
 
 import './main.css';
 

@@ -5,11 +5,8 @@ import {type ViewMessage} from '../types.js';
 import {BaseWebview} from '../webview.js';
 
 export abstract class BaseWebviewViewProvider extends BaseWebview implements vscode.WebviewViewProvider {
-    protected readonly projects: Projects;
-
     constructor(context: vscode.ExtensionContext, projects: Projects) {
-        super(context);
-        this.projects = projects;
+        super(context, projects);
     }
 
     static getViewID(): string {
@@ -29,6 +26,10 @@ export abstract class BaseWebviewViewProvider extends BaseWebview implements vsc
 
         // Add message listener
         webviewView.webview.onDidReceiveMessage(this.onDidReceiveMessage.bind(this, webviewView.webview));
+
+        // Hook up exchange portals
+        this.connectWebview(webviewView.webview);
+        webviewView.onDidDispose((_) => this.disconnectWebview());
     }
 
     protected abstract onDidReceiveMessage(webview: vscode.Webview, message: ViewMessage): void;

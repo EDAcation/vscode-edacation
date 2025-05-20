@@ -3,7 +3,8 @@ import '@vscode/codicons/dist/codicon.css';
 import {Project, type TargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
-import * as vscode from '../../../vscode';
+import {syncedState as projectState} from '../../project';
+import * as vscode from '../../vscode-wrapper';
 import {state as globalState} from '../state';
 
 import EDATargetSelector from './EDATargetSelector.vue';
@@ -18,7 +19,8 @@ export default defineComponent({
     },
     data() {
         return {
-            state: globalState
+            state: globalState,
+            projectState
         };
     },
     methods: {
@@ -41,7 +43,7 @@ export default defineComponent({
     },
     computed: {
         targets(): TargetConfiguration[] {
-            return this.state.project?.configuration.targets ?? [];
+            return this.projectState.project?.getConfiguration().targets ?? [];
         },
         targetIndex(): number | undefined {
             if (this.targets.length === 0) return undefined;
@@ -57,19 +59,17 @@ export default defineComponent({
         },
 
         designFiles(): string[] {
-            if (!this.state.project) return [];
+            if (!this.projectState.project) return [];
 
-            const project = Project.deserialize(this.state.project);
-            return project
+            return this.projectState.project
                 .getInputFiles()
                 .filter((file) => file.type === 'design')
                 .map((file) => file.path);
         },
         testbenchFiles(): string[] {
-            if (!this.state.project) return [];
+            if (!this.projectState.project) return [];
 
-            const project = Project.deserialize(this.state.project);
-            return project
+            return this.projectState.project
                 .getInputFiles()
                 .filter((file) => file.type === 'testbench')
                 .map((file) => file.path);
