@@ -1,6 +1,7 @@
+import {Project} from 'edacation';
 import * as vscode from 'vscode';
 
-import type {Project, Projects} from '../projects/index.js';
+import type {Projects} from '../projects/index.js';
 
 import {BaseTreeDataProvider} from './base.js';
 

@@ -1,14 +1,18 @@
 import type * as vscode from 'vscode';
 
-import {ProjectEventChannel} from './projects/project.js';
-import {OpenProjectsChannel, Projects} from './projects/projects.js';
+import {OpenProjectsChannel, OpenProjectsPortal, ProjectEventChannel, ProjectEventPortal} from '../exchange.js';
+
+import {Projects} from './projects/projects.js';
 import {getWebviewUri} from './util.js';
 
 export abstract class BaseWebview<Args = Record<string, never>> {
     protected readonly context: vscode.ExtensionContext;
     protected readonly projects: Projects;
+
     protected readonly projectEventChannel: ProjectEventChannel;
+    protected projectEventPortal?: ProjectEventPortal;
     protected readonly openProjectsChannel: OpenProjectsChannel;
+    protected openProjectsPortal?: OpenProjectsPortal;
 
     public static getWebviewOptions(): vscode.WebviewPanelOptions {
         return {retainContextWhenHidden: true};
@@ -47,6 +51,21 @@ export abstract class BaseWebview<Args = Record<string, never>> {
                 </body>
             </html>
         `;
+    }
+
+    protected connectWebview(webview: vscode.Webview) {
+        this.projectEventPortal = this.projects.attachProjectEventPortal((value) => webview.postMessage(value));
+        this.openProjectsPortal = this.projects.attachOpenProjectsPortal((value) => webview.postMessage(value));
+
+        webview.onDidReceiveMessage((message) => {
+            if (this.projectEventPortal) this.projectEventPortal.handleMessage(message);
+            if (this.openProjectsPortal) this.openProjectsPortal.handleMessage(message);
+        });
+    }
+
+    protected disconnectWebview() {
+        if (this.projectEventPortal) this.projectEventPortal.detach();
+        if (this.openProjectsPortal) this.openProjectsPortal.detach();
     }
 
     protected getInitialData(_args: Args): Record<string, unknown> | undefined {

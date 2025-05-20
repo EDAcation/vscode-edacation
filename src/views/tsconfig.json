@@ -5,6 +5,8 @@
         "baseUrl": ".",
         "paths": {
             "@/*": ["./*"]
-        }
+        },
+        "lib": ["es2022", "DOM", "DOM.Iterable"],
+        "types": ["node"]
     }
 }

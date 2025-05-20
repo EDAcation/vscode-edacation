@@ -26,6 +26,10 @@ export abstract class BaseWebviewViewProvider extends BaseWebview implements vsc
 
         // Add message listener
         webviewView.webview.onDidReceiveMessage(this.onDidReceiveMessage.bind(this, webviewView.webview));
+
+        // Hook up exchange portals
+        this.connectWebview(webviewView.webview);
+        webviewView.onDidDispose((_) => this.disconnectWebview());
     }
 
     protected abstract onDidReceiveMessage(webview: vscode.Webview, message: ViewMessage): void;

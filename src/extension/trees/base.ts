@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
-import type {OpenProjectsChannel, ProjectEventChannel, Projects} from '../projects/index.js';
+import {OpenProjectsChannel, ProjectEventChannel} from '../../exchange.js';
+import type {Projects} from '../projects/index.js';
 
 export abstract class BaseTreeDataProvider<T> implements vscode.TreeDataProvider<T> {
     protected readonly context: vscode.ExtensionContext;

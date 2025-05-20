@@ -1,8 +1,15 @@
 import * as vscode from 'vscode';
 
-import {Exchange, ExchangeChannel} from '../exchange.js';
+import {
+    type ExchangeObjectWrapper,
+    OpenProjectsChannel,
+    OpenProjectsExchange,
+    type SerializedProjectEvent,
+    type SerializedProjectsState,
+    createOpenProjectsExchange,
+    createProjectEventExchange
+} from '../../exchange.js';
 
-import {ProjectEvent} from './project.js';
 import {Project} from './project.js';
 
 interface SavedProjects {
@@ -10,20 +17,12 @@ interface SavedProjects {
     paths: string[];
 }
 
-interface ProjectsState {
-    projects: Project[];
-    currentProject: Project | undefined;
-}
-
-export type OpenProjectsExchange = Exchange<ProjectsState>;
-export type OpenProjectsChannel = ExchangeChannel<ProjectsState>;
-
 export class Projects {
     protected readonly context: vscode.ExtensionContext;
 
-    private projectEventExchange = new Exchange<ProjectEvent>();
+    private projectEventExchange = createProjectEventExchange();
 
-    private openProjectsExchange: OpenProjectsExchange = new Exchange();
+    private openProjectsExchange: OpenProjectsExchange = createOpenProjectsExchange();
     private openProjectsChannel: OpenProjectsChannel = this.openProjectsExchange.createChannel();
 
     private projects: Project[];
@@ -48,8 +47,16 @@ export class Projects {
         return this.projectEventExchange.createChannel();
     }
 
+    attachProjectEventPortal(sendCallback: (value: ExchangeObjectWrapper<SerializedProjectEvent>) => void) {
+        return this.projectEventExchange.attachPortal(sendCallback);
+    }
+
     createOpenProjectsChannel() {
         return this.openProjectsExchange.createChannel();
+    }
+
+    attachOpenProjectsPortal(sendCallback: (value: ExchangeObjectWrapper<SerializedProjectsState>) => void) {
+        return this.openProjectsExchange.attachPortal(sendCallback);
     }
 
     getAll() {

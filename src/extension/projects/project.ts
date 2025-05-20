@@ -3,9 +3,9 @@ import {
     DEFAULT_CONFIGURATION,
     FILE_EXTENSIONS_HDL,
     type ProjectConfiguration,
-    ProjectInputFile,
-    ProjectInputFileState,
-    ProjectOutputFile,
+    type ProjectInputFile,
+    type ProjectInputFileState,
+    type ProjectOutputFile,
     type ProjectOutputFileState,
     type ProjectState
 } from 'edacation';
@@ -13,18 +13,8 @@ import path from 'path';
 import * as vscode from 'vscode';
 
 import * as node from '../../common/node-modules.js';
-import {Exchange, ExchangeChannel} from '../exchange.js';
+import {ProjectEventChannel, type ProjectEventType} from '../../exchange.js';
 import {asWorkspaceRelativeFolderPath, decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util.js';
-
-export type ProjectEventType = 'full' | 'config' | 'inputFile' | 'outputFile';
-
-export interface ProjectEvent {
-    event: ProjectEventType;
-    project: Project;
-}
-
-export type ProjectEventChannel = ExchangeChannel<ProjectEvent>;
-export type ProjectEventExchange = Exchange<ProjectEvent>;
 
 export class Project extends BaseProject {
     private readonly channel?: ProjectEventChannel;

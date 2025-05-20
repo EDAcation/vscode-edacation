@@ -57,6 +57,10 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
             })
         );
 
+        // Hook up exchange portals
+        this.connectWebview(webviewPanel.webview);
+        webviewPanel.onDidDispose((_) => this.disconnectWebview());
+
         // Add dispose listener
         webviewPanel.onDidDispose(() => {
             this.onClose(document, webview);
