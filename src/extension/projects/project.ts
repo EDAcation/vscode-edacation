@@ -11,20 +11,20 @@ import {
 } from 'edacation';
 import path from 'path';
 import * as vscode from 'vscode';
+import {URI, Utils} from 'vscode-uri';
 
 import * as node from '../../common/node-modules.js';
-import {ProjectEventChannel, type ProjectEventType} from '../../exchange.js';
-import {asWorkspaceRelativeFolderPath, decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util.js';
+import {type ProjectEvent, ProjectEventChannel, type ProjectEventType} from '../../exchange.js';
+import {decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util.js';
 
 export class Project extends BaseProject {
     private readonly channel?: ProjectEventChannel;
 
-    private uri: vscode.Uri;
-    private root: vscode.Uri;
-    private relativeRoot: string;
+    private uri: URI;
+    private root: URI;
 
     constructor(
-        uri: vscode.Uri,
+        uri: URI,
         name?: string,
         inputFiles: string[] | ProjectInputFileState[] = [],
         outputFiles: string[] | ProjectOutputFileState[] = [],
@@ -41,9 +41,9 @@ export class Project extends BaseProject {
         this.root = this.uri.with({
             path: path.dirname(this.uri.path)
         });
-        this.relativeRoot = asWorkspaceRelativeFolderPath(this.root);
 
         this.channel = channel;
+        this.channel?.subscribe(this.onExternalEvent.bind(this));
 
         void this.cleanIOFiles();
     }
@@ -52,20 +52,16 @@ export class Project extends BaseProject {
         return this.uri;
     }
 
-    isUri(uri: vscode.Uri) {
+    isUri(uri: URI) {
         return this.uri.toString() === uri.toString();
     }
 
-    getRoot(): vscode.Uri {
+    getRoot(): URI {
         return this.root;
     }
 
-    getRelativeRoot(): string {
-        return this.relativeRoot;
-    }
-
-    getFileUri(path: string): vscode.Uri {
-        return vscode.Uri.joinPath(this.getRoot(), path);
+    getFileUri(path: string): URI {
+        return Utils.joinPath(this.getRoot(), path);
     }
 
     getTargetDirectory(targetId: string): string {
@@ -83,17 +79,7 @@ export class Project extends BaseProject {
         this.updateConfiguration({targets: targets});
     }
 
-    async setInputFileType(filePath: string, type: ProjectInputFile['type']) {
-        const file = this.getInputFile(filePath);
-        if (!file) {
-            console.warn(`Tried to set file type of missing input file: ${filePath}`);
-            return;
-        }
-
-        file.type = type;
-    }
-
-    async addInputFileUris(fileUris: vscode.Uri[]): Promise<void> {
+    async addInputFileUris(fileUris: URI[]): Promise<void> {
         const files: {path: string; type: ProjectInputFileState['type']}[] = [];
         let askForCopy = true;
         for (let fileUri of fileUris) {
@@ -140,10 +126,7 @@ export class Project extends BaseProject {
         }
     }
 
-    private async tryCopyFileIntoWorkspace(
-        uri: vscode.Uri,
-        askForCopy = true
-    ): Promise<[boolean, vscode.Uri | undefined]> {
+    private async tryCopyFileIntoWorkspace(uri: URI, askForCopy = true): Promise<[boolean, URI | undefined]> {
         if (!node.isAvailable()) {
             await vscode.window.showErrorMessage(`File must be in the a subfolder of the EDA project root.`, {
                 detail: `File "${uri.path}" is not in folder "${this.getRoot().path}".`,
@@ -168,30 +151,28 @@ export class Project extends BaseProject {
 
         if (answer === 'Only this file' || answer === 'Yes to all') {
             const targetDir = this.getFileUri('src');
-            const target = vscode.Uri.joinPath(targetDir, path.basename(uri.path));
+            const target = Utils.joinPath(targetDir, path.basename(uri.path));
 
-            const newUri: vscode.Uri | undefined = await new Promise(
-                (resolve: (newUri: vscode.Uri) => void, reject) => {
-                    node.fs().mkdir(targetDir.fsPath, {recursive: true}, (err) => {
-                        if (err) {
-                            reject();
-                            void vscode.window.showErrorMessage(`Failed to copy file: ${err}`);
-                            return;
-                        }
+            const newUri: URI | undefined = await new Promise((resolve: (newUri: URI) => void, reject) => {
+                node.fs().mkdir(targetDir.fsPath, {recursive: true}, (err) => {
+                    if (err) {
+                        reject();
+                        void vscode.window.showErrorMessage(`Failed to copy file: ${err}`);
+                        return;
+                    }
 
-                        node.fs().copyFile(uri.fsPath, target.fsPath, () => {
-                            resolve(target);
-                        });
+                    node.fs().copyFile(uri.fsPath, target.fsPath, () => {
+                        resolve(target);
                     });
-                }
-            );
+                });
+            });
             return [answer === 'Yes to all', newUri];
         }
 
         return [false, undefined];
     }
 
-    async addOutputFileUris(fileUris: vscode.Uri[], targetId: string): Promise<void> {
+    async addOutputFileUris(fileUris: URI[], targetId: string): Promise<void> {
         const filePaths = [];
         for (let fileUri of fileUris) {
             try {
@@ -212,6 +193,8 @@ export class Project extends BaseProject {
     }
 
     private async cleanIOFiles() {
+        if (!vscode.workspace) return;
+
         const brokenInputFiles: string[] = [];
         for (const file of this.getInputFiles()) {
             try {
@@ -234,6 +217,20 @@ export class Project extends BaseProject {
 
         if (brokenInputFiles.length) this.removeInputFiles(brokenInputFiles);
         if (brokenOutputFiles.length) this.removeOutputFiles(brokenOutputFiles);
+    }
+
+    private async onExternalEvent(event: ProjectEvent) {
+        // Only handle events related to our project
+        if (!event.project.isUri(this.getUri())) return;
+
+        console.log(`[Project ${this.getUri().path}] Importing new project config`);
+
+        this.importFromProject(event.project, false);
+
+        // TODO: make saving more efficient, as this will cause every project on the exchange to save the file...
+        // only saving on local changes is not enough because projects on the other side of a portal (in a webview)
+        // do not have access to the filesystem.
+        await this.save();
     }
 
     private async onInputFileChange(_files: ProjectInputFile[]) {
@@ -270,6 +267,8 @@ export class Project extends BaseProject {
     }
 
     private async save() {
+        if (!vscode.workspace) return;
+
         await Project.store(this);
     }
 
@@ -277,7 +276,7 @@ export class Project extends BaseProject {
         return BaseProject.serialize(project);
     }
 
-    static deserialize(data: ProjectState, uri: vscode.Uri, channel?: ProjectEventChannel): Project {
+    static deserialize(data: ProjectState, uri: URI, channel?: ProjectEventChannel): Project {
         const name = data.name;
         const inputFiles = data.inputFiles ?? [];
         const outputFiles = data.outputFiles ?? [];
@@ -286,13 +285,13 @@ export class Project extends BaseProject {
         return new Project(uri, name, inputFiles, outputFiles, configuration, channel);
     }
 
-    static async load(uri: vscode.Uri, channel?: ProjectEventChannel): Promise<Project> {
+    static async load(uri: URI, channel?: ProjectEventChannel): Promise<Project> {
         const data = decodeJSON(await vscode.workspace.fs.readFile(uri));
         const project = Project.deserialize(data as ProjectState, uri, channel);
         return project;
     }
 
-    static async store(project: Project): Promise<vscode.Uri> {
+    static async store(project: Project): Promise<URI> {
         const data = Project.serialize(project);
         await vscode.workspace.fs.writeFile(project.uri, encodeJSON(data, true));
         return project.uri;

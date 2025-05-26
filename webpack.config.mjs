@@ -162,6 +162,7 @@ const viewsConfig = Object.assign({}, baseConfig, {
             type: 'var'
         }
     },
+    externals: {},
     resolve: {
         mainFields: ['browser', 'module', 'main'],
         extensions: ['.ts', '.js'],
@@ -176,6 +177,7 @@ const viewsConfig = Object.assign({}, baseConfig, {
         },
         fallback: {
             crypto: false,
+            vscode: false,
             path: 'path-browserify-win32',
             os: 'os-browserify'
         }
@@ -216,7 +218,13 @@ const viewsConfig = Object.assign({}, baseConfig, {
                 generator: {
                     filename: './[name][ext]'
                 }
-            }
+            },
+            {
+                test: /\.m?js$/,
+                resolve: {
+                  fullySpecified: false
+                },
+            },
         ]
     },
     plugins: [

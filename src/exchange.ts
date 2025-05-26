@@ -1,4 +1,7 @@
-import {Project, type ProjectState} from 'edacation';
+import {type ProjectState} from 'edacation';
+import {URI} from 'vscode-uri';
+
+import {Project} from './extension/projects';
 
 export interface ExchangeObjectWrapper<SerializedMessage> {
     type: 'exchange';
@@ -120,16 +123,20 @@ export class Exchange<Message, SerializedMessage> {
             }
         }
 
-        const portalPayload: ExchangeObjectWrapper<SerializedMessage> = {
-            type: 'exchange',
-            topic: this.topic,
-            value: this.serialize(message)
-        };
+        const portalPayload: ExchangeObjectWrapper<SerializedMessage> = this.getPortalPayload(message);
         for (const portal of this.portals) {
             if (portal === source) continue;
 
             portal.transmit(portalPayload);
         }
+    }
+
+    private getPortalPayload(message: Message): ExchangeObjectWrapper<SerializedMessage> {
+        return {
+            type: 'exchange',
+            topic: this.topic,
+            value: this.serialize(message)
+        };
     }
 }
 
@@ -162,17 +169,23 @@ export interface ProjectEvent {
 }
 export interface SerializedProjectEvent {
     event: ProjectEventType;
+    path: string;
     project: ProjectState;
 }
 export const serializeProjectEvent = (e: ProjectEvent): SerializedProjectEvent => {
-    return {event: e.event, project: Project.serialize(e.project)};
+    return {event: e.event, path: e.project.getUri().path, project: Project.serialize(e.project)};
 };
-export const deserializeProjectEvent = (value: SerializedProjectEvent): ProjectEvent => {
-    return {event: value.event, project: Project.deserialize(value.project)};
+export const deserializeProjectEvent = (value: SerializedProjectEvent, channel?: ProjectEventChannel): ProjectEvent => {
+    return {event: value.event, project: Project.deserialize(value.project, URI.parse(value.path), channel)};
 };
 export class ProjectEventExchange extends Exchange<ProjectEvent, SerializedProjectEvent> {}
 export class ProjectEventChannel extends ExchangeChannel<ProjectEvent, SerializedProjectEvent> {}
 export class ProjectEventPortal extends ExchangePortal<ProjectEvent, SerializedProjectEvent> {}
 export const createProjectEventExchange = (): ProjectEventExchange => {
-    return new ProjectEventExchange('projectEvent', serializeProjectEvent, deserializeProjectEvent);
+    const exchange = new ProjectEventExchange(
+        'projectEvent',
+        serializeProjectEvent,
+        (value): ProjectEvent => deserializeProjectEvent(value, exchange.createChannel())
+    );
+    return exchange;
 };
