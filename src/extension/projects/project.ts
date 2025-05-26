@@ -43,7 +43,7 @@ export class Project extends BaseProject {
         });
 
         this.channel = channel;
-        this.channel?.subscribe(this.onExternalEvent.bind(this));
+        this.channel?.subscribe(this.onExternalEvent.bind(this), false);
 
         void this.cleanIOFiles();
     }

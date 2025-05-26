@@ -9,7 +9,7 @@ interface ProjectState {
 }
 
 const projectEventExchange = createProjectEventExchange();
-const openProjectsExchange = createOpenProjectsExchange();
+const openProjectsExchange = createOpenProjectsExchange(projectEventExchange);
 
 // Register portals to communicate with main extension
 const projectEventPortal = projectEventExchange.attachPortal((value) => vscode.postMessage(value));

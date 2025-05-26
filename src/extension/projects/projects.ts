@@ -22,7 +22,7 @@ export class Projects {
 
     private projectEventExchange = createProjectEventExchange();
 
-    private openProjectsExchange: OpenProjectsExchange = createOpenProjectsExchange();
+    private openProjectsExchange: OpenProjectsExchange = createOpenProjectsExchange(this.projectEventExchange);
     private openProjectsChannel: OpenProjectsChannel = this.openProjectsExchange.createChannel();
 
     private projects: Project[];

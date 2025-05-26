@@ -19,11 +19,11 @@ export class ExchangeChannel<Message, SerializedMessage> {
         this.callbacks = new Set();
     }
 
-    subscribe(callback: (message: Message) => void) {
+    subscribe(callback: (message: Message) => void, recvLastMessage = true) {
         this.callbacks.add(callback);
 
         const lastMsg = this.exchange.getLastMessage();
-        if (lastMsg !== undefined) callback(lastMsg);
+        if (recvLastMessage && lastMsg !== undefined) callback(lastMsg);
     }
 
     submit(message: Message) {
@@ -151,26 +151,6 @@ export class Exchange<Message, SerializedMessage> {
     }
 }
 
-// Open projects exchange
-export interface ProjectsState {
-    projects: Project[];
-    currentProject: Project | undefined;
-}
-// TODO: FIX! Necessary for exchange portals support!
-export type SerializedProjectsState = object;
-export const serializeOpenProjects = (_projects: ProjectsState): SerializedProjectsState => {
-    return {};
-};
-export const deserializeOpenProjects = (_value: SerializedProjectsState): ProjectsState => {
-    return {projects: [], currentProject: undefined};
-};
-export class OpenProjectsExchange extends Exchange<ProjectsState, SerializedProjectsState> {}
-export class OpenProjectsChannel extends ExchangeChannel<ProjectsState, SerializedProjectsState> {}
-export class OpenProjectsPortal extends ExchangePortal<ProjectsState, SerializedProjectsState> {}
-export const createOpenProjectsExchange = (): OpenProjectsExchange => {
-    return new OpenProjectsExchange('openProjects', serializeOpenProjects, deserializeOpenProjects);
-};
-
 // Current project event exchange
 export {Project};
 export type ProjectEvent = Project;
@@ -194,4 +174,39 @@ export const createProjectEventExchange = (): ProjectEventExchange => {
         (value): ProjectEvent => deserializeProjectEvent(value, exchange.createChannel())
     );
     return exchange;
+};
+
+// Open projects exchange
+export interface ProjectsState {
+    projects: Project[];
+    currentProject: Project | undefined;
+}
+export interface SerializedProjectsState {
+    projects: SerializedProjectEvent[];
+    currentProject: SerializedProjectEvent | undefined;
+}
+export const serializeOpenProjects = (projects: ProjectsState): SerializedProjectsState => {
+    return {
+        projects: projects.projects.map((project) => serializeProjectEvent(project)),
+        currentProject: projects.currentProject ? serializeProjectEvent(projects.currentProject) : undefined
+    };
+};
+export const deserializeOpenProjects = (
+    value: SerializedProjectsState,
+    channel?: ProjectEventChannel
+): ProjectsState => {
+    return {
+        projects: value.projects.map((project) => deserializeProjectEvent(project, channel)),
+        currentProject: value.currentProject ? deserializeProjectEvent(value.currentProject, channel) : undefined
+    };
+};
+export class OpenProjectsExchange extends Exchange<ProjectsState, SerializedProjectsState> {}
+export class OpenProjectsChannel extends ExchangeChannel<ProjectsState, SerializedProjectsState> {}
+export class OpenProjectsPortal extends ExchangePortal<ProjectsState, SerializedProjectsState> {}
+export const createOpenProjectsExchange = (projectEventExchange?: ProjectEventExchange): OpenProjectsExchange => {
+    return new OpenProjectsExchange(
+        'openProjects',
+        serializeOpenProjects,
+        (value): ProjectsState => deserializeOpenProjects(value, projectEventExchange?.createChannel())
+    );
 };
