@@ -71,8 +71,8 @@ export class ExchangePortal<Message, SerializedMessage> {
 }
 
 export class Exchange<Message, SerializedMessage> {
-    private channels: Set<ExchangeChannel<Message, SerializedMessage>> = new Set();
-    private portals: Set<ExchangePortal<Message, SerializedMessage>> = new Set();
+    private channels: Set<WeakRef<ExchangeChannel<Message, SerializedMessage>>> = new Set();
+    private portals: Set<WeakRef<ExchangePortal<Message, SerializedMessage>>> = new Set();
 
     private lastMessage?: Message;
 
@@ -96,24 +96,34 @@ export class Exchange<Message, SerializedMessage> {
 
     createChannel() {
         const channel = new ExchangeChannel<Message, SerializedMessage>(this);
-        this.channels.add(channel);
+        this.channels.add(new WeakRef(channel));
         return channel;
     }
 
     destroyChannel(channel: ExchangeChannel<Message, SerializedMessage>) {
-        this.channels.delete(channel);
+        for (const storedChannel of this.channels) {
+            if (storedChannel.deref() === channel) {
+                this.channels.delete(storedChannel);
+                return;
+            }
+        }
     }
 
     attachPortal(
         sendCallback: (value: ExchangeObjectWrapper<SerializedMessage>) => void
     ): ExchangePortal<Message, SerializedMessage> {
         const portal = new ExchangePortal(this, sendCallback);
-        this.portals.add(portal);
+        this.portals.add(new WeakRef(portal));
         return portal;
     }
 
     detachPortal(portal: ExchangePortal<Message, SerializedMessage>) {
-        this.portals.delete(portal);
+        for (const storedPortal of this.portals) {
+            if (storedPortal.deref() === portal) {
+                this.portals.delete(storedPortal);
+                return;
+            }
+        }
     }
 
     broadcast(
@@ -122,8 +132,9 @@ export class Exchange<Message, SerializedMessage> {
     ) {
         this.lastMessage = message;
 
-        for (const channel of this.channels) {
-            if (channel === source) continue;
+        for (const chanRef of this.channels) {
+            const channel = chanRef.deref();
+            if (channel === undefined || channel === source) continue;
 
             for (const cb of channel.callbacks) {
                 try {
@@ -135,8 +146,9 @@ export class Exchange<Message, SerializedMessage> {
         }
 
         const portalPayload: ExchangeObjectWrapper<SerializedMessage> = this.getPortalPayload(message);
-        for (const portal of this.portals) {
-            if (portal === source) continue;
+        for (const portalRef of this.portals) {
+            const portal = portalRef.deref();
+            if (portal === undefined || portal === source) continue;
 
             portal.transmit(portalPayload);
         }
