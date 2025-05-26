@@ -14,7 +14,7 @@ import * as vscode from 'vscode';
 import {URI, Utils} from 'vscode-uri';
 
 import * as node from '../../common/node-modules.js';
-import {type ProjectEvent, ProjectEventChannel, type ProjectEventType} from '../../exchange.js';
+import {type ProjectEvent, ProjectEventChannel} from '../../exchange.js';
 import {decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util.js';
 
 export class Project extends BaseProject {
@@ -219,13 +219,13 @@ export class Project extends BaseProject {
         if (brokenOutputFiles.length) this.removeOutputFiles(brokenOutputFiles);
     }
 
-    private async onExternalEvent(event: ProjectEvent) {
+    private async onExternalEvent(project: ProjectEvent) {
         // Only handle events related to our project
-        if (!event.project.isUri(this.getUri())) return;
+        if (!project.isUri(this.getUri())) return;
 
         console.log(`[Project ${this.getUri().path}] Importing new project config`);
 
-        this.importFromProject(event.project, false);
+        this.importFromProject(project, false);
 
         // TODO: make saving more efficient, as this will cause every project on the exchange to save the file...
         // only saving on local changes is not enough because projects on the other side of a portal (in a webview)
@@ -262,8 +262,8 @@ export class Project extends BaseProject {
         this.emitEvent('config');
     }
 
-    private emitEvent(event: ProjectEventType) {
-        if (this.channel) this.channel.submit({event, project: this});
+    private emitEvent(_event: string) {
+        if (this.channel) this.channel.submit(this);
     }
 
     private async save() {

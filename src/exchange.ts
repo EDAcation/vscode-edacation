@@ -21,6 +21,9 @@ export class ExchangeChannel<Message, SerializedMessage> {
 
     subscribe(callback: (message: Message) => void) {
         this.callbacks.add(callback);
+
+        const lastMsg = this.exchange.getLastMessage();
+        if (lastMsg !== undefined) callback(lastMsg);
     }
 
     submit(message: Message) {
@@ -71,6 +74,8 @@ export class Exchange<Message, SerializedMessage> {
     private channels: Set<ExchangeChannel<Message, SerializedMessage>> = new Set();
     private portals: Set<ExchangePortal<Message, SerializedMessage>> = new Set();
 
+    private lastMessage?: Message;
+
     public readonly topic: string;
     public readonly serialize: (m: Message) => SerializedMessage;
     public readonly deserialize: (v: SerializedMessage) => Message;
@@ -83,6 +88,10 @@ export class Exchange<Message, SerializedMessage> {
         this.topic = topic;
         this.serialize = serialize;
         this.deserialize = deserialize;
+    }
+
+    getLastMessage() {
+        return this.lastMessage;
     }
 
     createChannel() {
@@ -111,6 +120,8 @@ export class Exchange<Message, SerializedMessage> {
         source: ExchangeChannel<Message, SerializedMessage> | ExchangePortal<Message, SerializedMessage>,
         message: Message
     ) {
+        this.lastMessage = message;
+
         for (const channel of this.channels) {
             if (channel === source) continue;
 
@@ -131,7 +142,7 @@ export class Exchange<Message, SerializedMessage> {
         }
     }
 
-    private getPortalPayload(message: Message): ExchangeObjectWrapper<SerializedMessage> {
+    getPortalPayload(message: Message): ExchangeObjectWrapper<SerializedMessage> {
         return {
             type: 'exchange',
             topic: this.topic,
@@ -162,21 +173,16 @@ export const createOpenProjectsExchange = (): OpenProjectsExchange => {
 
 // Current project event exchange
 export {Project};
-export type ProjectEventType = 'full' | 'config' | 'inputFile' | 'outputFile';
-export interface ProjectEvent {
-    event: ProjectEventType;
-    project: Project;
-}
+export type ProjectEvent = Project;
 export interface SerializedProjectEvent {
-    event: ProjectEventType;
     path: string;
     project: ProjectState;
 }
-export const serializeProjectEvent = (e: ProjectEvent): SerializedProjectEvent => {
-    return {event: e.event, path: e.project.getUri().path, project: Project.serialize(e.project)};
+export const serializeProjectEvent = (project: ProjectEvent): SerializedProjectEvent => {
+    return {path: project.getUri().path, project: Project.serialize(project)};
 };
 export const deserializeProjectEvent = (value: SerializedProjectEvent, channel?: ProjectEventChannel): ProjectEvent => {
-    return {event: value.event, project: Project.deserialize(value.project, URI.parse(value.path), channel)};
+    return Project.deserialize(value.project, URI.parse(value.path), channel);
 };
 export class ProjectEventExchange extends Exchange<ProjectEvent, SerializedProjectEvent> {}
 export class ProjectEventChannel extends ExchangeChannel<ProjectEvent, SerializedProjectEvent> {}

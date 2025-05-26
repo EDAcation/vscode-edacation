@@ -30,10 +30,10 @@ export const syncedState: ProjectState = reactive({
     project: undefined
 });
 
-projectEventChannel.subscribe((message) => {
-    console.log('[VIEW] Project event: ' + message.event);
-    console.log(message.project);
-    syncedState.project = message.project;
+projectEventChannel.subscribe((project) => {
+    console.log('[VIEW] Project update event');
+    console.log(project);
+    syncedState.project = project;
 });
 openProjectsChannel.subscribe((message) => {
     console.log('[VIEW] Open projects event');

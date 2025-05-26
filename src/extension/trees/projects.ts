@@ -9,7 +9,8 @@ export class ProjectProvider extends BaseTreeDataProvider<Project> {
     constructor(context: vscode.ExtensionContext, projects: Projects) {
         super(context, projects);
 
-        this.openProjectsChannel.subscribe((msg) => this.changeEmitter.fire(msg.currentProject));
+        this.projectEventChannel.subscribe((_msg) => this.changeEmitter.fire(undefined));
+        this.openProjectsChannel.subscribe((_msg) => this.changeEmitter.fire(undefined));
     }
 
     static getViewID() {

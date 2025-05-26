@@ -67,9 +67,8 @@ export class InputFilesProvider extends FilesProvider<InputFileTreeItem> {
         // therefore we need to reload the entire tree on a change.
         this.onDidChangeTreeData = this.changeEmitter.event;
 
-        this.projectEventChannel.subscribe((msg) => {
-            if (msg.event === 'inputFile') this.changeEmitter.fire(undefined);
-        });
+        this.projectEventChannel.subscribe((_msg) => this.changeEmitter.fire(undefined));
+        this.openProjectsChannel.subscribe((_msg) => this.changeEmitter.fire(undefined));
     }
 
     getTreeItem(element: InputFileTreeItem): vscode.TreeItem {
@@ -167,9 +166,8 @@ export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
         // therefore we need to reload the entire tree on a change.
         this.onDidChangeTreeData = this.changeEmitter.event;
 
-        this.projectEventChannel.subscribe((msg) => {
-            if (msg.event === 'outputFile') this.changeEmitter.fire(undefined);
-        });
+        this.projectEventChannel.subscribe((_msg) => this.changeEmitter.fire(undefined));
+        this.openProjectsChannel.subscribe((_msg) => this.changeEmitter.fire(undefined));
     }
 
     getTreeItem(element: OutputFileTreeItem): vscode.TreeItem {
