@@ -55,7 +55,7 @@ export class ActionsProvider extends BaseWebviewViewProvider {
             console.log('[actions] updating TLM');
 
             try {
-                await project.setTopLevelModule(message.targetId, message.module);
+                project.setTopLevelModule(message.targetId, message.module);
             } catch (err) {
                 console.log(`[actions] Error while updating TLM: ${err}`);
             }
@@ -66,7 +66,7 @@ export class ActionsProvider extends BaseWebviewViewProvider {
             console.log('[actions] updating active testbench file');
 
             try {
-                await project.setTestbenchPath(message.targetId, message.testbenchPath);
+                project.setTestbenchPath(message.targetId, message.testbenchPath);
             } catch (err) {
                 console.log(`[actions] Error while updating testbench file: ${err}`);
             }

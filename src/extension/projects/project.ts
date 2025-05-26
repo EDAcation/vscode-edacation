@@ -119,39 +119,7 @@ export class Project extends BaseProject {
         super.addInputFiles(files);
     }
 
-    async setTopLevelModule(targetId: string, module: string) {
-        const target = this.getTarget(targetId);
-        if (!target) throw new Error(`Target "${targetId}" does not exist!`);
-
-        // Ensure the config tree exists
-        // We don't care about setting missing defaults, as this is target-level configuration,
-        // so any missing properties will fallback to project-level config.
-        if (!target.yosys) target.yosys = {};
-        if (!target.yosys.options) target.yosys.options = {};
-
-        target.yosys.options.topLevelModule = module;
-    }
-
-    async setTestbenchPath(targetId: string, testbenchPath?: string) {
-        const testbenchFiles = this.getInputFiles()
-            .filter((file) => file.type === 'testbench')
-            .map((file) => file.path);
-        if (testbenchPath && !testbenchFiles.includes(testbenchPath))
-            throw new Error(`Testbench ${testbenchPath} is not marked as such!`);
-
-        const target = this.getTarget(targetId);
-        if (!target) throw new Error(`Target "${targetId}" does not exist!`);
-
-        // Ensure the config tree exists
-        // We don't care about setting missing defaults, as this is target-level configuration,
-        // so any missing properties will fallback to project-level config.
-        if (!target.iverilog) target.iverilog = {};
-        if (!target.iverilog.options) target.iverilog.options = {};
-
-        target.iverilog.options.testbenchFile = testbenchPath;
-    }
-
-    private async ensureTestbenchPaths() {
+    private ensureTestbenchPaths() {
         const testbenches = this.getInputFiles()
             .filter((file) => file.type == 'testbench')
             .map((file) => file.path);
@@ -168,7 +136,7 @@ export class Project extends BaseProject {
             }
 
             const newTb = testbenches.length === 0 ? undefined : testbenches[0];
-            await this.setTestbenchPath(target.id, newTb);
+            this.setTestbenchPath(target.id, newTb);
         }
     }
 
