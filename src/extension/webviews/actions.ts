@@ -48,28 +48,6 @@ export class ActionsProvider extends BaseWebviewViewProvider {
                 type: 'project',
                 project: Project.serialize(project)
             });
-        } else if (message.type === 'changeTlm') {
-            const project = this.projects.getCurrent();
-            if (!project) return;
-
-            console.log('[actions] updating TLM');
-
-            try {
-                project.setTopLevelModule(message.targetId, message.module);
-            } catch (err) {
-                console.log(`[actions] Error while updating TLM: ${err}`);
-            }
-        } else if (message.type === 'changeTestbench') {
-            const project = this.projects.getCurrent();
-            if (!project) return;
-
-            console.log('[actions] updating active testbench file');
-
-            try {
-                project.setTestbenchPath(message.targetId, message.testbenchPath);
-            } catch (err) {
-                console.log(`[actions] Error while updating testbench file: ${err}`);
-            }
         } else if (message.type === 'command') {
             await vscode.commands.executeCommand(message.command, ...(message.args ?? []));
         }

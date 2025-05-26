@@ -24,11 +24,7 @@ export default defineComponent({
             if (!this.target) return;
 
             const newTlm = (event.target as VscodeTextfield).value;
-            vscode.vscode.postMessage({
-                type: 'changeTlm',
-                module: newTlm,
-                targetId: this.target.id
-            });
+            projectState.project?.setTopLevelModule(this.target.id, newTlm);
         }
     },
     computed: {

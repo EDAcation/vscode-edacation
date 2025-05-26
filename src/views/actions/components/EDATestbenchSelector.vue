@@ -29,11 +29,7 @@ export default defineComponent({
         setTestbench(file: string) {
             if (!this.target) return;
 
-            vscode.vscode.postMessage({
-                type: 'changeTestbench',
-                testbenchPath: file,
-                targetId: this.target.id
-            });
+            projectState.project?.setTestbenchPath(this.target.id, file);
         }
     },
     computed: {
