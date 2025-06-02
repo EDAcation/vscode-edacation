@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import {
-    type ExchangeObjectWrapper,
+    type ExchangeCommand,
     OpenProjectsChannel,
     OpenProjectsExchange,
     type SerializedProjectEvent,
@@ -20,9 +20,12 @@ interface SavedProjects {
 export class Projects {
     protected readonly context: vscode.ExtensionContext;
 
-    private projectEventExchange = createProjectEventExchange();
+    private projectEventExchange = createProjectEventExchange({isPrimary: true});
 
-    private openProjectsExchange: OpenProjectsExchange = createOpenProjectsExchange(this.projectEventExchange);
+    private openProjectsExchange: OpenProjectsExchange = createOpenProjectsExchange(
+        {isPrimary: true},
+        this.projectEventExchange
+    );
     private openProjectsChannel: OpenProjectsChannel = this.openProjectsExchange.createChannel();
 
     private projects: Project[];
@@ -47,7 +50,7 @@ export class Projects {
         return this.projectEventExchange.createChannel();
     }
 
-    attachProjectEventPortal(sendCallback: (value: ExchangeObjectWrapper<SerializedProjectEvent>) => void) {
+    attachProjectEventPortal(sendCallback: (value: ExchangeCommand<SerializedProjectEvent>) => void) {
         return this.projectEventExchange.attachPortal(sendCallback);
     }
 
@@ -55,7 +58,7 @@ export class Projects {
         return this.openProjectsExchange.createChannel();
     }
 
-    attachOpenProjectsPortal(sendCallback: (value: ExchangeObjectWrapper<SerializedProjectsState>) => void) {
+    attachOpenProjectsPortal(sendCallback: (value: ExchangeCommand<SerializedProjectsState>) => void) {
         return this.openProjectsExchange.attachPortal(sendCallback);
     }
 

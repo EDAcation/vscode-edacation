@@ -3,10 +3,24 @@ import {URI} from 'vscode-uri';
 
 import {Project} from './extension/projects';
 
-export interface ExchangeObjectWrapper<SerializedMessage> {
+interface BaseExchangeCommand {
     type: 'exchange';
     topic: string;
+}
+
+interface ExchangeCommandRequestInit extends BaseExchangeCommand {
+    command: 'requestInit';
+}
+
+interface ExchangeCommandUpdate<SerializedMessage> extends BaseExchangeCommand {
+    command: 'update';
     value: SerializedMessage;
+}
+
+export type ExchangeCommand<SerializedMessage> = ExchangeCommandRequestInit | ExchangeCommandUpdate<SerializedMessage>;
+
+interface ExchangeOptions {
+    isPrimary: boolean;
 }
 
 export class ExchangeChannel<Message, SerializedMessage> {
@@ -23,10 +37,17 @@ export class ExchangeChannel<Message, SerializedMessage> {
         this.callbacks.add(callback);
 
         const lastMsg = this.exchange.getLastMessage();
-        if (recvLastMessage && lastMsg !== undefined) callback(lastMsg);
+        if (recvLastMessage && lastMsg.initialized) callback(lastMsg.message);
     }
 
     submit(message: Message) {
+        // If this channel is on a secondary exchange that has not yet been initialized, messages should NOT propagate.
+        // Doing this could potentially overwrite data in the primary exchange.
+        // Instead, the `requestInit` message should have sent a request to the primary exchange by now, which
+        // will share its last message with us. We MUST wait for an update from the primary exchange
+        // in order to keep the exchanges synced.
+        if (!this.exchange.options.isPrimary && !this.exchange.getLastMessage().initialized) return;
+
         this.exchange.broadcast(this, message);
     }
 
@@ -39,30 +60,44 @@ export class ExchangeChannel<Message, SerializedMessage> {
 export class ExchangePortal<Message, SerializedMessage> {
     private readonly exchange: Exchange<Message, SerializedMessage>;
 
-    private sendCallback: (m: ExchangeObjectWrapper<SerializedMessage>) => void;
+    private sendCallback: (m: ExchangeCommand<SerializedMessage>) => void;
 
     constructor(
         exchange: Exchange<Message, SerializedMessage>,
-        sendCallback: (m: ExchangeObjectWrapper<SerializedMessage>) => void
+        sendCallback: (m: ExchangeCommand<SerializedMessage>) => void
     ) {
         this.exchange = exchange;
         this.sendCallback = sendCallback;
     }
 
-    private isExchangeObjectWrapper(obj: any): obj is ExchangeObjectWrapper<SerializedMessage> {
-        return (
-            obj && typeof obj === 'object' && obj.type === 'exchange' && typeof obj.topic === 'string' && 'value' in obj
-        );
+    private isExchangeMessage(obj: any): obj is ExchangeCommand<SerializedMessage> {
+        return obj && typeof obj === 'object' && obj.type === 'exchange';
     }
 
-    transmit(message: ExchangeObjectWrapper<SerializedMessage>) {
+    transmit(message: ExchangeCommand<SerializedMessage>) {
         this.sendCallback(message);
     }
 
     handleMessage(message: SerializedMessage) {
-        if (!this.isExchangeObjectWrapper(message) || message.topic !== this.exchange.topic) return;
+        if (!this.isExchangeMessage(message) || message.topic !== this.exchange.topic) return;
 
-        this.exchange.broadcast(this, this.exchange.deserialize(message.value));
+        console.log(message);
+
+        if (message.command === 'requestInit') {
+            // Init requested by secondary portal, only respond if we are primary
+            if (!this.exchange.options.isPrimary) return;
+
+            // Do not send anything if we haven't initialized yet
+            const lastMsg = this.exchange.getLastMessage();
+            if (!lastMsg.initialized) return;
+
+            // Emit last known value back to secondary exchange
+            const payload = this.exchange.getPortalPayload(lastMsg.message);
+            this.transmit(payload);
+        } else if (message.command === 'update') {
+            // New value from other side of portal
+            this.exchange.broadcast(this, this.exchange.deserialize(message.value));
+        }
     }
 
     detach() {
@@ -74,20 +109,23 @@ export class Exchange<Message, SerializedMessage> {
     private channels: Set<WeakRef<ExchangeChannel<Message, SerializedMessage>>> = new Set();
     private portals: Set<WeakRef<ExchangePortal<Message, SerializedMessage>>> = new Set();
 
-    private lastMessage?: Message;
+    private lastMessage: {initialized: false} | {initialized: true; message: Message} = {initialized: false};
 
     public readonly topic: string;
     public readonly serialize: (m: Message) => SerializedMessage;
     public readonly deserialize: (v: SerializedMessage) => Message;
+    public readonly options: ExchangeOptions;
 
     constructor(
         topic: string,
         serialize: (m: Message) => SerializedMessage,
-        deserialize: (v: SerializedMessage) => Message
+        deserialize: (v: SerializedMessage) => Message,
+        options: ExchangeOptions = {isPrimary: false}
     ) {
         this.topic = topic;
         this.serialize = serialize;
         this.deserialize = deserialize;
+        this.options = options;
     }
 
     getLastMessage() {
@@ -110,10 +148,21 @@ export class Exchange<Message, SerializedMessage> {
     }
 
     attachPortal(
-        sendCallback: (value: ExchangeObjectWrapper<SerializedMessage>) => void
+        sendCallback: (value: ExchangeCommand<SerializedMessage>) => void
     ): ExchangePortal<Message, SerializedMessage> {
         const portal = new ExchangePortal(this, sendCallback);
         this.portals.add(new WeakRef(portal));
+
+        if (this.options.isPrimary && this.lastMessage.initialized) {
+            // Primary exchange: emit last message into new portals if initialized
+            const payload = this.getPortalPayload(this.lastMessage.message);
+            portal.transmit(payload);
+        } else if (!this.options.isPrimary && !this.lastMessage.initialized) {
+            // Secondary exchange: send request for initial message if not initialized
+            const payload = this.getInitPayload();
+            portal.transmit(payload);
+        }
+
         return portal;
     }
 
@@ -130,7 +179,10 @@ export class Exchange<Message, SerializedMessage> {
         source: ExchangeChannel<Message, SerializedMessage> | ExchangePortal<Message, SerializedMessage>,
         message: Message
     ) {
-        this.lastMessage = message;
+        this.lastMessage = {
+            initialized: true,
+            message
+        };
 
         for (const chanRef of this.channels) {
             const channel = chanRef.deref();
@@ -145,7 +197,7 @@ export class Exchange<Message, SerializedMessage> {
             }
         }
 
-        const portalPayload: ExchangeObjectWrapper<SerializedMessage> = this.getPortalPayload(message);
+        const portalPayload: ExchangeCommand<SerializedMessage> = this.getPortalPayload(message);
         for (const portalRef of this.portals) {
             const portal = portalRef.deref();
             if (portal === undefined || portal === source) continue;
@@ -154,11 +206,20 @@ export class Exchange<Message, SerializedMessage> {
         }
     }
 
-    getPortalPayload(message: Message): ExchangeObjectWrapper<SerializedMessage> {
+    getPortalPayload(message: Message): ExchangeCommandUpdate<SerializedMessage> {
         return {
             type: 'exchange',
             topic: this.topic,
+            command: 'update',
             value: this.serialize(message)
+        };
+    }
+
+    getInitPayload(): ExchangeCommandRequestInit {
+        return {
+            type: 'exchange',
+            topic: this.topic,
+            command: 'requestInit'
         };
     }
 }
@@ -179,11 +240,12 @@ export const deserializeProjectEvent = (value: SerializedProjectEvent, channel?:
 export class ProjectEventExchange extends Exchange<ProjectEvent, SerializedProjectEvent> {}
 export class ProjectEventChannel extends ExchangeChannel<ProjectEvent, SerializedProjectEvent> {}
 export class ProjectEventPortal extends ExchangePortal<ProjectEvent, SerializedProjectEvent> {}
-export const createProjectEventExchange = (): ProjectEventExchange => {
+export const createProjectEventExchange = (options?: ExchangeOptions): ProjectEventExchange => {
     const exchange = new ProjectEventExchange(
         'projectEvent',
         serializeProjectEvent,
-        (value): ProjectEvent => deserializeProjectEvent(value, exchange.createChannel())
+        (value): ProjectEvent => deserializeProjectEvent(value, exchange.createChannel()),
+        options
     );
     return exchange;
 };
@@ -215,10 +277,14 @@ export const deserializeOpenProjects = (
 export class OpenProjectsExchange extends Exchange<ProjectsState, SerializedProjectsState> {}
 export class OpenProjectsChannel extends ExchangeChannel<ProjectsState, SerializedProjectsState> {}
 export class OpenProjectsPortal extends ExchangePortal<ProjectsState, SerializedProjectsState> {}
-export const createOpenProjectsExchange = (projectEventExchange?: ProjectEventExchange): OpenProjectsExchange => {
+export const createOpenProjectsExchange = (
+    options?: ExchangeOptions,
+    projectEventExchange?: ProjectEventExchange
+): OpenProjectsExchange => {
     return new OpenProjectsExchange(
         'openProjects',
         serializeOpenProjects,
-        (value): ProjectsState => deserializeOpenProjects(value, projectEventExchange?.createChannel())
+        (value): ProjectsState => deserializeOpenProjects(value, projectEventExchange?.createChannel()),
+        options
     );
 };

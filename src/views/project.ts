@@ -8,8 +8,8 @@ interface ProjectState {
     project?: Project;
 }
 
-const projectEventExchange = createProjectEventExchange();
-const openProjectsExchange = createOpenProjectsExchange(projectEventExchange);
+const projectEventExchange = createProjectEventExchange({isPrimary: false});
+const openProjectsExchange = createOpenProjectsExchange({isPrimary: false}, projectEventExchange);
 
 // Register portals to communicate with main extension
 const projectEventPortal = projectEventExchange.attachPortal((value) => vscode.postMessage(value));
