@@ -2,10 +2,9 @@ import {
     Project as BaseProject,
     DEFAULT_CONFIGURATION,
     FILE_EXTENSIONS_HDL,
+    type ProjectEvent as InternalProjectEvent,
     type ProjectConfiguration,
-    type ProjectInputFile,
     type ProjectInputFileState,
-    type ProjectOutputFile,
     type ProjectOutputFileState,
     type ProjectState
 } from 'edacation';
@@ -14,7 +13,7 @@ import * as vscode from 'vscode';
 import {URI, Utils} from 'vscode-uri';
 
 import * as node from '../../common/node-modules.js';
-import {type ProjectEvent, ProjectEventChannel} from '../../exchange.js';
+import {type ProjectEvent as ExternalProjectEvent, ProjectEventChannel} from '../../exchange.js';
 import {decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util.js';
 
 export class Project extends BaseProject {
@@ -31,11 +30,13 @@ export class Project extends BaseProject {
         configuration: ProjectConfiguration = DEFAULT_CONFIGURATION,
         channel?: ProjectEventChannel
     ) {
-        super(name ? name : path.basename(uri.path, '.edaproject'), inputFiles, outputFiles, configuration, {
-            onInputFileChange: (files) => this.onInputFileChange(files),
-            onOutputFileChange: (files) => this.onOutputFileChange(files),
-            onConfigurationChange: (config) => this.onConfigurationChange(config)
-        });
+        super(
+            name ? name : path.basename(uri.path, '.edaproject'),
+            inputFiles,
+            outputFiles,
+            configuration,
+            (_project, events) => this.onInternalEvent(events)
+        );
 
         this.uri = uri;
         this.root = this.uri.with({
@@ -103,27 +104,6 @@ export class Project extends BaseProject {
         if (files.length === 0) return;
 
         super.addInputFiles(files);
-    }
-
-    private ensureTestbenchPaths() {
-        const testbenches = this.getInputFiles()
-            .filter((file) => file.type == 'testbench')
-            .map((file) => file.path);
-
-        for (const target of this.getConfiguration().targets) {
-            const tbPath = target.iverilog?.options?.testbenchFile;
-
-            if (tbPath && testbenches.includes(tbPath)) {
-                // testbench is configured and correct
-                continue;
-            } else if (!tbPath && testbenches.length === 0) {
-                // no path configured but also no testbenches present, so ok
-                continue;
-            }
-
-            const newTb = testbenches.length === 0 ? undefined : testbenches[0];
-            this.setTestbenchPath(target.id, newTb);
-        }
     }
 
     private async tryCopyFileIntoWorkspace(uri: URI, askForCopy = true): Promise<[boolean, URI | undefined]> {
@@ -215,11 +195,41 @@ export class Project extends BaseProject {
             }
         }
 
-        if (brokenInputFiles.length) this.removeInputFiles(brokenInputFiles);
-        if (brokenOutputFiles.length) this.removeOutputFiles(brokenOutputFiles);
+        this.batchEvents(() => {
+            if (brokenInputFiles.length) this.removeInputFiles(brokenInputFiles);
+            if (brokenOutputFiles.length) this.removeOutputFiles(brokenOutputFiles);
+        });
     }
 
-    private async onExternalEvent(project: ProjectEvent) {
+    private ensureTestbenchPaths() {
+        const testbenches = this.getInputFiles()
+            .filter((file) => file.type == 'testbench')
+            .map((file) => file.path);
+
+        const changes: [string, string | undefined][] = [];
+
+        for (const target of this.getConfiguration().targets) {
+            const tbPath = target.iverilog?.options?.testbenchFile;
+
+            if (tbPath && testbenches.includes(tbPath)) {
+                // testbench is configured and correct
+                continue;
+            } else if (!tbPath && testbenches.length === 0) {
+                // no path configured but also no testbenches present, so ok
+                continue;
+            }
+
+            const newTb = testbenches.length === 0 ? undefined : testbenches[0];
+            changes.push([target.id, newTb]);
+        }
+
+        if (changes.length > 0)
+            this.batchEvents(() => {
+                for (const [targetId, tbPath] of changes) this.setTestbenchPath(targetId, tbPath);
+            });
+    }
+
+    private onExternalEvent(project: ExternalProjectEvent) {
         // Only handle events related to our project
         if (!project.isUri(this.getUri())) return;
 
@@ -228,33 +238,14 @@ export class Project extends BaseProject {
         this.importFromProject(project, false);
     }
 
-    private async onInputFileChange(_files: ProjectInputFile[]) {
-        console.log('[EDAcation] Input file change!');
+    private onInternalEvent(events: InternalProjectEvent[]) {
+        console.log(`[EDAcation] Received project events: ${events}`);
 
-        await this.cleanIOFiles();
-        this.expireOutputFiles();
+        // do 'ensure' checks here
         this.ensureTestbenchPaths();
 
-        this.emitEvent('inputFile');
-    }
+        console.log(this.channel);
 
-    private async onOutputFileChange(_files: ProjectOutputFile[]) {
-        console.log('[EDAcation] Output file change!');
-
-        await this.cleanIOFiles();
-
-        this.emitEvent('outputFile');
-    }
-
-    private async onConfigurationChange(_configuration: ProjectConfiguration) {
-        console.log('[EDAcation] Configuration change!');
-
-        this.ensureTestbenchPaths();
-
-        this.emitEvent('config');
-    }
-
-    private emitEvent(_event: string) {
         if (this.channel) this.channel.submit(this);
     }
 

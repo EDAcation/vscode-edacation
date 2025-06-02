@@ -81,8 +81,6 @@ export class ExchangePortal<Message, SerializedMessage> {
     handleMessage(message: SerializedMessage) {
         if (!this.isExchangeMessage(message) || message.topic !== this.exchange.topic) return;
 
-        console.log(message);
-
         if (message.command === 'requestInit') {
             // Init requested by secondary portal, only respond if we are primary
             if (!this.exchange.options.isPrimary) return;

@@ -231,6 +231,7 @@ export class Projects {
     }
 
     private emitState() {
+        if (this.currentProject) this.projectEventChannel.submit(this.currentProject);
         this.openProjectsChannel.submit({projects: this.projects, currentProject: this.currentProject});
     }
 }
