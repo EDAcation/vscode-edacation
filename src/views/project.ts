@@ -21,9 +21,9 @@ addEventListener('message', (event: MessageEvent) => {
     openProjectsPortal.handleMessage(event.data);
 });
 
-// Channels for internal use
-const projectEventChannel = projectEventExchange.createChannel();
-const openProjectsChannel = openProjectsExchange.createChannel();
+// Channels for internal use (exported to prevent GC)
+export const projectEventChannel = projectEventExchange.createChannel();
+export const openProjectsChannel = openProjectsExchange.createChannel();
 
 // State management
 export const syncedState: ProjectState = reactive({
