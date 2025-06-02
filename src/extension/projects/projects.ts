@@ -4,6 +4,7 @@ import {
     type ExchangeCommand,
     OpenProjectsChannel,
     OpenProjectsExchange,
+    ProjectEventChannel,
     type SerializedProjectEvent,
     type SerializedProjectsState,
     createOpenProjectsExchange,
@@ -21,6 +22,7 @@ export class Projects {
     protected readonly context: vscode.ExtensionContext;
 
     private projectEventExchange = createProjectEventExchange({isPrimary: true});
+    private projectEventChannel: ProjectEventChannel = this.projectEventExchange.createChannel();
 
     private openProjectsExchange: OpenProjectsExchange = createOpenProjectsExchange(
         {isPrimary: true},
@@ -38,6 +40,9 @@ export class Projects {
         this.projects = [];
 
         this.disposables = [vscode.tasks.onDidEndTask(this.handleTaskEnd.bind(this))];
+
+        // Subscribe to project changes and ensure they are saved to disk
+        this.projectEventChannel.subscribe((project) => project.save());
     }
 
     dispose() {

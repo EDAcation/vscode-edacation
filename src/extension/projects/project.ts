@@ -226,11 +226,6 @@ export class Project extends BaseProject {
         console.log(`[Project ${this.getUri().path}] Importing new project config`);
 
         this.importFromProject(project, false);
-
-        // TODO: make saving more efficient, as this will cause every project on the exchange to save the file...
-        // only saving on local changes is not enough because projects on the other side of a portal (in a webview)
-        // do not have access to the filesystem.
-        await this.save();
     }
 
     private async onInputFileChange(_files: ProjectInputFile[]) {
@@ -240,7 +235,6 @@ export class Project extends BaseProject {
         this.expireOutputFiles();
         this.ensureTestbenchPaths();
 
-        await this.save();
         this.emitEvent('inputFile');
     }
 
@@ -249,7 +243,6 @@ export class Project extends BaseProject {
 
         await this.cleanIOFiles();
 
-        await this.save();
         this.emitEvent('outputFile');
     }
 
@@ -258,7 +251,6 @@ export class Project extends BaseProject {
 
         this.ensureTestbenchPaths();
 
-        await this.save();
         this.emitEvent('config');
     }
 
@@ -266,7 +258,7 @@ export class Project extends BaseProject {
         if (this.channel) this.channel.submit(this);
     }
 
-    private async save() {
+    async save() {
         if (!vscode.workspace) return;
 
         await Project.store(this);
