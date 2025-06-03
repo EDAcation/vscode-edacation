@@ -464,7 +464,7 @@
         "nextpnr-viewer": "^0.7.3",
         "os-browserify": "^0.3.0",
         "path-browserify-win32": "github:EDAcation/path-browserify-win32",
-        "tar-fs": "^3.0.6",
+        "tar-fs": "^3.0.9",
         "vue": "^3.4.27",
         "which": "^5.0.0",
         "yosys2digitaljs": "github:EDAcation/yosys2digitaljs#next"
