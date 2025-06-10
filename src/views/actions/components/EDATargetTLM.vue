@@ -3,7 +3,8 @@ import {VscodeTextfield} from '@vscode-elements/elements';
 import {type TargetConfiguration, type YosysOptions, getYosysDefaultOptions, getYosysOptions} from 'edacation';
 import {defineComponent} from 'vue';
 
-import * as vscode from '../../../vscode';
+import {syncedState as projectState} from '../../project';
+import * as vscode from '../../vscode-wrapper';
 import {state as globalState} from '../state';
 
 export default defineComponent({
@@ -14,7 +15,8 @@ export default defineComponent({
     },
     data() {
         return {
-            state: globalState
+            state: globalState,
+            projectState
         };
     },
     methods: {
@@ -22,24 +24,20 @@ export default defineComponent({
             if (!this.target) return;
 
             const newTlm = (event.target as VscodeTextfield).value;
-            vscode.vscode.postMessage({
-                type: 'changeTlm',
-                module: newTlm,
-                targetId: this.target.id
-            });
+            projectState.project?.setTopLevelModule(this.target.id, newTlm);
         }
     },
     computed: {
         target(): TargetConfiguration | null {
             if (this.targetIndex === undefined) return null;
 
-            const targets = this.state.project?.configuration.targets ?? [];
+            const targets = this.projectState.project?.getConfiguration().targets ?? [];
             return targets[this.targetIndex] || null;
         },
         effectiveOptions(): YosysOptions | null {
-            if (!this.state.project) return null;
+            if (!this.projectState.project) return null;
 
-            const projectConfig = this.state.project.configuration;
+            const projectConfig = this.projectState.project.getConfiguration();
             const targetId = this.target?.id;
 
             if (!targetId) {

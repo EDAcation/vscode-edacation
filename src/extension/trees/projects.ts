@@ -1,6 +1,7 @@
+import {Project} from 'edacation';
 import * as vscode from 'vscode';
 
-import type {Project, Projects} from '../projects/index.js';
+import type {Projects} from '../projects/index.js';
 
 import {BaseTreeDataProvider} from './base.js';
 
@@ -8,7 +9,8 @@ export class ProjectProvider extends BaseTreeDataProvider<Project> {
     constructor(context: vscode.ExtensionContext, projects: Projects) {
         super(context, projects);
 
-        this.onDidChangeTreeData = projects.getProjectEmitter().event;
+        this.projectEventChannel.subscribe((_msg) => this.changeEmitter.fire(undefined));
+        this.openProjectsChannel.subscribe((_msg) => this.changeEmitter.fire(undefined));
     }
 
     static getViewID() {

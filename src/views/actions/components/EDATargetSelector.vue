@@ -3,6 +3,7 @@ import {VscodeSingleSelect} from '@vscode-elements/elements';
 import {type TargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
+import {syncedState as projectState} from '../../project';
 import {state as globalState} from '../state';
 
 export default defineComponent({
@@ -13,7 +14,8 @@ export default defineComponent({
     },
     data() {
         return {
-            state: globalState
+            state: globalState,
+            projectState
         };
     },
     methods: {
@@ -25,7 +27,7 @@ export default defineComponent({
     },
     computed: {
         targets(): TargetConfiguration[] {
-            return this.state.project?.configuration.targets ?? [];
+            return this.projectState.project?.getConfiguration().targets ?? [];
         }
     }
 });

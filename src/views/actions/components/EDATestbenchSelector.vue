@@ -3,7 +3,8 @@ import {VscodeSingleSelect} from '@vscode-elements/elements';
 import {Project, ProjectInputFile, type TargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
-import * as vscode from '../../../vscode';
+import {syncedState as projectState} from '../../project';
+import * as vscode from '../../vscode-wrapper';
 import {state as globalState} from '../state';
 
 export default defineComponent({
@@ -14,7 +15,8 @@ export default defineComponent({
     },
     data() {
         return {
-            state: globalState
+            state: globalState,
+            projectState
         };
     },
     methods: {
@@ -27,24 +29,19 @@ export default defineComponent({
         setTestbench(file: string) {
             if (!this.target) return;
 
-            vscode.vscode.postMessage({
-                type: 'changeTestbench',
-                testbenchPath: file,
-                targetId: this.target.id
-            });
+            projectState.project?.setTestbenchPath(this.target.id, file);
         }
     },
     computed: {
         target(): TargetConfiguration | undefined {
             if (this.targetIndex === undefined) return undefined;
-            const targets = this.state.project?.configuration.targets ?? [];
+            const targets = this.projectState.project?.getConfiguration().targets ?? [];
             return targets[this.targetIndex];
         },
         testbenchFiles(): string[] {
-            if (!this.state.project) return [];
+            if (!this.projectState.project) return [];
 
-            const project = Project.deserialize(this.state.project);
-            return project
+            return this.projectState.project
                 .getInputFiles()
                 .filter((file) => file.type === 'testbench')
                 .map((file) => file.path);

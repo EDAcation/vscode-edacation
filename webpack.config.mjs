@@ -149,7 +149,7 @@ const workerConfig = Object.assign({}, baseConfig, {
 /** @type WebpackConfig */
 const viewsConfig = Object.assign({}, baseConfig, {
     entry: {
-        actions: './src/views/actions/src/main.ts',
+        actions: './src/views/actions/main.ts',
         nextpnr: './src/views/nextpnr/src/main.ts',
         yosys: './src/views/yosys/src/main.ts',
         project: './src/views/project/src/main.ts'
@@ -162,6 +162,7 @@ const viewsConfig = Object.assign({}, baseConfig, {
             type: 'var'
         }
     },
+    externals: {},
     resolve: {
         mainFields: ['browser', 'module', 'main'],
         extensions: ['.ts', '.js'],
@@ -176,6 +177,7 @@ const viewsConfig = Object.assign({}, baseConfig, {
         },
         fallback: {
             crypto: false,
+            vscode: false,
             path: 'path-browserify-win32',
             os: 'os-browserify'
         }
@@ -216,7 +218,13 @@ const viewsConfig = Object.assign({}, baseConfig, {
                 generator: {
                     filename: './[name][ext]'
                 }
-            }
+            },
+            {
+                test: /\.m?js$/,
+                resolve: {
+                  fullySpecified: false
+                },
+            },
         ]
     },
     plugins: [

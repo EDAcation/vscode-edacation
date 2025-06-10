@@ -2,7 +2,7 @@
 import '@vscode-elements/elements';
 import {defineComponent} from 'vue';
 
-import {vscode} from '../../vscode';
+import {vscode} from '../../vscode-wrapper';
 
 import EDAProject from './components/EDAProject.vue';
 import {ignoreSave, state} from './state';

@@ -1,40 +1,19 @@
-import type {ProjectState} from 'edacation';
-import {type WatchStopHandle, reactive, watch} from 'vue';
+import {reactive} from 'vue';
 
-import {vscode} from '../../../vscode';
+import {vscode} from '../vscode-wrapper';
 
 export interface State {
-    project?: ProjectState;
     selectedTargetIndex: number;
 }
 
 export const DEFAULT_STATE = {
-    project: undefined,
     selectedTargetIndex: 0
 };
 
 export let state = reactive<State>(DEFAULT_STATE);
-let unwatch: WatchStopHandle | undefined;
 
 export const setState = (newState: State) => {
-    if (unwatch) {
-        unwatch();
-    }
-
     state = reactive(newState);
-
-    unwatch = watch(state, (newState) => {
-        // TODO: debounce?
-
-        vscode.setState(newState);
-
-        const newDocument = `${JSON.stringify(newState.project, null, 4)}\n`;
-
-        vscode.postMessage({
-            type: 'change',
-            document: newDocument
-        });
-    });
 };
 
 export const initializeState = () => {
