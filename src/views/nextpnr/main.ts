@@ -1,16 +1,11 @@
-import '@vscode/codicons/dist/codicon.css';
 import '@vscode-elements/elements';
+import '@vscode/codicons/dist/codicon.css';
 import {getElementGroups} from 'edacation';
-import {NextPNRViewer} from 'nextpnr-viewer';
+import {NextPNRViewer, SUPPORTED_DEVICES, type SupportedChip, isSupported} from 'nextpnr-viewer';
 
-import {vscode} from '../../vscode-wrapper';
+import {vscode} from '../vscode-wrapper';
 
 import './main.css';
-
-// List supported chips (family: [device])
-const SUPPORTED = <const> {
-    ecp5: ['25k', '45k', '85k']
-};
 
 interface State {
     document?: string;
@@ -22,13 +17,6 @@ interface MessageDocument {
 }
 
 type Message = MessageDocument;
-
-// TODO: export from nextpnr-viewer
-interface Chip<Family extends keyof typeof SUPPORTED> {
-    family: Family;
-    device: typeof SUPPORTED[Family][number];
-}
-type SupportedChip = Chip<keyof typeof SUPPORTED>
 
 interface NextpnrJSON {
     creator: string;
@@ -129,31 +117,28 @@ class View {
             const json = JSON.parse(this.state.document) as NextpnrFileFormat | NextpnrJSON;
 
             // Deduce exact chip to render
-            let chip: SupportedChip;
+            let chip: {family: string; device: string};
             let data: NextpnrJSON;
             if ('chip' in json) {
-                chip = {
-                    family: json.chip.family,
-                    device: json.chip.device
-                };
+                chip = json.chip;
                 data = json.data;
             } else {
                 // Older versions of the extension simply defaulted to ecp5-25k
                 chip = {
                     family: 'ecp5',
                     device: '25k'
-                }
+                };
                 data = json;
             }
 
             // Verify if chip is actually supported
-            if (!(SUPPORTED[chip.family] ?? []).includes(chip.device)) {
-                let errorMsg = `The configured chip (${chip.family} ${chip.device}) is currently not supported by the Nextpnr viewer.\n\n`
-                errorMsg += 'If you want to use the viewer, please use one of the following chip configurations:\n'
-                
-                for (const [family, devices] of Object.entries(SUPPORTED)) {
+            if (!isSupported(chip)) {
+                let errorMsg = `The configured chip (${chip.family} ${chip.device}) is currently not supported by the Nextpnr viewer.\n\n`;
+                errorMsg += 'If you want to use the viewer, please use one of the following chip configurations:\n';
+
+                for (const [family, devices] of Object.entries(SUPPORTED_DEVICES)) {
                     errorMsg += `${family}:\n`;
-                    for (const device of devices) {
+                    for (const device of Object.keys(devices)) {
                         errorMsg += `  - ${device}\n`;
                     }
                 }
