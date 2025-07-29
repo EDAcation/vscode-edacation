@@ -437,7 +437,7 @@
         "@types/which": "^3.0.4",
         "@typescript-eslint/eslint-plugin": "^8.5.0",
         "@typescript-eslint/parser": "^8.5.0",
-        "@vscode/test-web": "^0.0.63",
+        "@vscode/test-web": "^0.0.71",
         "@vue/compiler-sfc": "^3.4.13",
         "@vue/tsconfig": "^0.5.1",
         "assert": "^2.1.0",
