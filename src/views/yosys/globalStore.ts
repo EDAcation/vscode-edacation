@@ -1,4 +1,4 @@
-import {vscode} from '../../vscode-wrapper';
+import {vscode} from '../vscode-wrapper';
 
 import type {GlobalStoreMessage} from './messages';
 
