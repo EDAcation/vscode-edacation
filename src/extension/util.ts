@@ -50,8 +50,8 @@ export const encodeText = (input: string) => textEncoder.encode(input.endsWith('
 export const encodeJSON = (input: unknown, pretty = false) =>
     encodeText(JSON.stringify(input, undefined, pretty ? 4 : undefined));
 
-export const decodeText = (input: BufferSource): string => textDecoder.decode(input);
-export const decodeJSON = (input: BufferSource): unknown => JSON.parse(decodeText(input));
+export const decodeText = (input: Uint8Array): string => textDecoder.decode(input);
+export const decodeJSON = (input: Uint8Array): unknown => JSON.parse(decodeText(input));
 
 export const FILE_FILTERS_HDL = {
     /* eslint-disable-next-line @typescript-eslint/naming-convention */

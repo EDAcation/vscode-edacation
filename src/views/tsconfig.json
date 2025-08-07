@@ -7,6 +7,9 @@
             "@/*": ["./*"]
         },
         "lib": ["es2022", "DOM", "DOM.Iterable"],
-        "types": ["node"]
+        "types": ["node"],
+
+        // fix error due to vue tsconfig extends
+        "allowImportingTsExtensions": false
     }
 }
