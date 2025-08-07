@@ -2,7 +2,7 @@ import '@vscode-elements/elements';
 import '@vscode/codicons/dist/codicon.css';
 import 'jquery-ui/dist/jquery-ui.min.js';
 
-import {vscode} from '../../vscode-wrapper';
+import {vscode} from '../vscode-wrapper';
 
 import {GlobalStoreConnector} from './globalStore';
 import './main.css';
