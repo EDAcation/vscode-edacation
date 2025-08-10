@@ -91,7 +91,7 @@ export class Project extends BaseProject {
                 if (!copiedFileUri) continue;
 
                 fileUri = copiedFileUri;
-                folderRelativePath = path.relative(this.getRoot().path, fileUri.path);
+                folderRelativePath = getWorkspaceRelativePath(this.getRoot(), fileUri)[1];
             }
             if (!folderRelativePath || this.hasInputFile(folderRelativePath)) continue;
 

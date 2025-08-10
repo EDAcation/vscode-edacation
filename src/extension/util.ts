@@ -68,8 +68,6 @@ export const getWorkspaceRelativePath = (
     const workspaceRelativeFolder = asWorkspaceRelativeFolderPath(folderUri);
     const workspaceRelativePath = vscode.workspace.asRelativePath(fileUri, true);
 
-    console.log(workspaceRelativeFolder, workspaceRelativePath);
-
     if (
         workspaceRelativePath !== workspaceRelativeFolder &&
         !workspaceRelativePath.startsWith(`${workspaceRelativeFolder}/`)
