@@ -121,8 +121,10 @@ export class Project extends BaseProject {
                 (await vscode.window.showInformationMessage(
                     `Copy file into workspace?`,
                     {
-                        detail: `The selected file "${uri.path}" is not in the workspace folder. 
-                        Do you want to copy it into the project workspace?`,
+                        detail:
+                            `The selected file "${uri.path}" is not in the EDA project root.` +
+                            ` Do you want to copy it into the 'src' directory?\n\n` +
+                            `If you cancel, the file will not be added to the project.`,
                         modal: true
                     },
                     'Yes to all',
