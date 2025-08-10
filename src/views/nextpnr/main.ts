@@ -147,33 +147,27 @@ class View {
                 return;
             }
 
-            let didCreateViewer = false;
-            if (!this.viewer) {
-                didCreateViewer = true;
-                // Clear root
-                this.root.replaceChildren();
+            // Clear root
+            this.root.replaceChildren();
 
-                // Obtain available space
-                const [width, height] = this.getSize();
+            // Obtain available space
+            const [width, height] = this.getSize();
 
-                // Render viewer
-                const elementViewer = document.createElement('div');
-                this.root.appendChild(elementViewer);
-                this.viewer = new NextPNRViewer(elementViewer, {
-                    width,
-                    height,
-                    cellColors: this.cellColors,
-                    chip
-                });
-            }
+            // Render viewer
+            const elementViewer = document.createElement('div');
+            this.root.appendChild(elementViewer);
+            this.viewer = new NextPNRViewer(elementViewer, {
+                width,
+                height,
+                cellColors: this.cellColors,
+                chip
+            });
 
             // Render nextpnr document
             const viewer = this.viewer;
             viewer.showJson(JSON.stringify(data)).then(() => {
                 // Delay first render until after showJson is called, this allows for internal optimizations
-                if (didCreateViewer) {
-                    viewer.render();
-                }
+                viewer.render();
             });
         } catch (err) {
             this.handleError(err);
