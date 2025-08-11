@@ -4,7 +4,6 @@ import {type TargetConfiguration, type YosysOptions, getYosysDefaultOptions, get
 import {defineComponent} from 'vue';
 
 import {syncedState as projectState} from '../../project';
-import * as vscode from '../../vscode-wrapper';
 import {state as globalState} from '../state';
 
 export default defineComponent({

@@ -130,9 +130,14 @@ export class ToolRepository {
 
     constructor(extensionContext: vscode.ExtensionContext) {
         this.extensionContext = extensionContext;
+
         this.state = this.extensionContext.globalState.get<ToolsState>(ToolRepository.GLOBAL_STATE_KEY) ?? {
             installedTools: {}
         };
+        if (this.state.lastUpdateCheck !== undefined) {
+            // after deserializing, the date is still a string, so we need to parse it
+            this.state.lastUpdateCheck = new Date(this.state.lastUpdateCheck);
+        }
     }
 
     public static get(extensionContext: vscode.ExtensionContext) {
@@ -296,7 +301,8 @@ export class ToolRepository {
 
     private async saveState(): Promise<void> {
         const newState: ToolsState = {
-            installedTools: {}
+            installedTools: {},
+            lastUpdateCheck: this.state.lastUpdateCheck
         };
 
         // Build state from installed tools

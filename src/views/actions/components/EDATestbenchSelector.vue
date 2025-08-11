@@ -1,10 +1,9 @@
 <script lang="ts">
 import {VscodeSingleSelect} from '@vscode-elements/elements';
-import {Project, ProjectInputFile, type TargetConfiguration} from 'edacation';
+import {type TargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
 import {syncedState as projectState} from '../../project';
-import * as vscode from '../../vscode-wrapper';
 import {state as globalState} from '../state';
 
 export default defineComponent({

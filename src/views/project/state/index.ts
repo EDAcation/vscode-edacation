@@ -1,7 +1,7 @@
 import type {ProjectState} from 'edacation';
 import {type WatchStopHandle, nextTick, reactive, watch} from 'vue';
 
-import {vscode} from '../../../vscode-wrapper';
+import {vscode} from '../../vscode-wrapper';
 
 export interface State {
     project?: ProjectState;

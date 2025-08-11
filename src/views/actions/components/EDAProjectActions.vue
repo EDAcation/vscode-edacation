@@ -80,8 +80,11 @@ export default defineComponent({
 
 <template>
     <component is="style" lang="css">
-        .list { display: flex; align-items: stretch; gap: 0.75rem; } .list-vertical { flex-direction: column; }
+        .list { display: flex; align-items: stretch; gap: 0.75rem; }
+        .list-vertical { flex-direction: column; }
         .list-horizontal { flex-direction: row; }
+        
+        vscode-button::part(base){ height: 100%; }
     </component>
 
     <div style="width: calc(100% - 40px)" class="list list-vertical">
