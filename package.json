@@ -457,7 +457,7 @@
         "webpack-cli": "6.0.1"
     },
     "dependencies": {
-        "@vscode-elements/elements": "^2.1.1-pre.0",
+        "@vscode-elements/elements": "^2.2.0",
         "@vscode/codicons": "0.0.39",
         "digitaljs": "github:EDAcation/digitaljs#next",
         "edacation": "^0.5.0",
