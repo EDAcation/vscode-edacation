@@ -176,7 +176,6 @@ export class OpenProjectCommand extends BaseCommand {
             canSelectMany: false,
             defaultUri: projectWorkspace,
             filters: {
-                /* eslint-disable-next-line @typescript-eslint/naming-convention */
                 'EDA Projects (*.edaproject)': ['edaproject']
             }
         });

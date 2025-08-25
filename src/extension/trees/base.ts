@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import {OpenProjectsChannel, ProjectEventChannel} from '../../exchange.js';
+import {type OpenProjectsChannel, type ProjectEventChannel} from '../../exchange.js';
 import type {Projects} from '../projects/index.js';
 
 export abstract class BaseTreeDataProvider<T> implements vscode.TreeDataProvider<T> {
@@ -25,5 +25,5 @@ export abstract class BaseTreeDataProvider<T> implements vscode.TreeDataProvider
 
     abstract getTreeItem(element: T): vscode.TreeItem | Thenable<vscode.TreeItem>;
 
-    abstract getChildren(element?: T | undefined): vscode.ProviderResult<T[]>;
+    abstract getChildren(element?: T  ): vscode.ProviderResult<T[]>;
 }

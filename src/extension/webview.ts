@@ -1,8 +1,8 @@
 import type * as vscode from 'vscode';
 
-import {OpenProjectsChannel, OpenProjectsPortal, ProjectEventChannel, ProjectEventPortal} from '../exchange.js';
+import {type OpenProjectsChannel, type OpenProjectsPortal, type ProjectEventChannel, type ProjectEventPortal} from '../exchange.js';
 
-import {Projects} from './projects/projects.js';
+import {type Projects} from './projects/projects.js';
 import {getWebviewUri} from './util.js';
 
 export abstract class BaseWebview<Args = Record<string, never>> {

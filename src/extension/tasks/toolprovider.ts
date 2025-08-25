@@ -1,4 +1,4 @@
-import {WorkerStep} from 'edacation';
+import {type WorkerStep} from 'edacation';
 import path from 'path';
 import * as vscode from 'vscode';
 

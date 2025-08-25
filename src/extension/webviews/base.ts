@@ -32,5 +32,5 @@ export abstract class BaseWebviewViewProvider extends BaseWebview implements vsc
         webviewView.onDidDispose((_) => this.disconnectWebview());
     }
 
-    protected abstract onDidReceiveMessage(webview: vscode.Webview, message: ViewMessage): void;
+    protected abstract onDidReceiveMessage(webview: vscode.Webview, message: ViewMessage): Promise<void>;
 }

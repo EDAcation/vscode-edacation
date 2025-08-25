@@ -1,5 +1,4 @@
 /* This module is committing so many crimes we might as well disable ESLint for the entire file */
-
 /* eslint-disable */
 import type {TransferListItem} from 'worker_threads';
 
@@ -58,17 +57,13 @@ export class UniversalWorker {
 
     public onEvent<E extends keyof EventCallbacks>(event: E, callback: EventCallbacks[E]): void {
         if (this.worker.type === 'web') {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             this.worker.worker.addEventListener(event, (event) => callback(extractData(event)));
         } else {
             this.worker.worker.on(event, callback);
         }
     }
 
-    public sendMessage(
-        message: WorkerMessage,
-        transferList?: ArrayBufferLike[]
-    ) {
+    public sendMessage(message: WorkerMessage, transferList?: ArrayBufferLike[]) {
         // @ts-ignore: node + web type clashing shenanigans
         this.worker.worker.postMessage(message, transferList);
     }

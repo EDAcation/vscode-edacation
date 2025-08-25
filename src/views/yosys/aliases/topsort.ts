@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/restrict-plus-operands */
 /*
  * @author Samuel Neff (https://github.com/samuelneff)
  *

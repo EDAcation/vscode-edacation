@@ -1,4 +1,4 @@
-import {ProjectInputFile, ProjectInputFileState, ProjectOutputFile, TargetConfiguration} from 'edacation';
+import {type ProjectInputFile, type ProjectInputFileState, ProjectOutputFile, type TargetConfiguration} from 'edacation';
 import {basename, extname} from 'path';
 import * as vscode from 'vscode';
 

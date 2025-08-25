@@ -1,6 +1,6 @@
 import {reactive} from 'vue';
 
-import {Project, createOpenProjectsExchange, createProjectEventExchange} from '../exchange';
+import {type Project, createOpenProjectsExchange, createProjectEventExchange} from '../exchange';
 
 import {vscode} from './vscode-wrapper';
 

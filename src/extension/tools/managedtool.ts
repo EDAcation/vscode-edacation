@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import * as node from '../../common/node-modules.js';
 
-import {RemoteTool, ToolRepository, ToolSettings, getPlatform} from './repository.js';
+import {type RemoteTool, type ToolRepository, type ToolSettings, getPlatform} from './repository.js';
 
 export interface NativeToolExecutionOptions {
     entrypoint: string;

@@ -10,10 +10,10 @@ import {
 } from 'edacation';
 import path from 'path';
 import * as vscode from 'vscode';
-import {URI, Utils} from 'vscode-uri';
+import {type URI, Utils} from 'vscode-uri';
 
 import * as node from '../../common/node-modules.js';
-import {type ProjectEvent as ExternalProjectEvent, ProjectEventChannel} from '../../exchange.js';
+import {type ProjectEvent as ExternalProjectEvent, type ProjectEventChannel} from '../../exchange.js';
 import {decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util.js';
 
 export class Project extends BaseProject {
@@ -84,6 +84,7 @@ export class Project extends BaseProject {
         const files: {path: string; type: ProjectInputFileState['type']}[] = [];
         let askForCopy = true;
         for (let fileUri of fileUris) {
+            // eslint-disable-next-line prefer-const
             let [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
             if (!workspaceRelativePath) {
                 const [yesToAll, copiedFileUri] = await this.tryCopyFileIntoWorkspace(fileUri, askForCopy);
@@ -138,8 +139,8 @@ export class Project extends BaseProject {
             const newUri: URI | undefined = await new Promise((resolve: (newUri: URI) => void, reject) => {
                 node.fs().mkdir(targetDir.fsPath, {recursive: true}, (err) => {
                     if (err) {
-                        reject();
-                        void vscode.window.showErrorMessage(`Failed to copy file: ${err}`);
+                        reject(err);
+                        void vscode.window.showErrorMessage(`Failed to copy file: ${err as Error}`);
                         return;
                     }
 
@@ -156,15 +157,15 @@ export class Project extends BaseProject {
 
     async addOutputFileUris(fileUris: URI[], targetId: string): Promise<void> {
         const filePaths = [];
-        for (let fileUri of fileUris) {
+        for (const fileUri of fileUris) {
             try {
                 await vscode.workspace.fs.stat(fileUri);
             } catch {
-                console.warn(`Not adding output file since it does not exist: ${fileUri}`);
+                console.warn(`Not adding output file since it does not exist: ${fileUri.toString()}`);
                 continue;
             }
 
-            // eslint-disable-next-line prefer-const
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const [_workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
             if (!folderRelativePath) continue;
 
@@ -192,7 +193,7 @@ export class Project extends BaseProject {
             try {
                 await vscode.workspace.fs.stat(this.getFileUri(file.path));
             } catch {
-                console.warn(`Output file does not exist, removing: ${file}`);
+                console.warn(`Output file does not exist, removing: ${file.path}`);
                 brokenOutputFiles.push(file.path);
             }
         }
@@ -241,7 +242,7 @@ export class Project extends BaseProject {
     }
 
     private onInternalEvent(events: InternalProjectEvent[]) {
-        console.log(`[EDAcation] Received project events: ${events}`);
+        console.log(`[EDAcation] Received project events: ${events.toString()}`);
 
         // do 'ensure' checks here
         this.ensureTestbenchPaths();

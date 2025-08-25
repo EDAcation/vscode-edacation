@@ -2,9 +2,9 @@ import * as vscode from 'vscode';
 
 import {
     type ExchangeCommand,
-    OpenProjectsChannel,
-    OpenProjectsExchange,
-    ProjectEventChannel,
+    type OpenProjectsChannel,
+    type OpenProjectsExchange,
+    type ProjectEventChannel,
     type SerializedProjectEvent,
     type SerializedProjectsState,
     createOpenProjectsExchange,

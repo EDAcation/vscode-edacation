@@ -54,7 +54,6 @@ export const decodeText = (input: Uint8Array): string => textDecoder.decode(inpu
 export const decodeJSON = (input: Uint8Array): unknown => JSON.parse(decodeText(input));
 
 export const FILE_FILTERS_HDL = {
-    /* eslint-disable-next-line @typescript-eslint/naming-convention */
     'HDL (*.v, *.vh, *.sv, *.svh, *.vhd, *.vhdl)': FILE_EXTENSIONS_HDL
 };
 
