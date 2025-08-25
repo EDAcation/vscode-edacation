@@ -1,6 +1,11 @@
 import type * as vscode from 'vscode';
 
-import {type OpenProjectsChannel, type OpenProjectsPortal, type ProjectEventChannel, type ProjectEventPortal} from '../exchange.js';
+import {
+    type OpenProjectsChannel,
+    type OpenProjectsPortal,
+    type ProjectEventChannel,
+    type ProjectEventPortal
+} from '../exchange.js';
 
 import {type Projects} from './projects/projects.js';
 import {getWebviewUri} from './util.js';
@@ -54,8 +59,8 @@ export abstract class BaseWebview<Args = Record<string, never>> {
     }
 
     protected connectWebview(webview: vscode.Webview) {
-        this.projectEventPortal = this.projects.attachProjectEventPortal((value) => webview.postMessage(value));
-        this.openProjectsPortal = this.projects.attachOpenProjectsPortal((value) => webview.postMessage(value));
+        this.projectEventPortal = this.projects.attachProjectEventPortal((value) => void webview.postMessage(value));
+        this.openProjectsPortal = this.projects.attachOpenProjectsPortal((value) => void webview.postMessage(value));
 
         webview.onDidReceiveMessage((message) => {
             if (this.projectEventPortal) this.projectEventPortal.handleMessage(message);

@@ -54,7 +54,7 @@ export class NextpnrEditor extends BaseEditor {
         return false;
     }
 
-    protected onSave(_document: vscode.TextDocument, _webview: vscode.Webview): void {
+    protected async onSave(_document: vscode.TextDocument, _webview: vscode.Webview): Promise<void> {
         // Do nothing
     }
 

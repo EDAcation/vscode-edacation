@@ -17,11 +17,11 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         throw new Error('Not implemented.');
     }
 
-    public resolveCustomTextEditor(
+    public async resolveCustomTextEditor(
         document: vscode.TextDocument,
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken
-    ): void | Thenable<void> {
+    ): Promise<void> {
         const disposables: vscode.Disposable[] = [];
         const webview = webviewPanel.webview;
 
@@ -38,7 +38,7 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         disposables.push(
             vscode.workspace.onDidChangeTextDocument((event) => {
                 if (event.document.uri.toString() === document.uri.toString()) {
-                    this.update(document, webview, true);
+                    void this.update(document, webview, true);
                 }
             })
         );
@@ -52,7 +52,7 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         disposables.push(
             vscode.workspace.onDidSaveTextDocument((event) => {
                 if (event.uri.toString() === document.uri.toString()) {
-                    this.onSave(document, webview);
+                    void this.onSave(document, webview);
                 }
             })
         );
@@ -71,7 +71,7 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         });
 
         // Update document
-        this.update(document, webview, false);
+        await this.update(document, webview, false);
     }
 
     protected async onDidReceiveMessage(
@@ -107,9 +107,13 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         return false;
     }
 
-    protected abstract onSave(document: vscode.TextDocument, webview: vscode.Webview): void;
+    protected abstract onSave(document: vscode.TextDocument, webview: vscode.Webview): Promise<void>;
 
     protected abstract onClose(document: vscode.TextDocument, webview: vscode.Webview): void;
 
-    protected abstract update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean): void;
+    protected abstract update(
+        document: vscode.TextDocument,
+        webview: vscode.Webview,
+        isDocumentChange: boolean
+    ): Promise<void>;
 }
