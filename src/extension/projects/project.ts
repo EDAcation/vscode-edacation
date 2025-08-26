@@ -80,16 +80,18 @@ export class Project extends BaseProject {
         this.updateConfiguration({targets: targets});
     }
 
-    async addInputFileUris(fileUris: URI[]): Promise<void> {
+    async addInputFileUris(fileUris: URI[], notifyUser = true): Promise<void> {
         const files: {path: string; type: ProjectInputFileState['type']}[] = [];
-        let askForCopy = true;
+        let copiedFileCount = 0;
+
         for (let fileUri of fileUris) {
             // eslint-disable-next-line prefer-const
             let [workspaceRelativePath, folderRelativePath] = getWorkspaceRelativePath(this.getRoot(), fileUri);
             if (!workspaceRelativePath) {
-                const [yesToAll, copiedFileUri] = await this.tryCopyFileIntoWorkspace(fileUri, askForCopy);
-                askForCopy = !yesToAll;
+                const copiedFileUri = await this.tryCopyFileIntoWorkspace(fileUri, notifyUser);
                 if (!copiedFileUri) continue;
+
+                copiedFileCount++;
 
                 fileUri = copiedFileUri;
                 folderRelativePath = getWorkspaceRelativePath(this.getRoot(), fileUri)[1];
@@ -104,55 +106,44 @@ export class Project extends BaseProject {
         }
         if (files.length === 0) return;
 
+        if (copiedFileCount > 0 && notifyUser) {
+            // do not await to prevent blocking
+            void vscode.window.showInformationMessage(
+                `Copied ${copiedFileCount} external file${copiedFileCount > 1 ? 's' : ''} into project folder.`
+            );
+        }
+
         super.addInputFiles(files);
     }
 
-    private async tryCopyFileIntoWorkspace(uri: URI, askForCopy = true): Promise<[boolean, URI | undefined]> {
+    private async tryCopyFileIntoWorkspace(uri: URI, notifyUser = true): Promise<URI | undefined> {
         if (!node.isAvailable()) {
-            await vscode.window.showErrorMessage(`File must be in the a subfolder of the EDA project root.`, {
-                detail: `File "${uri.path}" is not in folder "${this.getRoot().path}".`,
-                modal: true
-            });
-            return [false, undefined];
+            if (notifyUser) {
+                await vscode.window.showErrorMessage(`File must be in the a subfolder of the EDA project root.`, {
+                    detail: `File "${uri.path}" is not in folder "${this.getRoot().path}".`,
+                    modal: true
+                });
+            }
+            return undefined;
         }
 
-        let answer: 'Only this file' | 'Yes to all' | 'No' = 'Yes to all';
-        if (askForCopy)
-            answer =
-                (await vscode.window.showInformationMessage(
-                    `Copy file into workspace?`,
-                    {
-                        detail:
-                            `The selected file "${uri.path}" is not in the EDA project root.` +
-                            ` Do you want to copy it into the 'src' directory?\n\n` +
-                            `If you cancel, the file will not be added to the project.`,
-                        modal: true
-                    },
-                    'Yes to all',
-                    'Only this file'
-                )) ?? 'No';
+        const targetDir = this.getFileUri('src');
+        const targetUri = Utils.joinPath(targetDir, path.basename(uri.path));
 
-        if (answer === 'Only this file' || answer === 'Yes to all') {
-            const targetDir = this.getFileUri('src');
-            const target = Utils.joinPath(targetDir, path.basename(uri.path));
+        const newUri: URI | undefined = await new Promise((resolve: (newUri: URI) => void, reject) => {
+            node.fs().mkdir(targetDir.fsPath, {recursive: true}, (err) => {
+                if (err) {
+                    reject(err);
+                    if (notifyUser) void vscode.window.showErrorMessage(`Failed to copy file: ${err as Error}`);
+                    return;
+                }
 
-            const newUri: URI | undefined = await new Promise((resolve: (newUri: URI) => void, reject) => {
-                node.fs().mkdir(targetDir.fsPath, {recursive: true}, (err) => {
-                    if (err) {
-                        reject(err);
-                        void vscode.window.showErrorMessage(`Failed to copy file: ${err as Error}`);
-                        return;
-                    }
-
-                    node.fs().copyFile(uri.fsPath, target.fsPath, () => {
-                        resolve(target);
-                    });
+                node.fs().copyFile(uri.fsPath, targetUri.fsPath, () => {
+                    resolve(targetUri);
                 });
             });
-            return [answer === 'Yes to all', newUri];
-        }
-
-        return [false, undefined];
+        });
+        return newUri;
     }
 
     async addOutputFileUris(fileUris: URI[], targetId: string): Promise<void> {
