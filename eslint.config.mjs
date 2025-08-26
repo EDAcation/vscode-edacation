@@ -1,8 +1,14 @@
 import eslint from '@eslint/js';
 import vuePlugin from 'eslint-plugin-vue';
 import tseslint from 'typescript-eslint';
+import vueParser from 'vue-eslint-parser';
+import {fileURLToPath} from 'node:url';
+
+const DIRNAME = fileURLToPath(new URL('.', import.meta.url));
 
 export default tseslint.config(
+    {ignores: ['**/dist/**', '**/node_modules/**']},
+
     // --- Base JS + TS ---
     eslint.configs.recommended,
     tseslint.configs.recommendedTypeChecked,
@@ -12,8 +18,10 @@ export default tseslint.config(
         files: ['**/*.{ts,tsx,js,mjs,cjs}'],
         languageOptions: {
             parserOptions: {
-                projectService: true,
-                tsconfigRootDir: import.meta.dirname
+                projectService: {
+                    allowDefaultProject: ["*.mjs"]
+                },
+                tsconfigRootDir: DIRNAME
             }
         },
         rules: {
@@ -31,11 +39,11 @@ export default tseslint.config(
     {
         files: ['**/*.vue'],
         languageOptions: {
-            parser: vuePlugin.parser, // vue-eslint-parser
+            parser: vueParser,
             parserOptions: {
                 parser: tseslint.parser,
                 projectService: true,
-                tsconfigRootDir: import.meta.dirname,
+                tsconfigRootDir: DIRNAME,
                 extraFileExtensions: ['.vue']
             }
         },
