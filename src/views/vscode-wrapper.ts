@@ -10,6 +10,7 @@ class VSCodeWrapper {
     }
 
     public postMessage(message: unknown) {
+        console.log(message);
         if (this.api) {
             this.api.postMessage(message);
         } else {

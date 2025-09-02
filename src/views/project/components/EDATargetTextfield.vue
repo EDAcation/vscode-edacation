@@ -7,7 +7,7 @@ import {
     type NextpnrConfiguration,
     type NextpnrOptions,
     type NextpnrTargetConfiguration,
-    type TargetConfiguration,
+    ProjectTarget,
     type WorkerId,
     type YosysConfiguration,
     type YosysOptions,
@@ -21,6 +21,7 @@ import {
 } from 'edacation';
 import {type PropType, defineComponent} from 'vue';
 
+import {syncedState as projectState} from '../../project';
 import {state as globalState} from '../state';
 
 export default defineComponent({
@@ -47,21 +48,21 @@ export default defineComponent({
     },
     data() {
         return {
-            state: globalState
+            state: globalState,
+            projectState
         };
     },
     computed: {
-        target(): TargetConfiguration | undefined {
+        target(): ProjectTarget | undefined {
             if (this.targetIndex === undefined) {
                 return undefined;
             }
-            return this.state.project!.configuration.targets[this.targetIndex];
+            return this.projectState.project?.getTargets()[this.targetIndex];
         },
         defaultWorker(): YosysConfiguration | NextpnrConfiguration | IVerilogConfiguration | undefined {
-            if (!this.state.project!.configuration.defaults) {
-                return undefined;
-            }
-            return this.state.project!.configuration.defaults[this.workerId as WorkerId];
+            const defaults = this.projectState.project?.getConfiguration().defaults;
+            if (!defaults) return undefined;
+            return defaults[this.workerId as WorkerId];
         },
         worker():
             | YosysConfiguration
@@ -71,16 +72,12 @@ export default defineComponent({
             | IVerilogConfiguration
             | IVerilogTargetConfiguration
             | undefined {
-            return this.target ? this.target[this.workerId as WorkerId] : this.defaultWorker;
-        },
-        options() {
-            if (!this.worker) {
-                return undefined;
-            }
-            return this.worker.options;
+            return this.target ? this.target.config[this.workerId as WorkerId] : this.defaultWorker;
         },
         effectiveOptions(): YosysOptions | NextpnrOptions | IVerilogOptions | null {
-            const projectConfig = this.state.project!.configuration;
+            // TODO: move this logic to edacation package
+            const projectConfig = this.projectState.project?.getConfiguration();
+            if (!projectConfig) return null;
             const targetId = this.target?.id;
 
             if (!targetId) {
@@ -97,7 +94,7 @@ export default defineComponent({
                 return null;
             }
         },
-        effectiveConfig(): string | undefined {
+        effectiveValue(): boolean | undefined {
             if (!this.effectiveOptions) {
                 return undefined;
             }
@@ -105,36 +102,14 @@ export default defineComponent({
         }
     },
     methods: {
-        ensureConfig() {
-            if (!this.state.project) {
-                return false;
-            }
-
-            if (!this.options) {
-                if (!this.worker) {
-                    if (this.target) {
-                        this.target[this.workerId as WorkerId] = {};
-                    } else {
-                        if (!this.state.project.configuration.defaults) {
-                            this.state.project.configuration.defaults = {};
-                        }
-                        this.state.project.configuration.defaults[this.workerId as WorkerId] = {};
-                    }
-                }
-
-                this.worker!.options = {};
-            }
-
-            return true;
-        },
-
         handleTextfieldChange(event: Event) {
-            if (!event.target || !this.ensureConfig()) {
+            if (!event.target || !this.target) {
                 return;
             }
 
-            (this.options as Record<string, string | undefined>)[this.configId] =
-                (event.target as VscodeTextfield).value || undefined;
+            const value = (event.target as VscodeTextfield).value;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            this.target.setConfig([this.workerId, this.configId as any], value);
         }
     }
 });
@@ -144,11 +119,7 @@ export default defineComponent({
     <div>
         <vscode-form-group variant="vertical">
             <vscode-label>{{ configName }}</vscode-label>
-            <vscode-textfield
-                :placeholder="placeholder"
-                :value="effectiveConfig"
-                @input="handleTextfieldChange"
-            ></vscode-textfield>
+            <vscode-textfield :placeholder="placeholder" :value="effectiveValue" @input="handleTextfieldChange" />
         </vscode-form-group>
     </div>
 </template>

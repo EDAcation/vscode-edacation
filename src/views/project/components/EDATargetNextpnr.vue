@@ -1,12 +1,14 @@
 <script lang="ts">
-import {generateNextpnrWorkerOptions, parseNextpnrArguments} from 'edacation';
-import type {NextpnrConfiguration, NextpnrTargetConfiguration, TargetConfiguration} from 'edacation';
+import {generateNextpnrWorkerOptions} from 'edacation';
+import type {ProjectTarget} from 'edacation';
 import {defineComponent} from 'vue';
 
+import {syncedState as projectState} from '../../project';
 import {state as globalState} from '../state';
-import {type PotentialError} from '../util';
 
 import EDATargetValueList from './EDATargetValueList.vue';
+
+type PotentialError<WorkerOptions> = {status: 'ok'; res: WorkerOptions} | {status: 'error'; err: Error};
 
 export default defineComponent({
     components: {
@@ -17,26 +19,29 @@ export default defineComponent({
             type: Number
         }
     },
+    data() {
+        return {
+            state: globalState,
+            projectState
+        };
+    },
     computed: {
-        target(): TargetConfiguration | undefined {
+        target(): ProjectTarget | undefined {
             if (this.targetIndex === undefined) {
                 return undefined;
             }
-            return this.state.project!.configuration.targets[this.targetIndex];
-        },
-        nextpnr(): NextpnrConfiguration | NextpnrTargetConfiguration {
-            const nextpnr = this.target ? this.target.nextpnr : this.state.project!.configuration.defaults?.nextpnr;
-            console.log('nextpnr target', this.target, this.targetIndex, nextpnr, nextpnr ?? {});
-            return nextpnr ?? {};
+            return this.projectState.project?.getTargets()[this.targetIndex];
         },
         generated(): PotentialError<ReturnType<typeof generateNextpnrWorkerOptions> | null> {
-            if (!this.target || !this.state.project) return {status: 'ok', res: null};
+            if (!this.target || !this.projectState.project) return {status: 'ok', res: null};
 
             try {
-                const options = generateNextpnrWorkerOptions(this.state.project.configuration, this.target.id);
+                const options = generateNextpnrWorkerOptions(
+                    this.projectState.project.getConfiguration(),
+                    this.target.id
+                );
                 return {status: 'ok', res: options};
-            } catch (err: any) {
-                console.trace(`Error generating Nextpnr worker options: ${err}`);
+            } catch (err: unknown) {
                 return {status: 'error', err: err as Error};
             }
         },
@@ -46,58 +51,47 @@ export default defineComponent({
         generatedOptions(): ReturnType<typeof generateNextpnrWorkerOptions> | null {
             return this.generated.status === 'ok' ? this.generated.res : null;
         }
-    },
-    data() {
-        return {
-            state: globalState
-        };
-    },
-    methods: {
-        parseNextpnrArguments
     }
 });
 </script>
 
 <template>
-    <template v-if="nextpnr">
-        <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem">
-            <code v-if="generatedError" style="color: red; grid-column: span 2">{{ generatedError }}</code>
-            <EDATargetValueList
-                :targetIndex="targetIndex"
-                :generated="generatedOptions?.steps[0].arguments ?? []"
-                :parse="parseNextpnrArguments"
-                workerId="nextpnr"
-                workerName="nextpnr"
-                configId="arguments"
-                configName="arguments"
-                configDescription="Arguments are passed to the nextpnr worker for execution."
-            />
+    <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem">
+        <code v-if="generatedError" style="color: red; grid-column: span 2">{{ generatedError }}</code>
+        <EDATargetValueList
+            :targetIndex="targetIndex"
+            :generated="generatedOptions?.steps[0].arguments ?? []"
+            workerId="nextpnr"
+            workerName="nextpnr"
+            configId="arguments"
+            configName="arguments"
+            configDescription="Arguments are passed to the nextpnr worker for execution."
+        />
 
-            <vscode-divider style="grid-column: span 2" />
+        <vscode-divider style="grid-column: span 2" />
 
-            <EDATargetValueList
-                :targetIndex="targetIndex"
-                :generated="generatedOptions?.inputFiles ?? []"
-                workerId="nextpnr"
-                workerName="nextpnr"
-                configId="inputFiles"
-                configName="input files"
-                configNameOnePerLine
-                configDescription="Input files are sent from the workspace folder to the nextpnr worker."
-            />
+        <EDATargetValueList
+            :targetIndex="targetIndex"
+            :generated="generatedOptions?.inputFiles ?? []"
+            workerId="nextpnr"
+            workerName="nextpnr"
+            configId="inputFiles"
+            configName="input files"
+            configNameOnePerLine
+            configDescription="Input files are sent from the workspace folder to the nextpnr worker."
+        />
 
-            <vscode-divider style="grid-column: span 2" />
+        <vscode-divider style="grid-column: span 2" />
 
-            <EDATargetValueList
-                :targetIndex="targetIndex"
-                :generated="generatedOptions?.outputFiles ?? []"
-                workerId="nextpnr"
-                workerName="nextpnr"
-                configId="outputFiles"
-                configName="output files"
-                configNameOnePerLine
-                configDescription="Output files are sent from the workspace folder to the nextpnr worker."
-            />
-        </div>
-    </template>
+        <EDATargetValueList
+            :targetIndex="targetIndex"
+            :generated="generatedOptions?.outputFiles ?? []"
+            workerId="nextpnr"
+            workerName="nextpnr"
+            configId="outputFiles"
+            configName="output files"
+            configNameOnePerLine
+            configDescription="Output files are sent from the workspace folder to the nextpnr worker."
+        />
+    </div>
 </template>

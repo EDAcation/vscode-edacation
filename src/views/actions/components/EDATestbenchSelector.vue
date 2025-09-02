@@ -18,19 +18,6 @@ export default defineComponent({
             projectState
         };
     },
-    methods: {
-        handleTestbenchChange(event: Event) {
-            if (!event.target) return;
-
-            const target = event.target as VscodeSingleSelect;
-            this.setTestbench(target.value);
-        },
-        setTestbench(file: string) {
-            if (!this.target) return;
-
-            projectState.project?.setTestbenchPath(this.target.id, file);
-        }
-    },
     computed: {
         target(): TargetConfiguration | undefined {
             if (this.targetIndex === undefined) return undefined;
@@ -54,12 +41,25 @@ export default defineComponent({
             }
             return file;
         }
+    },
+    methods: {
+        handleTestbenchChange(event: Event) {
+            if (!event.target) return;
+
+            const target = event.target as VscodeSingleSelect;
+            this.setTestbench(target.value);
+        },
+        setTestbench(file: string) {
+            if (!this.target) return;
+
+            projectState.project?.setTestbenchPath(this.target.id, file);
+        }
     }
 });
 </script>
 
 <template>
-    <vscode-single-select @change="handleTestbenchChange" :value="selectedTestbench" style="width: initial">
+    <vscode-single-select :value="selectedTestbench" style="width: initial" @change="handleTestbenchChange">
         <vscode-option v-for="file in testbenchFiles" :value="file">
             {{ file }}
         </vscode-option>

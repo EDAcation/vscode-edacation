@@ -12,7 +12,11 @@ const projectEventExchange = createProjectEventExchange({isPrimary: false});
 const openProjectsExchange = createOpenProjectsExchange({isPrimary: false}, projectEventExchange);
 
 // Register portals to communicate with main extension
-const projectEventPortal = projectEventExchange.attachPortal((value) => vscode.postMessage(value));
+const projectEventPortal = projectEventExchange.attachPortal((value) => {
+    console.log('[VIEW] Sending message to extension');
+    console.log(value);
+    vscode.postMessage(value);
+});
 const openProjectsPortal = openProjectsExchange.attachPortal((value) => vscode.postMessage(value));
 
 // Put received messages on the local exchanges

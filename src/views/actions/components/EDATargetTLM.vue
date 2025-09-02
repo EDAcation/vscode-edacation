@@ -18,14 +18,6 @@ export default defineComponent({
             projectState
         };
     },
-    methods: {
-        handleTLMChange(event: Event) {
-            if (!this.target) return;
-
-            const newTlm = (event.target as VscodeTextfield).value;
-            projectState.project?.setTopLevelModule(this.target.id, newTlm);
-        }
-    },
     computed: {
         target(): TargetConfiguration | null {
             if (this.targetIndex === undefined) return null;
@@ -50,6 +42,14 @@ export default defineComponent({
         topLevelModule(): string | null {
             return this.effectiveOptions?.topLevelModule ?? null;
         }
+    },
+    methods: {
+        handleTLMChange(event: Event) {
+            if (!this.target) return;
+
+            const newTlm = (event.target as VscodeTextfield).value;
+            projectState.project?.setTopLevelModule(this.target.id, newTlm);
+        }
     }
 });
 </script>
@@ -58,9 +58,9 @@ export default defineComponent({
     <vscode-textfield
         placeholder="Top-level module (optional)"
         :value="topLevelModule"
-        @input="handleTLMChange"
         style="width: 100%"
-    ></vscode-textfield>
+        @input="handleTLMChange"
+    />
 </template>
 
 <style scoped></style>

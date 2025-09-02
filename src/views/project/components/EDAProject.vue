@@ -1,15 +1,22 @@
 <script lang="ts">
 import type {VscodeSingleSelect} from '@vscode-elements/elements';
-import type {TargetConfiguration} from 'edacation';
+import type {ProjectTarget} from 'edacation';
 import {defineComponent} from 'vue';
 
-import {state as globalState} from '../state';
+import {syncedState as projectState} from '../../project';
+import {state as globalState} from '../state.js';
 
 import EDATarget from './EDATarget.vue';
 
 export default defineComponent({
     components: {
         EDATarget
+    },
+    data() {
+        return {
+            state: globalState,
+            projectState
+        };
     },
     computed: {
         targetIndex: {
@@ -25,90 +32,40 @@ export default defineComponent({
                 this.state.selectedTargetIndex = index;
             }
         },
-        targets(): TargetConfiguration[] {
-            return this.state.project?.configuration.targets ?? [];
+        targets(): ProjectTarget[] {
+            return this.projectState.project?.getTargets() ?? [];
+        },
+        currentTarget(): ProjectTarget | undefined {
+            if (this.targetIndex === undefined) return undefined;
+            return this.targets[this.targetIndex];
         }
     },
-    data() {
-        return {
-            state: globalState
-        };
-    },
     methods: {
-        getNewTargetId(): string {
-            const takenIds = this.targets.map((target) => target.id);
-
-            let index = this.targets.length + 1;
-            while (takenIds.includes(`target${index}`)) index++;
-
-            return `target${index}`;
-        },
-        getDuplicateTargetId(oldId: string): string {
-            const match = oldId.match(/^(.*)(\d)+$/);
-            let base: string;
-            let seq: number;
-            if (match) {
-                base = match[1];
-                seq = Number(match[2]) + 1;
-            } else {
-                base = oldId;
-                seq = 1;
-            }
-
-            const takenIds = this.targets.map((target) => target.id);
-            while (takenIds.includes(`${base}${seq}`)) seq++;
-
-            return `${base}${seq}`;
-        },
         handleNameChange(event: Event) {
-            if (!this.state.project || !event.target) {
-                return;
-            }
+            if (!event.target) return;
 
-            this.state.project.name = (event.target as HTMLInputElement).value;
+            this.projectState.project?.setName((event.target as HTMLInputElement).value);
         },
         handleTargetChange(event: Event) {
             this.state.selectedTargetIndex = (event.target as VscodeSingleSelect).selectedIndex;
         },
         handleTargetAdd() {
-            if (!this.state.project) {
-                return;
-            }
-
-            this.state.project.configuration.targets.push({
-                id: this.getNewTargetId(),
-                name: `Target ${this.targets.length + 1}`,
-                vendor: 'generic',
-                family: 'generic',
-                device: 'generic',
-                package: 'generic'
-            });
-            // TODO: This does not work, because does not yet exist, due to sync issues
-            // this.state.selectedTargetIndex = (index - 1).toString();
+            // target ID is auto-generated
+            this.projectState.project?.addTarget();
         },
         handleTargetDuplicate() {
-            const targetIndex = this.targetIndex;
-            if (!this.state.project || targetIndex === undefined) {
+            if (this.targetIndex === undefined || this.currentTarget === undefined) {
                 return;
             }
 
-            const curTarget = this.targets[targetIndex];
-            if (!curTarget) return;
-
-            this.state.project.configuration.targets.push({
-                ...curTarget,
-                id: this.getDuplicateTargetId(curTarget.id),
-                name: `Target ${this.targets.length + 1}`
-            });
-            // TODO: This does not work, because does not yet exist, due to sync issues
-            // this.state.selectedTargetIndex = (index - 1).toString();
+            this.projectState.project?.addTarget(undefined, this.currentTarget.config);
         },
         handleTargetDelete() {
-            if (!this.state.project || this.targetIndex === undefined) {
+            if (this.currentTarget === undefined) {
                 return;
             }
 
-            this.state.project.configuration.targets.splice(this.targetIndex, 1);
+            this.projectState.project?.removeTarget(this.currentTarget.id);
             this.targetIndex = 0;
         }
     }
@@ -116,9 +73,9 @@ export default defineComponent({
 </script>
 
 <template>
-    <template v-if="state.project">
+    <template v-if="projectState.project">
         <h1>Project</h1>
-        <vscode-textfield placeholder="Project name" :value="state.project.name" @input="handleNameChange">
+        <vscode-textfield placeholder="Project name" :value="projectState.project?.getName()" @input="handleNameChange">
             Project name
         </vscode-textfield>
 

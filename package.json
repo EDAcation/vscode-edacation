@@ -463,7 +463,7 @@
         "@vscode-elements/elements": "^2.2.0",
         "@vscode/codicons": "0.0.39",
         "digitaljs": "github:EDAcation/digitaljs#next",
-        "edacation": "^0.5.0",
+        "edacation": "github:edacation/edacation#feat/more-methods",
         "nextpnr-viewer": "^0.8.3",
         "os-browserify": "^0.3.0",
         "path-browserify-win32": "github:EDAcation/path-browserify-win32",

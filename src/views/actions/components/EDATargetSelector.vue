@@ -18,23 +18,23 @@ export default defineComponent({
             projectState
         };
     },
+    computed: {
+        targets(): TargetConfiguration[] {
+            return this.projectState.project?.getConfiguration().targets ?? [];
+        }
+    },
     methods: {
         handleTargetChange(event: Event) {
             if (!event.target) return;
 
             this.state.selectedTargetIndex = (event.target as VscodeSingleSelect).selectedIndex;
         }
-    },
-    computed: {
-        targets(): TargetConfiguration[] {
-            return this.projectState.project?.getConfiguration().targets ?? [];
-        }
     }
 });
 </script>
 
 <template>
-    <vscode-single-select @change="handleTargetChange" style="width: initial">
+    <vscode-single-select style="width: initial" @change="handleTargetChange">
         <vscode-option v-for="(target, index) in targets" :selected="index === targetIndex">
             {{ target.name }}
         </vscode-option>

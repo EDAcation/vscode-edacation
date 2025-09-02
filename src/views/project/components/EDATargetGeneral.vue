@@ -1,17 +1,9 @@
 <script lang="ts">
-import {VENDORS} from 'edacation';
-import type {
-    Device,
-    Family,
-    NextpnrConfiguration,
-    TargetConfiguration,
-    Vendor,
-    VendorId,
-    YosysConfiguration
-} from 'edacation';
+import type {ProjectTarget} from 'edacation';
 import {defineComponent} from 'vue';
 
-import {state as globalState} from '../state';
+import {syncedState as projectState} from '../../project';
+import {state as globalState} from '../state.js';
 
 export default defineComponent({
     props: {
@@ -19,92 +11,32 @@ export default defineComponent({
             type: Number
         }
     },
+    data() {
+        return {
+            state: globalState,
+            projectState
+        };
+    },
     computed: {
-        target(): TargetConfiguration | undefined {
+        target(): ProjectTarget | undefined {
             if (this.targetIndex === undefined) {
                 return undefined;
             }
-            return this.state.project!.configuration.targets[this.targetIndex];
-        },
-        yosys(): YosysConfiguration | undefined {
-            if (!this.target) {
-                return this.state.project!.configuration.defaults?.yosys;
-            }
-            return this.target.yosys;
-        },
-        nextpnr(): NextpnrConfiguration | undefined {
-            if (!this.target) {
-                return this.state.project!.configuration.defaults?.nextpnr;
-            }
-            return this.target.nextpnr;
-        },
-        vendors() {
-            return VENDORS;
-        },
-        vendor(): Vendor | undefined {
-            if (!this.target) {
-                return undefined;
-            }
-            return VENDORS[this.target.vendor as VendorId];
-        },
-        families(): Record<string, Family> {
-            if (!this.vendor) {
-                return {};
-            }
-            return this.vendor.families;
-        },
-        family(): Family | undefined {
-            if (!this.target || !this.vendor) {
-                return undefined;
-            }
-            return this.vendor.families[this.target.family];
-        },
-        devices(): Record<string, Device> {
-            if (!this.family) {
-                return {};
-            }
-            return this.family.devices;
-        },
-        device(): Device | undefined {
-            if (!this.target || !this.family) {
-                return undefined;
-            }
-            return this.family.devices[this.target.device];
-        },
-        packages(): Record<string, string> {
-            const target = this.target;
-            if (!target || !this.device) {
-                return {};
-            }
-
-            return this.device.packages.reduce(
-                (prev, packageId) => {
-                    const vendorPackages: Record<string, string> = VENDORS[target.vendor as VendorId].packages;
-                    prev[packageId] = vendorPackages[packageId] ?? packageId;
-                    return prev;
-                },
-                {} as Record<string, string>
-            );
-        },
-        hasIdOverlap(): boolean {
-            if (!this.target) return false;
-
-            const targetIds = this.state.project!.configuration.targets.map((target) => target.id);
-            return targetIds.filter((id) => id === this.target?.id).length >= 2;
+            return this.projectState.project?.getTargets()[this.targetIndex];
         }
     },
-    data() {
-        return {
-            state: globalState
-        };
-    },
     methods: {
-        handleTextFieldChange(event: Event, key: 'id' | 'name' | 'directory') {
+        handleTextFieldChange(event: Event, key: 'id' | 'name') {
             if (!this.target || !event.target) {
                 return;
             }
+            const value = (event.target as HTMLInputElement).value;
 
-            this.target[key] = (event.target as HTMLInputElement).value;
+            if (key === 'id') {
+                this.target.id = value;
+            } else if (key === 'name') {
+                this.target.name = value;
+            }
         },
         handleIdChange(event: Event) {
             return this.handleTextFieldChange(event, 'id');
@@ -112,27 +44,20 @@ export default defineComponent({
         handleNameChange(event: Event) {
             return this.handleTextFieldChange(event, 'name');
         },
-        handleDirectoryChange(event: Event) {
-            return this.handleTextFieldChange(event, 'directory');
-        },
         handleTargetChange(event: Event, key: 'vendor' | 'family' | 'device' | 'package') {
             if (!this.target || !event.target) {
                 return;
             }
+            const value = (event.target as HTMLInputElement).value;
 
-            this.target[key] = (event.target as HTMLInputElement).value;
-
-            if (!this.vendors[this.target.vendor as VendorId]) {
-                this.target.vendor = Object.keys(this.vendors)[0];
-            }
-            if (!this.families[this.target.family]) {
-                this.target.family = Object.keys(this.families)[0];
-            }
-            if (!this.devices[this.target.device]) {
-                this.target.device = Object.keys(this.devices)[0];
-            }
-            if (!this.packages[this.target.package]) {
-                this.target.package = Object.keys(this.packages)[0];
+            if (key === 'vendor') {
+                this.target.setVendor(value);
+            } else if (key === 'family') {
+                this.target.setFamily(value);
+            } else if (key === 'device') {
+                this.target.setDevice(value);
+            } else if (key === 'package') {
+                this.target.setPackage(value);
             }
         },
         handleVendorChange(event: Event) {
@@ -164,16 +89,13 @@ export default defineComponent({
             "
         >
             <vscode-form-group variant="vertical">
-                <vscode-label>
-                    ID
-                    <span style="margin-inline: 2rem; color: red" v-if="hasIdOverlap">Error: duplicate ID</span>
-                </vscode-label>
-                <vscode-textfield placeholder="ID" :value="target.id" @input="handleIdChange"></vscode-textfield>
+                <vscode-label> ID </vscode-label>
+                <vscode-textfield placeholder="ID" :value="target.id" @input="handleIdChange" />
             </vscode-form-group>
 
             <vscode-form-group variant="vertical">
                 <vscode-label>Name</vscode-label>
-                <vscode-textfield placeholder="Name" :value="target.name" @input="handleNameChange"></vscode-textfield>
+                <vscode-textfield placeholder="Name" :value="target.name" @input="handleNameChange" />
             </vscode-form-group>
 
             <!-- TODO: Make this configurable again
@@ -189,8 +111,12 @@ export default defineComponent({
 
             <vscode-form-group variant="vertical">
                 <vscode-label>Vendor</vscode-label>
-                <vscode-single-select :value="target.vendor" @input="handleVendorChange">
-                    <vscode-option v-for="(vendor, vendorId) in vendors" :key="vendorId" :value="vendorId">
+                <vscode-single-select :value="target.vendorId" @input="handleVendorChange">
+                    <vscode-option
+                        v-for="(vendor, vendorId) in target.availableVendors"
+                        :key="vendorId"
+                        :value="vendorId"
+                    >
                         {{ vendor.name }}
                     </vscode-option>
                 </vscode-single-select>
@@ -198,8 +124,12 @@ export default defineComponent({
 
             <vscode-form-group variant="vertical">
                 <vscode-label>Family</vscode-label>
-                <vscode-single-select :value="target.family" @input="handleFamilyChange">
-                    <vscode-option v-for="(family, familyId) in families" :key="familyId" :value="familyId">
+                <vscode-single-select :value="target.familyId" @input="handleFamilyChange">
+                    <vscode-option
+                        v-for="(family, familyId) in target.availableFamilies"
+                        :key="familyId"
+                        :value="familyId"
+                    >
                         {{ family.name }}
                     </vscode-option>
                 </vscode-single-select>
@@ -207,8 +137,12 @@ export default defineComponent({
 
             <vscode-form-group variant="vertical">
                 <vscode-label>Device</vscode-label>
-                <vscode-single-select :value="target.device" @input="handleDeviceChange">
-                    <vscode-option v-for="(device, deviceId) in devices" :key="deviceId" :value="deviceId">
+                <vscode-single-select :value="target.deviceId" @input="handleDeviceChange">
+                    <vscode-option
+                        v-for="(device, deviceId) in target.availableDevices"
+                        :key="deviceId"
+                        :value="deviceId"
+                    >
                         {{ device.name }}
                     </vscode-option>
                 </vscode-single-select>
@@ -216,8 +150,12 @@ export default defineComponent({
 
             <vscode-form-group variant="vertical">
                 <vscode-label>Package</vscode-label>
-                <vscode-single-select :value="target.package" @input="handlePackageChange">
-                    <vscode-option v-for="(packageName, packageId) in packages" :key="packageId" :value="packageId">
+                <vscode-single-select :value="target.packageId" @input="handlePackageChange">
+                    <vscode-option
+                        v-for="(packageName, packageId) in target.availablePackages"
+                        :key="packageId"
+                        :value="packageId"
+                    >
                         {{ packageName }}
                     </vscode-option>
                 </vscode-single-select>

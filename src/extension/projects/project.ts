@@ -229,7 +229,12 @@ export class Project extends BaseProject {
 
         console.log(`[Project ${this.getUri().path}] Importing new project config`);
 
-        this.importFromProject(project, false);
+        try {
+            this.importFromProject(project, false);
+        } catch (err) {
+            console.error(`Failed to import project configuration: ${err as Error}`);
+            console.error(project);
+        }
     }
 
     private onInternalEvent(events: InternalProjectEvent[]) {

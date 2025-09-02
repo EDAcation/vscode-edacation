@@ -1,18 +1,15 @@
 <script lang="ts">
 import type {
-    TargetConfiguration,
+    ProjectTarget,
     ValueListConfiguration,
     ValueListConfigurationTarget,
-    WorkerConfiguration,
     WorkerId,
     WorkerTargetConfiguration
 } from 'edacation';
 import {type PropType, defineComponent} from 'vue';
 
+import {syncedState as projectState} from '../../project';
 import {state as globalState} from '../state';
-import {firstUpperCase} from '../util';
-
-const defaultParse = (values: string[]) => values;
 
 export default defineComponent({
     props: {
@@ -20,7 +17,7 @@ export default defineComponent({
             type: Number
         },
         workerId: {
-            type: String,
+            type: String as PropType<WorkerId>,
             required: true
         },
         workerName: {
@@ -46,97 +43,58 @@ export default defineComponent({
         generated: {
             type: Array as PropType<string[]>,
             required: true
-        },
-        parse: {
-            type: Function as PropType<(values: string[]) => string[]>,
-            default: defaultParse
         }
     },
+    data() {
+        return {
+            state: globalState,
+            projectState
+        };
+    },
     computed: {
-        target(): TargetConfiguration | undefined {
+        target(): ProjectTarget | undefined {
             if (this.targetIndex === undefined) {
                 return undefined;
             }
-            return this.state.project!.configuration.targets[this.targetIndex];
+            return this.projectState.project?.getTargets()[this.targetIndex];
         },
-        defaultWorker(): WorkerConfiguration | undefined {
-            if (!this.state.project!.configuration.defaults) {
-                return undefined;
-            }
-            return this.state.project!.configuration.defaults[this.workerId as WorkerId];
-        },
-        worker(): WorkerConfiguration | WorkerTargetConfiguration | undefined {
-            return this.target ? this.target[this.workerId as WorkerId] : this.defaultWorker;
-        },
-        configNameTitle(): string {
-            return firstUpperCase(this.configName);
-        },
-        defaultConfig(): ValueListConfiguration | undefined {
-            if (!this.defaultWorker) {
-                return undefined;
-            }
-            return (this.defaultWorker as Record<string, ValueListConfiguration>)[this.configId];
+        worker(): WorkerTargetConfiguration | undefined {
+            return this.target?.config[this.workerId];
         },
         config(): ValueListConfiguration | ValueListConfigurationTarget | undefined {
             if (!this.worker) {
                 return undefined;
             }
-            return (this.worker as Record<string, ValueListConfiguration | ValueListConfigurationTarget>)[
-                this.configId
-            ];
+
+            return (
+                (this.worker as Record<string, ValueListConfiguration | ValueListConfigurationTarget>)[
+                    this.configId
+                ] ?? {
+                    useGenerated: true,
+                    useDefault: true,
+                    values: []
+                }
+            );
         },
         combined(): string[] {
-            const combined = [
-                ...(this.target && (!this.config || this.config.useGenerated) ? this.generated : []),
-                ...(this.target && (this.config && 'useDefault' in this.config ? this.config.useDefault : true)
-                    ? this.parse(this.defaultConfig?.values ?? [])
-                    : []),
-                ...(this.config ? this.parse(this.config.values) : [])
-            ];
-            return combined;
+            if (!this.target) return [];
+
+            return this.target.getEffectiveTextConfig(this.workerId, this.configId, this.generated);
+        },
+        configNameTitle(): string {
+            // Capitalize first letter
+            return `${this.configName.substring(0, 1).toUpperCase()}${this.configName.substring(1)}`;
         }
     },
-    data() {
-        return {
-            state: globalState
-        };
-    },
     methods: {
-        ensureConfig() {
-            if (!this.state.project) {
-                return false;
-            }
-
-            if (!this.config) {
-                if (!this.worker) {
-                    if (this.target) {
-                        this.target[this.workerId as WorkerId] = {};
-                    } else {
-                        if (!this.state.project.configuration.defaults) {
-                            this.state.project.configuration.defaults = {};
-                        }
-                        this.state.project.configuration.defaults[this.workerId as WorkerId] = {};
-                    }
-                }
-
-                (this.worker as Record<string, ValueListConfiguration | ValueListConfigurationTarget | undefined>)[
-                    this.configId
-                ] = {
-                    useDefault: true,
-                    useGenerated: true,
-                    values: []
-                };
-            }
-
-            return true;
-        },
-
         handleCheckboxChange(event: Event, key: 'useDefault' | 'useGenerated') {
-            if (!event.target || !this.ensureConfig()) {
+            if (!event.target || !this.target) {
                 return;
             }
 
-            (this.config as ValueListConfigurationTarget)[key] = (event.target as HTMLInputElement).checked;
+            const value = (event.target as HTMLInputElement).checked;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            this.target.setConfig([this.workerId, this.configId as any, key], value);
         },
         handleUseDefaultChange(event: Event) {
             return this.handleCheckboxChange(event, 'useDefault');
@@ -146,13 +104,13 @@ export default defineComponent({
         },
 
         handleTextAreaChange(event: Event, key: 'values') {
-            if (!event.target || !this.ensureConfig()) {
+            if (!event.target || !this.target) {
                 return;
             }
 
-            (this.config as ValueListConfigurationTarget)[key] = (
-                (event.target as HTMLTextAreaElement).value ?? ''
-            ).split('\n');
+            const value = ((event.target as HTMLTextAreaElement).value ?? '').split('\n');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            this.target.setConfig([this.workerId, this.configId as any, key], value);
         },
         handleValuesChange(event: Event) {
             return this.handleTextAreaChange(event, 'values');
@@ -168,14 +126,10 @@ export default defineComponent({
             <p>{{ configDescription }}</p>
             <div v-if="target">
                 <vscode-checkbox
-                    :checked="config && 'useDefault' in config ? (config?.useDefault ?? true) : true"
-                    @change="handleUseDefaultChange"
+                    :disabled="config === undefined"
+                    :checked="config?.useGenerated"
+                    @change="handleUseGeneratedChange"
                 >
-                    Use default {{ configName }} (from "Defaults for all targets")
-                </vscode-checkbox>
-            </div>
-            <div v-if="target">
-                <vscode-checkbox :checked="config?.useGenerated ?? true" @change="handleUseGeneratedChange">
                     Use generated {{ configName }}
                 </vscode-checkbox>
             </div>
@@ -184,8 +138,8 @@ export default defineComponent({
                     rows="10"
                     :placeholder="configNameTitle"
                     :value="(config?.values ?? []).join('\n')"
-                    @input="handleValuesChange"
                     style="width: 100%; margin-top: 1rem"
+                    @input="handleValuesChange"
                 >
                     {{ configNameTitle }}{{ configNameOnePerLine ? ' (one per line)' : '' }}
                 </vscode-textarea>
