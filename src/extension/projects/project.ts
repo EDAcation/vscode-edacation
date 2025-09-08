@@ -243,9 +243,14 @@ export class Project extends BaseProject {
         // do 'ensure' checks here
         this.ensureTestbenchPaths();
 
-        console.log(this.channel);
-
         if (this.channel) this.channel.submit(this);
+    }
+
+    async reloadFromDisk() {
+        if (!vscode.workspace) return;
+
+        const newProject = await Project.load(this.getUri());
+        this.importFromProject(newProject, true);
     }
 
     async save() {
