@@ -242,16 +242,6 @@
         ],
         "customEditors": [
             {
-                "viewType": "edacation.project",
-                "displayName": "EDA Project",
-                "selector": [
-                    {
-                        "filenamePattern": "*.edaproject"
-                    }
-                ],
-                "priority": "default"
-            },
-            {
                 "viewType": "edacation.yosys",
                 "displayName": "Yosys",
                 "selector": [

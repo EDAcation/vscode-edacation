@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 
-import {ProjectEditor} from '../editors/project.js';
 import type {Project} from '../projects/index.js';
 import {ensureFileAbsent, getWorkspaceRelativePath} from '../util.js';
 
@@ -128,8 +127,8 @@ export class NewProjectCommand extends BaseCommand {
         // Add project
         await this.projects.add(projectUri, true, true);
 
-        // Open project file
-        await vscode.commands.executeCommand('vscode.openWith', projectUri, ProjectEditor.getViewType());
+        // Open project config
+        await vscode.commands.executeCommand('vscode.openProject');
     }
 }
 
@@ -202,8 +201,8 @@ export class OpenProjectCommand extends BaseCommand {
         // Add project
         await this.projects.add(projectUri, true, false);
 
-        // Open project file
-        await vscode.commands.executeCommand('vscode.openWith', projectUri, ProjectEditor.getViewType());
+        // Open project config
+        await vscode.commands.executeCommand('vscode.openProject');
     }
 }
 
