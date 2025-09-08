@@ -58,7 +58,7 @@ export default defineComponent({
     <vscode-textfield
         placeholder="Top-level module (optional)"
         :value="topLevelModule"
-        style="width: 100%"
+        style="width: initial"
         @input="handleTLMChange"
     />
 </template>

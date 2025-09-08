@@ -82,7 +82,7 @@ export default defineComponent({
         .list-horizontal { flex-direction: row; } vscode-button::part(base){ height: 100%; }
     </component>
 
-    <div style="width: calc(100% - 40px)" class="list list-vertical">
+    <div style="width: 100%" class="list list-vertical">
         <div class="list list-horizontal">
             <vscode-button
                 style="flex-grow: 1; display: flex; align-items: center"
