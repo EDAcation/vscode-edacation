@@ -5,6 +5,10 @@ import {defineComponent} from 'vue';
 import {syncedState as projectState} from '../../project';
 import {state as globalState} from '../state.js';
 
+type Errors = Record<'id' | 'name', string>;
+
+const ErrorStyle = '--vscode-settings-textInputBorder: red; --vscode-focusBorder: red;';
+
 export default defineComponent({
     props: {
         targetIndex: {
@@ -14,7 +18,9 @@ export default defineComponent({
     data() {
         return {
             state: globalState,
-            projectState
+            projectState,
+
+            errors: {} as Errors
         };
     },
     computed: {
@@ -26,16 +32,25 @@ export default defineComponent({
         }
     },
     methods: {
+        getErrorStyle(key: keyof Errors): string | undefined {
+            const error = this.errors[key];
+            return error ? ErrorStyle : undefined;
+        },
         handleTextFieldChange(event: Event, key: 'id' | 'name') {
             if (!this.target || !event.target) {
                 return;
             }
             const value = (event.target as HTMLInputElement).value;
 
-            if (key === 'id') {
-                this.target.id = value;
-            } else if (key === 'name') {
-                this.target.name = value;
+            try {
+                if (key === 'id') {
+                    this.target.id = value;
+                } else if (key === 'name') {
+                    this.target.name = value;
+                }
+                delete this.errors[key];
+            } catch (error) {
+                this.errors[key] = (error as Error).message;
             }
         },
         handleIdChange(event: Event) {
@@ -90,12 +105,22 @@ export default defineComponent({
         >
             <vscode-form-group variant="vertical">
                 <vscode-label> ID </vscode-label>
-                <vscode-textfield placeholder="ID" :value="target.id" @input="handleIdChange" />
+                <vscode-textfield
+                    placeholder="ID"
+                    :value="target.id"
+                    :style="getErrorStyle('id')"
+                    @input="handleIdChange"
+                />
             </vscode-form-group>
 
             <vscode-form-group variant="vertical">
                 <vscode-label>Name</vscode-label>
-                <vscode-textfield placeholder="Name" :value="target.name" @input="handleNameChange" />
+                <vscode-textfield
+                    placeholder="Name"
+                    :value="target.name"
+                    :style="getErrorStyle('name')"
+                    @input="handleNameChange"
+                />
             </vscode-form-group>
 
             <!-- TODO: Make this configurable again
