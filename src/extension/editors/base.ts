@@ -17,11 +17,11 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         throw new Error('Not implemented.');
     }
 
-    public async resolveCustomTextEditor(
+    public resolveCustomTextEditor(
         document: vscode.TextDocument,
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken
-    ): Promise<void> {
+    ): Thenable<void> | void {
         const disposables: vscode.Disposable[] = [];
         const webview = webviewPanel.webview;
 
@@ -71,7 +71,7 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         });
 
         // Update document
-        await this.update(document, webview, false);
+        void this.update(document, webview, false);
     }
 
     protected async onDidReceiveMessage(
