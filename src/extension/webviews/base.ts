@@ -31,7 +31,7 @@ export abstract class BaseWebviewViewProvider extends BaseWebview implements vsc
             curclass.getViewID(),
             curclass.getTitle(),
             {
-                viewColumn: vscode.ViewColumn.Beside
+                viewColumn: vscode.ViewColumn.Active
             },
             curclass.getWebviewOptions()
         );
