@@ -57,11 +57,14 @@ export default defineComponent({
     Otherwise, if the options change but the single-select element itself does not, it will show
     the wrong value
     -->
-    <vscode-single-select :key="testbenchFiles" :value="selectedTestbench" @change="handleTestbenchChange">
-        <vscode-option v-for="file in testbenchFiles" :value="file">
-            {{ file }}
-        </vscode-option>
-    </vscode-single-select>
+    <vscode-form-group v-if="testbenchFiles.length >= 2" :key="testbenchFiles" variant="vertical">
+        <vscode-label>Testbench file</vscode-label>
+        <vscode-single-select :value="selectedTestbench" @change="handleTestbenchChange">
+            <vscode-option v-for="file in testbenchFiles" :value="file">
+                {{ file }}
+            </vscode-option>
+        </vscode-single-select>
+    </vscode-form-group>
 </template>
 
 <style scoped></style>
