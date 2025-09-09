@@ -4,21 +4,21 @@ import type {ViewMessage} from '../types.js';
 
 import {BaseWebviewViewProvider} from './base.js';
 
-export class ActionsProvider extends BaseWebviewViewProvider {
+export class ProjectProvider extends BaseWebviewViewProvider {
     public static getViewID() {
-        return 'edacation-actions';
+        return 'edacation.project';
     }
 
     public static getTitle() {
-        return 'EDAcation Actions';
+        return 'EDA Project Configuration';
     }
 
     protected getStylePaths() {
-        return [['dist', 'views', 'actions', 'index.css']];
+        return [];
     }
 
     protected getScriptPaths() {
-        return [['dist', 'views', 'actions', 'index.js']];
+        return [['dist', 'views', 'project', 'index.js']];
     }
 
     protected getInitialData(): Record<string, unknown> {

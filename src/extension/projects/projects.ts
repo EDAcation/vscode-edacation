@@ -2,9 +2,9 @@ import * as vscode from 'vscode';
 
 import {
     type ExchangeCommand,
-    OpenProjectsChannel,
-    OpenProjectsExchange,
-    ProjectEventChannel,
+    type OpenProjectsChannel,
+    type OpenProjectsExchange,
+    type ProjectEventChannel,
     type SerializedProjectEvent,
     type SerializedProjectsState,
     createOpenProjectsExchange,
@@ -32,6 +32,7 @@ export class Projects {
 
     private projects: Project[];
     private currentProject?: Project;
+    private ignoreSave = false;
 
     private disposables: vscode.Disposable[];
 
@@ -42,7 +43,27 @@ export class Projects {
         this.disposables = [vscode.tasks.onDidEndTask(this.handleTaskEnd.bind(this))];
 
         // Subscribe to project changes and ensure they are saved to disk
-        this.projectEventChannel.subscribe((project) => project.save());
+        // Make sure to ignore change events triggered by ourselves
+        this.projectEventChannel.subscribe((project) => {
+            if (this.ignoreSave) return;
+            void project.save();
+        });
+
+        // Watch for project file changes
+        const projectConfigWatcher = vscode.workspace.createFileSystemWatcher('**/*.edaproject', true, false, false);
+        projectConfigWatcher.onDidChange((uri) => {
+            this.ignoreSave = true;
+            void this.reload(uri).finally(() => {
+                this.ignoreSave = false;
+            });
+        });
+        projectConfigWatcher.onDidDelete(async (uri) => {
+            if (!this.has(uri)) return;
+
+            await this.remove(uri);
+            void vscode.window.showWarningMessage(`Project deleted: ${uri.fsPath}`);
+        });
+        this.disposables.push(projectConfigWatcher);
     }
 
     dispose() {
@@ -117,9 +138,11 @@ export class Projects {
             if (this.projects.length > 0) {
                 await this.setCurrent(this.projects[0]);
             } else {
-                this.setCurrent(undefined);
+                await this.setCurrent(undefined);
             }
         }
+
+        this.emitState();
     }
 
     async load() {
@@ -178,19 +201,8 @@ export class Projects {
     }
 
     async reload(uri: vscode.Uri) {
-        const index = this.projects.findIndex((project) => project.getUri().toString() === uri.toString());
-        if (index === -1) return;
-
-        const project = this.projects[index];
-        const newProject = await this.loadProject(uri);
-
-        this.projects.splice(index, 1, newProject);
-
-        if (this.currentProject === project) {
-            await this.setCurrent(newProject);
-        }
-
-        this.emitState();
+        const project = this.projects.find((project) => project.isUri(uri));
+        await project?.reloadFromDisk();
     }
 
     getCurrent() {

@@ -1,7 +1,7 @@
 <script lang="ts">
-import type {TargetConfiguration} from 'edacation';
 import {defineComponent} from 'vue';
 
+import {syncedState as projectState} from '../../project';
 import {state as globalState} from '../state';
 
 import EDATargetCheckbox from './EDATargetCheckbox.vue';
@@ -17,17 +17,10 @@ export default defineComponent({
             type: Number
         }
     },
-    computed: {
-        target(): TargetConfiguration | undefined {
-            if (this.targetIndex === undefined) {
-                return undefined;
-            }
-            return this.state.project!.configuration.targets[this.targetIndex];
-        }
-    },
     data() {
         return {
-            state: globalState
+            state: globalState,
+            projectState
         };
     }
 });
@@ -35,12 +28,19 @@ export default defineComponent({
 
 <template>
     <div style="width: 100%; display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem">
+        <EDATargetCheckbox
+            :targetIndex="targetIndex"
+            workerId="yosys"
+            configId="optimize"
+            configName="Enable Yosys optimization"
+        />
+
         <EDATargetTextfield
             :targetIndex="targetIndex"
-            workerId="iverilog"
-            configId="testbenchFile"
-            configName="Testbench file path"
-            placeholder="Automatic (first file)"
+            workerId="yosys"
+            configId="topLevelModule"
+            configName="Top-level module name"
+            placeholder="Automatic (Verilog only)"
         />
     </div>
 </template>

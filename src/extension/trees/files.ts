@@ -1,4 +1,4 @@
-import {ProjectInputFile, ProjectInputFileState, ProjectOutputFile, TargetConfiguration} from 'edacation';
+import {type ProjectInputFile, type ProjectInputFileState, ProjectOutputFile, type ProjectTarget} from 'edacation';
 import {basename, extname} from 'path';
 import * as vscode from 'vscode';
 
@@ -273,7 +273,7 @@ export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
         return [];
     }
 
-    getTargetTreeItem(target: TargetConfiguration | null): vscode.TreeItem {
+    getTargetTreeItem(target: ProjectTarget | null): vscode.TreeItem {
         return {
             label: target?.name ?? 'Unknown targets',
             id: target?.id,

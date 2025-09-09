@@ -1,6 +1,6 @@
 import {reactive} from 'vue';
 
-import {Project, createOpenProjectsExchange, createProjectEventExchange} from '../exchange';
+import {type Project, createOpenProjectsExchange, createProjectEventExchange} from '../exchange';
 
 import {vscode} from './vscode-wrapper';
 
@@ -33,7 +33,13 @@ export const syncedState: ProjectState = reactive({
 projectEventChannel.subscribe((project) => {
     console.log('[VIEW] Project update event');
     console.log(project);
-    syncedState.project = project;
+
+    // only update if the update concerns the current project
+    // note that we need to reassign in order to trigger Vue reactivity,
+    // even though the project instance itself is already subscribed to the channel.
+    if (syncedState.project && syncedState.project.isUri(project.getUri())) {
+        syncedState.project = project;
+    }
 });
 openProjectsChannel.subscribe((message) => {
     console.log('[VIEW] Open projects event');

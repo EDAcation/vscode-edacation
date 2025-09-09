@@ -1,9 +1,9 @@
 import type {TargetConfiguration} from 'edacation';
 import * as vscode from 'vscode';
 
-import {ProjectEditor} from '../editors/index.js';
 import type {Project} from '../projects/index.js';
 import {IVerilogTaskProvider, NextpnrTaskProvider, RTLTaskProvider, YosysTaskProvider} from '../tasks/index.js';
+import {ProjectProvider} from '../webviews/project.js';
 
 import {CurrentProjectCommand} from './base.js';
 
@@ -12,9 +12,10 @@ export class OpenProjectConfigurationCommand extends CurrentProjectCommand {
         return 'edacation.openProjectConfiguration';
     }
 
-    async executeForCurrentProject(project: Project) {
+    async executeForCurrentProject(_project: Project) {
         // Open project file
-        await vscode.commands.executeCommand('vscode.openWith', project.getUri(), ProjectEditor.getViewType());
+        const provider = new ProjectProvider(this.context, this.projects);
+        provider.showAsPanel();
     }
 }
 

@@ -35,7 +35,7 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
         conf.columns = [];
         return conf;
     }
-    setConfig(config?: InteractiveDatagridConfig<PrimitivesOverviewOptions> | undefined): void {
+    setConfig(config?: InteractiveDatagridConfig<PrimitivesOverviewOptions>): void {
         if (config) {
             config.columns = null;
         }

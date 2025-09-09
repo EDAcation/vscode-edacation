@@ -4,7 +4,6 @@ import {type TargetConfiguration, type YosysOptions, getYosysDefaultOptions, get
 import {defineComponent} from 'vue';
 
 import {syncedState as projectState} from '../../project';
-import * as vscode from '../../vscode-wrapper';
 import {state as globalState} from '../state';
 
 export default defineComponent({
@@ -18,14 +17,6 @@ export default defineComponent({
             state: globalState,
             projectState
         };
-    },
-    methods: {
-        handleTLMChange(event: Event) {
-            if (!this.target) return;
-
-            const newTlm = (event.target as VscodeTextfield).value;
-            projectState.project?.setTopLevelModule(this.target.id, newTlm);
-        }
     },
     computed: {
         target(): TargetConfiguration | null {
@@ -51,6 +42,14 @@ export default defineComponent({
         topLevelModule(): string | null {
             return this.effectiveOptions?.topLevelModule ?? null;
         }
+    },
+    methods: {
+        handleTLMChange(event: Event) {
+            if (!this.target) return;
+
+            const newTlm = (event.target as VscodeTextfield).value;
+            projectState.project?.setTopLevelModule(this.target.id, newTlm);
+        }
     }
 });
 </script>
@@ -59,9 +58,9 @@ export default defineComponent({
     <vscode-textfield
         placeholder="Top-level module (optional)"
         :value="topLevelModule"
+        style="width: initial"
         @input="handleTLMChange"
-        style="width: 100%"
-    ></vscode-textfield>
+    />
 </template>
 
 <style scoped></style>

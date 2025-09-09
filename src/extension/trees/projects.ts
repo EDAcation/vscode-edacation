@@ -1,4 +1,4 @@
-import {Project} from 'edacation';
+import {type Project} from 'edacation';
 import * as vscode from 'vscode';
 
 import type {Projects} from '../projects/index.js';

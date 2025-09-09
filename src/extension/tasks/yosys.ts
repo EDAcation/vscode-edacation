@@ -1,5 +1,5 @@
 import {
-    YosysStep,
+    type YosysStep,
     type YosysWorkerOptions,
     generateYosysSynthCommands,
     generateYosysSynthPrepareCommands,

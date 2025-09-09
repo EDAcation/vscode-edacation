@@ -4,12 +4,12 @@ import {defineComponent} from 'vue';
 
 import {syncedState as projectState} from '../project';
 
-import EDAProjectActions from './components/EDAProjectActions.vue';
+import EDAProject from './components/EDAProject.vue';
 import {state} from './state';
 
 export default defineComponent({
     components: {
-        EDAProjectActions
+        EDAProject
     },
     data() {
         return {
@@ -22,7 +22,7 @@ export default defineComponent({
 
 <template>
     <main>
-        <EDAProjectActions />
+        <EDAProject />
     </main>
 </template>
 

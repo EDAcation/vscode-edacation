@@ -4,4 +4,4 @@ declare module '*.vue' {
     export default component;
 }
 
-declare var __non_webpack_require__: NodeRequire;
+declare let __non_webpack_require__: NodeRequire;
