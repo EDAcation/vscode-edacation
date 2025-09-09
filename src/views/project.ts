@@ -12,11 +12,7 @@ const projectEventExchange = createProjectEventExchange({isPrimary: false});
 const openProjectsExchange = createOpenProjectsExchange({isPrimary: false}, projectEventExchange);
 
 // Register portals to communicate with main extension
-const projectEventPortal = projectEventExchange.attachPortal((value) => {
-    console.log('[VIEW] Sending message to extension');
-    console.log(value);
-    vscode.postMessage(value);
-});
+const projectEventPortal = projectEventExchange.attachPortal((value) => vscode.postMessage(value));
 const openProjectsPortal = openProjectsExchange.attachPortal((value) => vscode.postMessage(value));
 
 // Put received messages on the local exchanges
@@ -37,7 +33,13 @@ export const syncedState: ProjectState = reactive({
 projectEventChannel.subscribe((project) => {
     console.log('[VIEW] Project update event');
     console.log(project);
-    syncedState.project = project;
+
+    // only update if the update concerns the current project
+    // note that we need to reassign in order to trigger Vue reactivity,
+    // even though the project instance itself is already subscribed to the channel.
+    if (syncedState.project && syncedState.project.isUri(project.getUri())) {
+        syncedState.project = project;
+    }
 });
 openProjectsChannel.subscribe((message) => {
     console.log('[VIEW] Open projects event');
