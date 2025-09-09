@@ -141,6 +141,8 @@ export class Projects {
                 await this.setCurrent(undefined);
             }
         }
+
+        this.emitState();
     }
 
     async load() {
