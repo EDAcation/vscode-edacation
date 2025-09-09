@@ -128,7 +128,7 @@ export class NewProjectCommand extends BaseCommand {
         await this.projects.add(projectUri, true, true);
 
         // Open project config
-        await vscode.commands.executeCommand('vscode.openProject');
+        await vscode.commands.executeCommand('edacation.openProjectConfiguration');
     }
 }
 
@@ -202,7 +202,7 @@ export class OpenProjectCommand extends BaseCommand {
         await this.projects.add(projectUri, true, false);
 
         // Open project config
-        await vscode.commands.executeCommand('vscode.openProject');
+        await vscode.commands.executeCommand('edacation.openProjectConfiguration');
     }
 }
 
