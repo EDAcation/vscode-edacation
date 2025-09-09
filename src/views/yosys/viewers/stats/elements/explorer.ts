@@ -39,7 +39,9 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
     }
 
     get curModule(): Module {
-        return this.moduleBreadcrumbs[this.moduleBreadcrumbs.length - 1];
+        const module = this.moduleBreadcrumbs[this.moduleBreadcrumbs.length - 1];
+        if (!module) throw new Error('No current module available!');
+        return module;
     }
 
     protected override getGridHeaderElement(): HTMLElement {
@@ -70,7 +72,7 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
 
         for (let i = 0; i < this.moduleBreadcrumbs.length; i++) {
             const link = document.createElement('vscode-link');
-            link.textContent = this.moduleBreadcrumbs[i].name;
+            link.textContent = this.moduleBreadcrumbs[i]?.name ?? '<unknown>';
             link.addEventListener('click', (_ev) => {
                 this.navigateSplice(i + 1);
                 this.update();
@@ -117,7 +119,7 @@ export class ModuleExplorerGrid extends InteractiveDataGrid<ModuleExplorerRowIte
     }
 
     protected getNewOption(): ModuleExplorerOptions {
-        return this.getAvailableOptions()[0];
+        return this.getAvailableOptions()[0] ?? 'name';
     }
 
     protected getOptionName(option: ModuleExplorerOptions): string {

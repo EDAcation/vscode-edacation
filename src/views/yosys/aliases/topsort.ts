@@ -35,7 +35,10 @@ abstract class Stringable {
  *                  circular dependency is found. The precise sort is not guaranteed.
  * @returns Array : topological sorted list of IDs
  **/
-function topsort<T extends Stringable>(edges: T[][], options?: {continueOnCircularDependency: boolean}): T[] {
+function topsort<T extends Stringable>(
+    edges: Array<[T, ...T[]]>,
+    options?: {continueOnCircularDependency: boolean}
+): T[] {
     const nodes: {[key: string]: EdgeNode<T>} = {};
     if (!options) {
         options = {continueOnCircularDependency: false};
@@ -48,13 +51,13 @@ function topsort<T extends Stringable>(edges: T[][], options?: {continueOnCircul
     const visited: {[key: string]: boolean} = {};
 
     // 1. build data structures
-    edges.forEach(function (edge: T[]) {
+    edges.forEach(function (edge: [T, ...T[]]) {
         const fromEdge: T = edge[0];
         const fromStr: string = fromEdge.toString();
-        let fromNode: EdgeNode<T>;
-
-        if (!(fromNode = nodes[fromStr])) {
-            fromNode = nodes[fromStr] = new EdgeNode<T>(fromEdge);
+        let fromNode = nodes[fromStr];
+        if (fromNode === undefined) {
+            fromNode = new EdgeNode<T>(fromEdge);
+            nodes[fromStr] = fromNode;
         }
 
         edge.forEach(function (toEdge: T) {
@@ -76,7 +79,9 @@ function topsort<T extends Stringable>(edges: T[][], options?: {continueOnCircul
     const keys: string[] = Object.keys(nodes);
     keys.sort(sortDesc);
     keys.forEach(function visit(idstr: string, ancestorsIn: any) {
-        const node: EdgeNode<T> = nodes[idstr];
+        const node: EdgeNode<T> | undefined = nodes[idstr];
+        if (!node) return;
+
         const id: T = node.id;
 
         // if already exists, do nothing

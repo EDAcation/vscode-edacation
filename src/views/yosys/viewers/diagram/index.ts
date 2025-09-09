@@ -148,6 +148,9 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
                 throw new Error('Could not find SVG element to export');
             }
             const svgElem = svgElems[0];
+            if (!svgElem) {
+                throw new Error('Could not find SVG element to export');
+            }
 
             this.requestExport(svgElem, 'topLevel.svg');
         });

@@ -38,7 +38,7 @@ export class ModuleOverviewGrid extends InteractiveDataGrid<Module, ModuleOvervi
     }
 
     protected getNewOption(): ModuleOverviewOptions {
-        return this.getAvailableOptions()[0];
+        return this.getAvailableOptions()[0] ?? 'name';
     }
 
     protected getOptionName(option: ModuleOverviewOptions): string {
@@ -57,17 +57,26 @@ export class ModuleOverviewGrid extends InteractiveDataGrid<Module, ModuleOvervi
             case 'name':
                 return {elem: item.name};
             case 'count': {
-                const val = this.modules[0].globalChildren.get(item)?.toString() ?? '-';
+                const root = this.modules[0];
+                const val = root?.globalChildren.get(item)?.toString() ?? '-';
                 return {elem: val};
             }
             default: {
                 const countVar = this.getSetting('count-recursive') ? 'globalStats' : 'stats';
-                let stat1 = item[countVar][option];
+                const root = this.modules[0];
+                if (!root) return {elem: '-'};
+
+                const statsContainer = (item as unknown as Record<string, Record<string, number>>)[countVar];
+                const statKey = option;
+                let stat1 = statsContainer ? statsContainer[statKey as unknown as string] : 0;
+                if (stat1 === undefined) stat1 = 0;
                 if (this.getSetting('count-all')) {
-                    stat1 *= this.modules[0].globalChildren.get(item) || 1;
+                    const factor = root.globalChildren.get(item) || 1;
+                    stat1 *= factor;
                 }
 
-                const stat2 = this.modules[0].globalStats[option];
+                const rootStats = root.globalStats as unknown as Record<string, number>;
+                const stat2 = rootStats[statKey as unknown as string] ?? 0;
 
                 const val = `${stat1}/${stat2} (${getPercentage(stat1, stat2)}%)`;
                 return {elem: val};

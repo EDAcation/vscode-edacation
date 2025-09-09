@@ -22,7 +22,7 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         super(mainView, initData);
 
         this.modules = buildModuleTree(this.data.modules);
-        if (!this.modules) {
+        if (!this.modules[0]) {
             throw new Error('No circuit modules found to display!');
         }
 
@@ -67,12 +67,10 @@ export class StatsViewer extends BaseViewer<YosysStats> {
         const storeId = `yosys.stats.${element.getIdentifier()}.settings`;
 
         // Register callbacks for config back-up
-        element.addEventListener('gridConfigUpdate', (event) => this.storeValue(storeId, event.config));
+        element.addEventListener('gridConfigUpdate', (event) => void this.storeValue(storeId, event.config));
 
         // Restore initial config
-        this.getValue(storeId).then((value) => {
-            element.setConfig(value as InteractiveDatagridConfig<K>);
-        });
+        void this.getValue(storeId).then((value) => element.setConfig(value as InteractiveDatagridConfig<K>));
     }
 
     private getModule(name: string): Module | null {

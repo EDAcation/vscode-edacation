@@ -27,7 +27,9 @@ export class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
     }
 
     get width() {
-        return this.cells[0].length;
+        const width = this.cells[0]?.length;
+        if (width === undefined) throw new Error('DataGrid has no columns!');
+        return width;
     }
 
     get height() {
@@ -35,9 +37,11 @@ export class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
     }
 
     private setCellColor(x: number, y: number, gridCell: HTMLElement) {
-        const cell = this.cells[y][x];
-        const cellColor = cell?.borderColor;
-        const cellBorders = cell?.borders ?? [];
+        const cell = this.cells[y]?.[x];
+        if (!cell) throw new Error('Cell does not exist!');
+
+        const cellColor = cell.borderColor;
+        const cellBorders = cell.borders ?? [];
 
         gridCell.style.borderWidth = cell?.borderWidth ?? 'medium';
         gridCell.style.borderColor = cellColor ?? 'none';
@@ -66,7 +70,8 @@ export class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
         }
 
         for (let i = 0; i < this.height; i++) {
-            this.cells[i].splice(pos, 0, contents[i]);
+            const newItem = contents[i] || {elem: ''};
+            this.cells[i]?.splice(pos, 0, newItem);
         }
 
         return pos;
@@ -80,8 +85,10 @@ export class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
 
     addRow(contents: DataGridCell[], pos?: number): number {
         contents = contents.slice(0, this.width);
+        // Pad the row with empty cells so every position contains a valid DataGridCell.
         if (contents.length < this.width) {
-            contents = contents.concat(new Array(this.height - contents.length));
+            const missing = this.width - contents.length;
+            contents = contents.concat(Array.from({length: missing}, () => ({elem: ''}) as DataGridCell));
         }
 
         if (pos === undefined) {
@@ -94,7 +101,14 @@ export class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
     }
 
     setCell(x: number, y: number, value: DataGridCell) {
-        this.cells[y][x] = value;
+        const rowCells = this.cells[y];
+        if (!rowCells) {
+            throw new Error(`Row ${y} does not exist in DataGrid (height=${this.cells.length}).`);
+        }
+        if (x < 0 || x >= rowCells.length) {
+            throw new Error(`Column ${x} does not exist in DataGrid row ${y} (width=${rowCells.length}).`);
+        }
+        rowCells[x] = value;
 
         const row = this.rootElem.querySelectorAll('vscode-table-row')[y];
         if (!row) {
@@ -125,10 +139,13 @@ export class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
         const headerElem = document.createElement('vscode-table-header');
         headerElem.slot = 'header';
 
+        const headerRow = this.cells[0];
+        if (!headerRow) throw new Error('DataGrid has no header row!');
+
         for (let i = 0; i < this.width; i++) {
             const cell = document.createElement('vscode-table-header-cell');
             cell.style.overflow = 'visible'; // allow dropdowns to 'escape' the cell bounds
-            cell.append(this.cells[0][i].elem);
+            cell.append(headerRow[i]?.elem ?? '');
             headerElem.appendChild(cell);
             this.setCellColor(i, 0, cell);
         }
@@ -141,9 +158,14 @@ export class DataGrid<EventsDirectory> extends CustomElement<EventsDirectory> {
 
             for (let coli = 0; coli < this.width; coli++) {
                 const cell = document.createElement('vscode-table-cell');
-                cell.append(this.cells[rowi][coli].elem);
+                // Guard against unexpected undefined cells (should not happen after
+                // padding in addRow, but keeps this robust and satisfies TS).
+                const dataCell = this.cells[rowi]?.[coli];
+                cell.append(dataCell ? dataCell.elem : '');
                 row.appendChild(cell);
-                this.setCellColor(coli, rowi, cell);
+                if (dataCell) {
+                    this.setCellColor(coli, rowi, cell);
+                }
             }
             body.appendChild(row);
         }
@@ -342,8 +364,13 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
             throw new Error('Out of bounds!');
         }
 
-        const option = this.getDefaultOptions().concat(this.cols)[x];
+        const allOptions = this.getDefaultOptions().concat(this.cols);
+        const option = allOptions[x];
+        if (option === undefined) {
+            throw new Error('Option index out of bounds');
+        }
         const item = this.rows[y - 1];
+        if (item === undefined) return; // Defensive, nothing to render
         const value = this.getValue(item, option);
 
         return super.setCell(x, y, value);
@@ -376,7 +403,9 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
         const delBtn = document.createElement('vscode-button');
         delBtn.innerHTML = /* html */ `<span class="codicon codicon-close"></span>`;
         delBtn.addEventListener('click', (_ev) => {
-            const coli = this.cells[0].map((cell) => cell.elem).indexOf(header);
+            const headerRow = this.cells[0];
+            if (!headerRow) return;
+            const coli = headerRow.map((cell) => cell.elem).indexOf(header);
             const defColCount = this.getDefaultOptions().length;
             if (coli >= defColCount) {
                 this.cols.splice(coli - defColCount, 1);
@@ -400,10 +429,13 @@ export abstract class InteractiveDataGrid<RowItem, ColumnOption> extends DataGri
         header.appendChild(dropdown);
 
         dropdown.addEventListener('change', (_ev) => {
-            const headerIndex = this.cells[0].map((cell) => cell.elem).indexOf(header);
+            const headerRow = this.cells[0];
+            if (!headerRow) return;
+            const headerIndex = headerRow.map((cell) => cell.elem).indexOf(header);
             if (headerIndex === -1) return;
 
             const newOption = this.getAvailableOptions()[dropdown.selectedIndex];
+            if (newOption === undefined) return;
 
             // Actually update the column and re-render
             this.cols.splice(headerIndex - this.getDefaultOptions().length, 1, newOption);

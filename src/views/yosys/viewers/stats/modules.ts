@@ -233,7 +233,9 @@ export const buildModuleTree = (modules: Record<string, YosysModuleStats>): Modu
     while (resolved.size < modCount) {
         const oldSize = resolved.size;
         for (let i = modEntries.length - 1; i >= 0; i--) {
-            const [modName, stats] = modEntries[i];
+            const entry = modEntries[i];
+            if (!entry) throw new Error('Internal error: module entry disappeared during processing!');
+            const [modName, stats] = entry;
 
             // Strip leading "/"
             const sanitizedName = modName.startsWith('\\') ? modName.slice(1) : modName;

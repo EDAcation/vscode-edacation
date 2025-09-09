@@ -54,11 +54,11 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
     }
 
     protected getAvailableOptions(): PrimitivesOverviewOptions[] {
-        return this.modules[0].globalPrimitives.map((prim) => prim.name);
+        return this.modules[0]?.globalPrimitives.map((prim) => prim.name) ?? [];
     }
 
     protected getNewOption(): PrimitivesOverviewOptions {
-        return this.getAvailableOptions()[0];
+        return this.getAvailableOptions()[0] ?? 'name';
     }
 
     protected getOptionName(option: PrimitivesOverviewOptions): string {
@@ -74,11 +74,12 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
         if (option === 'name') {
             return {elem: item.name};
         } else if (option === 'count') {
-            const val = this.modules[0].globalChildren.get(item)?.toString() ?? '-';
+            const val = this.modules[0]?.globalChildren.get(item)?.toString() ?? '-';
             return {elem: val};
         }
 
-        const totalCount = getTotalPrimCounts(this.modules[0].findPrimitives({name: option}, true));
+        const primitives = this.modules[0]?.findPrimitives({name: option}, true) ?? [];
+        const totalCount = getTotalPrimCounts(primitives);
 
         const isGlobal = this.getSetting('count-recursive');
         const count = getTotalPrimCounts(item.findPrimitives({name: option}, isGlobal));
@@ -87,7 +88,7 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
         }
 
         if (this.getSetting('count-all')) {
-            const factor = this.modules[0].globalChildren.get(item) || 1;
+            const factor = this.modules[0]?.globalChildren.get(item) || 1;
             count.cells *= factor;
             count.bits *= factor;
         }
