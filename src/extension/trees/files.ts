@@ -1,4 +1,4 @@
-import {ProjectInputFile, ProjectInputFileState, ProjectOutputFile, TargetConfiguration} from 'edacation';
+import {type ProjectInputFile, type ProjectInputFileState, ProjectOutputFile, type ProjectTarget} from 'edacation';
 import {basename, extname} from 'path';
 import * as vscode from 'vscode';
 
@@ -55,8 +55,6 @@ interface InputFileTreeFile {
 export type InputFileTreeItem = InputFileTreeCategory | InputFileTreeFile;
 
 export class InputFilesProvider extends FilesProvider<InputFileTreeItem> {
-    private changeEmitter = new vscode.EventEmitter<InputFileTreeItem | InputFileTreeItem[] | undefined>();
-
     static getViewID() {
         return 'edacation-inputFiles';
     }
@@ -68,7 +66,9 @@ export class InputFilesProvider extends FilesProvider<InputFileTreeItem> {
         // because a small input file change could change the entire tree structure.
         // therefore we need to reload the entire tree on a change.
         this.onDidChangeTreeData = this.changeEmitter.event;
-        projects.getInputFileEmitter().event((_file) => this.changeEmitter.fire(undefined));
+
+        this.projectEventChannel.subscribe((_msg) => this.changeEmitter.fire(undefined));
+        this.openProjectsChannel.subscribe((_msg) => this.changeEmitter.fire(undefined));
     }
 
     getTreeItem(element: InputFileTreeItem): vscode.TreeItem {
@@ -158,8 +158,6 @@ export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
         return 'edacation-outputFiles';
     }
 
-    private changeEmitter = new vscode.EventEmitter<OutputFileTreeItem | OutputFileTreeItem[] | undefined>();
-
     constructor(context: vscode.ExtensionContext, projects: Projects) {
         super(context, projects);
 
@@ -167,7 +165,9 @@ export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
         // because a small output file change could change the entire tree structure.
         // therefore we need to reload the entire tree on a change.
         this.onDidChangeTreeData = this.changeEmitter.event;
-        projects.getOutputFileEmitter().event((_file) => this.changeEmitter.fire(undefined));
+
+        this.projectEventChannel.subscribe((_msg) => this.changeEmitter.fire(undefined));
+        this.openProjectsChannel.subscribe((_msg) => this.changeEmitter.fire(undefined));
     }
 
     getTreeItem(element: OutputFileTreeItem): vscode.TreeItem {
@@ -273,7 +273,7 @@ export class OutputFilesProvider extends FilesProvider<OutputFileTreeItem> {
         return [];
     }
 
-    getTargetTreeItem(target: TargetConfiguration | null): vscode.TreeItem {
+    getTargetTreeItem(target: ProjectTarget | null): vscode.TreeItem {
         return {
             label: target?.name ?? 'Unknown targets',
             id: target?.id,

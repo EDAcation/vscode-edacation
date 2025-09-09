@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import * as node from '../../common/node-modules.js';
-import {ManagedTool, RemoteTool, ToolRepository} from '../tools';
+import {ManagedTool, type RemoteTool, ToolRepository} from '../tools';
 
 import {BaseCommand} from './base';
 

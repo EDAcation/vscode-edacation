@@ -149,10 +149,10 @@ const workerConfig = Object.assign({}, baseConfig, {
 /** @type WebpackConfig */
 const viewsConfig = Object.assign({}, baseConfig, {
     entry: {
-        actions: './src/views/actions/src/main.ts',
-        nextpnr: './src/views/nextpnr/src/main.ts',
-        yosys: './src/views/yosys/src/main.ts',
-        project: './src/views/project/src/main.ts'
+        actions: './src/views/actions/main.ts',
+        nextpnr: './src/views/nextpnr/main.ts',
+        yosys: './src/views/yosys/main.ts',
+        project: './src/views/project/main.ts'
     },
     output: {
         filename: '[name]/index.js',
@@ -162,6 +162,7 @@ const viewsConfig = Object.assign({}, baseConfig, {
             type: 'var'
         }
     },
+    externals: {},
     resolve: {
         mainFields: ['browser', 'module', 'main'],
         extensions: ['.ts', '.js'],
@@ -171,11 +172,12 @@ const viewsConfig = Object.assign({}, baseConfig, {
         alias: {
             fs: false,
             child_process: false,
-            tmp: path.join(currentDirectory, 'src/views/yosys/src/aliases/tmp.ts'),
-            topsort: path.join(currentDirectory, 'src/views/yosys/src/aliases/topsort.ts')
+            tmp: path.join(currentDirectory, 'src/views/yosys/aliases/tmp.ts'),
+            topsort: path.join(currentDirectory, 'src/views/yosys/aliases/topsort.ts')
         },
         fallback: {
             crypto: false,
+            vscode: false,
             path: 'path-browserify-win32',
             os: 'os-browserify'
         }
@@ -216,7 +218,13 @@ const viewsConfig = Object.assign({}, baseConfig, {
                 generator: {
                     filename: './[name][ext]'
                 }
-            }
+            },
+            {
+                test: /\.m?js$/,
+                resolve: {
+                  fullySpecified: false
+                },
+            },
         ]
     },
     plugins: [

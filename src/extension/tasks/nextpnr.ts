@@ -1,4 +1,4 @@
-import {type NextpnrWorkerOptions, VENDORS, WorkerStep, getNextpnrWorkerOptions} from 'edacation';
+import {type NextpnrWorkerOptions, VENDORS, type WorkerStep, getNextpnrWorkerOptions} from 'edacation';
 import * as vscode from 'vscode';
 
 import type {Project} from '../projects/index.js';

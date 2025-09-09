@@ -9,11 +9,8 @@ export interface EditorWebviewArgs {
 }
 
 export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implements vscode.CustomTextEditorProvider {
-    protected readonly projects: Projects;
-
     constructor(context: vscode.ExtensionContext, projects: Projects) {
-        super(context);
-        this.projects = projects;
+        super(context, projects);
     }
 
     static getViewType(): string {
@@ -24,7 +21,7 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         document: vscode.TextDocument,
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken
-    ): void | Thenable<void> {
+    ): Thenable<void> | void {
         const disposables: vscode.Disposable[] = [];
         const webview = webviewPanel.webview;
 
@@ -41,7 +38,7 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         disposables.push(
             vscode.workspace.onDidChangeTextDocument((event) => {
                 if (event.document.uri.toString() === document.uri.toString()) {
-                    this.update(document, webview, true);
+                    void this.update(document, webview, true);
                 }
             })
         );
@@ -55,10 +52,14 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         disposables.push(
             vscode.workspace.onDidSaveTextDocument((event) => {
                 if (event.uri.toString() === document.uri.toString()) {
-                    this.onSave(document, webview);
+                    void this.onSave(document, webview);
                 }
             })
         );
+
+        // Hook up exchange portals
+        this.connectWebview(webviewPanel.webview);
+        webviewPanel.onDidDispose((_) => this.disconnectWebview());
 
         // Add dispose listener
         webviewPanel.onDidDispose(() => {
@@ -70,7 +71,7 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         });
 
         // Update document
-        this.update(document, webview, false);
+        void this.update(document, webview, false);
     }
 
     protected async onDidReceiveMessage(
@@ -106,9 +107,13 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         return false;
     }
 
-    protected abstract onSave(document: vscode.TextDocument, webview: vscode.Webview): void;
+    protected abstract onSave(document: vscode.TextDocument, webview: vscode.Webview): Promise<void>;
 
     protected abstract onClose(document: vscode.TextDocument, webview: vscode.Webview): void;
 
-    protected abstract update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean): void;
+    protected abstract update(
+        document: vscode.TextDocument,
+        webview: vscode.Webview,
+        isDocumentChange: boolean
+    ): Promise<void>;
 }

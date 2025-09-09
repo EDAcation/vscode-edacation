@@ -1,5 +1,15 @@
-import {ProjectInputFile, ProjectOutputFile} from 'edacation';
 import * as vscode from 'vscode';
+
+import {
+    type ExchangeCommand,
+    type OpenProjectsChannel,
+    type OpenProjectsExchange,
+    type ProjectEventChannel,
+    type SerializedProjectEvent,
+    type SerializedProjectsState,
+    createOpenProjectsExchange,
+    createProjectEventExchange
+} from '../../exchange.js';
 
 import {Project} from './project.js';
 
@@ -11,12 +21,18 @@ interface SavedProjects {
 export class Projects {
     protected readonly context: vscode.ExtensionContext;
 
-    private projectEmitter = new vscode.EventEmitter<Project | Project[] | undefined>();
-    private inputFileEmitter = new vscode.EventEmitter<ProjectInputFile | ProjectInputFile[] | undefined>();
-    private outputFileEmitter = new vscode.EventEmitter<ProjectOutputFile | ProjectOutputFile[] | undefined>();
+    private projectEventExchange = createProjectEventExchange({isPrimary: true});
+    private projectEventChannel: ProjectEventChannel = this.projectEventExchange.createChannel();
+
+    private openProjectsExchange: OpenProjectsExchange = createOpenProjectsExchange(
+        {isPrimary: true},
+        this.projectEventExchange
+    );
+    private openProjectsChannel: OpenProjectsChannel = this.openProjectsExchange.createChannel();
 
     private projects: Project[];
     private currentProject?: Project;
+    private ignoreSave = false;
 
     private disposables: vscode.Disposable[];
 
@@ -25,6 +41,29 @@ export class Projects {
         this.projects = [];
 
         this.disposables = [vscode.tasks.onDidEndTask(this.handleTaskEnd.bind(this))];
+
+        // Subscribe to project changes and ensure they are saved to disk
+        // Make sure to ignore change events triggered by ourselves
+        this.projectEventChannel.subscribe((project) => {
+            if (this.ignoreSave) return;
+            void project.save();
+        });
+
+        // Watch for project file changes
+        const projectConfigWatcher = vscode.workspace.createFileSystemWatcher('**/*.edaproject', true, false, false);
+        projectConfigWatcher.onDidChange((uri) => {
+            this.ignoreSave = true;
+            void this.reload(uri).finally(() => {
+                this.ignoreSave = false;
+            });
+        });
+        projectConfigWatcher.onDidDelete(async (uri) => {
+            if (!this.has(uri)) return;
+
+            await this.remove(uri);
+            void vscode.window.showWarningMessage(`Project deleted: ${uri.fsPath}`);
+        });
+        this.disposables.push(projectConfigWatcher);
     }
 
     dispose() {
@@ -33,28 +72,20 @@ export class Projects {
         }
     }
 
-    getProjectEmitter() {
-        return this.projectEmitter;
+    createProjectEventChannel() {
+        return this.projectEventExchange.createChannel();
     }
 
-    getInputFileEmitter() {
-        return this.inputFileEmitter;
+    attachProjectEventPortal(sendCallback: (value: ExchangeCommand<SerializedProjectEvent>) => void) {
+        return this.projectEventExchange.attachPortal(sendCallback);
     }
 
-    getOutputFileEmitter() {
-        return this.outputFileEmitter;
+    createOpenProjectsChannel() {
+        return this.openProjectsExchange.createChannel();
     }
 
-    emitProjectChange(changed: Project | Project[] | undefined = undefined) {
-        this.projectEmitter.fire(changed);
-    }
-
-    emitInputFileChange(changed: ProjectInputFile | ProjectInputFile[] | undefined = undefined) {
-        this.inputFileEmitter.fire(changed);
-    }
-
-    emitOutputFileChange(changed: ProjectOutputFile | ProjectOutputFile[] | undefined = undefined) {
-        this.outputFileEmitter.fire(changed);
+    attachOpenProjectsPortal(sendCallback: (value: ExchangeCommand<SerializedProjectsState>) => void) {
+        return this.openProjectsExchange.attachPortal(sendCallback);
     }
 
     getAll() {
@@ -74,10 +105,10 @@ export class Projects {
 
         if (!this.has(uri)) {
             if (shouldCreate) {
-                project = new Project(this, uri);
+                project = this.createProject(uri);
                 await Project.store(project);
             } else {
-                project = await Project.load(this, uri);
+                project = await this.loadProject(uri);
             }
 
             this.projects.push(project);
@@ -85,7 +116,7 @@ export class Projects {
             project = this.get(uri);
         }
 
-        await this.store(false);
+        await this.store();
 
         if (!project) {
             throw new Error(`Failed to open project "${uri.toString()}".`);
@@ -101,15 +132,17 @@ export class Projects {
     async remove(uri: vscode.Uri) {
         this.projects = this.projects.filter((project) => !project.isUri(uri));
 
-        await this.store(false);
+        await this.store();
 
         if (this.currentProject && this.currentProject.getUri().toString() === uri.toString()) {
             if (this.projects.length > 0) {
                 await this.setCurrent(this.projects[0]);
             } else {
-                this.clearCurrent();
+                await this.setCurrent(undefined);
             }
         }
+
+        this.emitState();
     }
 
     async load() {
@@ -125,7 +158,7 @@ export class Projects {
 
             this.projects = [];
             for (const projectUri of projectsConf.paths) {
-                const project = await Project.load(this, vscode.Uri.parse(projectUri));
+                const project = await this.loadProject(vscode.Uri.parse(projectUri));
 
                 this.projects.push(project);
             }
@@ -140,17 +173,17 @@ export class Projects {
             throw err;
         }
 
-        this.emitProjectChange();
-
         if (!this.currentProject && this.projects.length > 0) {
             await this.setCurrent(this.projects[0]);
         }
+
+        this.emitState();
     }
 
-    async store(full = true) {
+    async store() {
         const projectUris: vscode.Uri[] = [];
         for (const project of this.projects) {
-            const projectUri = full ? await Project.store(project) : project.getUri();
+            const projectUri = project.getUri();
             projectUris.push(projectUri);
         }
 
@@ -165,50 +198,23 @@ export class Projects {
         };
 
         await this.context.workspaceState.update('projects', data);
-
-        this.emitProjectChange();
     }
 
     async reload(uri: vscode.Uri) {
-        const index = this.projects.findIndex((project) => project.getUri().toString() === uri.toString());
-        const project = this.projects[index];
-
-        if (index !== -1) {
-            const newProject = await Project.load(this, uri);
-
-            this.projects.splice(index, 1, newProject);
-
-            if (this.currentProject === project) {
-                await this.setCurrent(newProject);
-            }
-
-            this.emitProjectChange();
-            this.emitInputFileChange();
-            this.emitOutputFileChange();
-        }
+        const project = this.projects.find((project) => project.isUri(uri));
+        await project?.reloadFromDisk();
     }
 
     getCurrent() {
         return this.currentProject;
     }
 
-    async setCurrent(project: Project) {
+    async setCurrent(project?: Project) {
         this.currentProject = project;
 
-        await this.store(false);
+        await this.store();
 
-        this.emitProjectChange();
-        this.emitInputFileChange();
-        this.emitOutputFileChange();
-    }
-
-    clearCurrent() {
-        const previousProject = this.currentProject;
-        this.currentProject = undefined;
-
-        this.emitProjectChange(previousProject ? previousProject : undefined);
-        this.emitInputFileChange();
-        this.emitOutputFileChange();
+        this.emitState();
     }
 
     async handleTaskEnd(event: vscode.TaskEndEvent) {
@@ -226,5 +232,18 @@ export class Projects {
             const uri = vscode.Uri.joinPath(task.scope.uri, task.definition.project as string);
             await this.reload(uri);
         }
+    }
+
+    private async loadProject(uri: vscode.Uri): Promise<Project> {
+        return Project.load(uri, this.createProjectEventChannel());
+    }
+
+    private createProject(uri: vscode.Uri): Project {
+        return new Project(uri, undefined, undefined, undefined, undefined, this.createProjectEventChannel());
+    }
+
+    private emitState() {
+        if (this.currentProject) this.projectEventChannel.submit(this.currentProject);
+        this.openProjectsChannel.submit({projects: this.projects, currentProject: this.currentProject});
     }
 }

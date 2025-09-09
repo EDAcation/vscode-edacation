@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import type {Project} from '../projects/index.js';
-import {InputFileTreeItem, OutputFileTreeItem} from '../trees/files.js';
+import {type InputFileTreeItem, type OutputFileTreeItem} from '../trees/files.js';
 import {FILE_FILTERS_HDL} from '../util.js';
 
 import {CurrentProjectCommand} from './base.js';
@@ -64,7 +64,7 @@ export class RemoveInputFileCommand extends CurrentProjectCommand {
             await vscode.window.showErrorMessage('Input file removal is not supported for this item');
             return;
         }
-        await project.removeInputFiles([treeItem.file.path]);
+        project.removeInputFiles([treeItem.file.path]);
     }
 }
 
@@ -80,11 +80,12 @@ export class SetInputFileTypeCommand extends CurrentProjectCommand {
         }
 
         if (treeItem.category === 'design') {
-            return await project.setInputFileType(treeItem.file.path, 'testbench');
+            return project.setInputFileType(treeItem.file.path, 'testbench');
         } else if (treeItem.category === 'testbench') {
-            return await project.setInputFileType(treeItem.file.path, 'design');
+            return project.setInputFileType(treeItem.file.path, 'design');
         }
 
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new Error(`Invalid previous category: ${treeItem.category}`);
     }
 }
@@ -100,7 +101,7 @@ export class RemoveOutputFileCommand extends CurrentProjectCommand {
             return;
         }
 
-        await project.removeOutputFiles([treeItem.file.path]);
+        project.removeOutputFiles([treeItem.file.path]);
     }
 }
 
@@ -115,7 +116,7 @@ export class TrashOutputFileCommand extends CurrentProjectCommand {
             return;
         }
 
-        await project.removeOutputFiles([treeItem.file.path]);
+        project.removeOutputFiles([treeItem.file.path]);
 
         try {
             const uri = project.getFileUri(treeItem.file.path);

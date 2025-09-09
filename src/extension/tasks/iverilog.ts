@@ -1,4 +1,4 @@
-import {type IVerilogWorkerOptions, WorkerStep, getIVerilogWorkerOptions} from 'edacation';
+import {type IVerilogWorkerOptions, type WorkerStep, getIVerilogWorkerOptions} from 'edacation';
 import {getTargetFile} from 'edacation/dist/project/target';
 import path from 'path';
 import * as vscode from 'vscode';

@@ -1,5 +1,5 @@
 import {
-    YosysStep,
+    type YosysStep,
     type YosysWorkerOptions,
     generateYosysSynthCommands,
     generateYosysSynthPrepareCommands,
@@ -178,7 +178,7 @@ class YosysSynthTerminalTask extends BaseYosysTerminalTask {
         const outFiles = outputFiles.filter((file) => file.path.endsWith('.json'));
         if (outFiles.length !== 1) return;
         const synthUri = project.getFileUri(outFiles[0].path);
-        const lutUri = vscode.Uri.parse(path.join(path.dirname(synthUri.path), 'luts.yosys.json'));
+        const lutUri = vscode.Uri.file(path.join(path.dirname(synthUri.fsPath), 'luts.yosys.json'));
 
         // Write LUT file
         const oldContent = await vscode.workspace.fs.readFile(synthUri);
