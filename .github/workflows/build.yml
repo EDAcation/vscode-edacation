@@ -74,7 +74,7 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v5
       - name: Download Build Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ubuntu-latest
       - name: Publish to GitHub Release
