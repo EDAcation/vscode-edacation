@@ -79,10 +79,22 @@ export abstract class BaseWebview<Args = Record<string, never>> {
 
     protected getHtmlStyles(webview: vscode.Webview): string {
         const stylePaths = this.getStylePaths();
-        const styleUris = stylePaths.map((stylePath) => getWebviewUri(webview, this.context, stylePath));
+        const styleUris = stylePaths.map((style) => {
+            if (Array.isArray(style)) {
+                return {id: null, uri: getWebviewUri(webview, this.context, style)};
+            } else {
+                return {id: style.id, uri: getWebviewUri(webview, this.context, style.path)};
+            }
+        });
 
         return styleUris
-            .map((styleUri) => /*html*/ `<link rel="stylesheet" type="text/css" href="${styleUri.toString()}">`)
+            .map((styleUri) => {
+                if (styleUri.id !== null) {
+                    return /*html*/ `<link id="${styleUri.id}" rel="stylesheet" type="text/css" href="${styleUri.uri.toString()}">`;
+                } else {
+                    return /*html*/ `<link rel="stylesheet" type="text/css" href="${styleUri.uri.toString()}">`;
+                }
+            })
             .join('\n');
     }
 
@@ -95,7 +107,7 @@ export abstract class BaseWebview<Args = Record<string, never>> {
             .join('\n');
     }
 
-    protected abstract getStylePaths(): string[][];
+    protected abstract getStylePaths(): (string[] | {path: string[]; id: string})[];
 
     protected abstract getScriptPaths(): string[][];
 }

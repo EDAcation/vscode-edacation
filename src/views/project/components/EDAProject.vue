@@ -80,23 +80,21 @@ export default defineComponent({
         </vscode-textfield>
 
         <h1>Targets</h1>
-        <vscode-form-group variant="vertical">
-            <vscode-label>Select target to configure</vscode-label>
-            <vscode-single-select @input="handleTargetChange">
+
+        <vscode-label>Select target to configure</vscode-label>
+        <vscode-form-group variant="horizontal">
+            <vscode-single-select style="margin-right: 4px" @input="handleTargetChange">
                 <vscode-option v-for="(target, index) in targets" :selected="targetIndex === index">
                     {{ target.name }}
                 </vscode-option>
             </vscode-single-select>
+
+            <vscode-button icon="add" @click="handleTargetAdd" />
+            <template v-if="targetIndex !== undefined">
+                <vscode-button icon="copy" @click="handleTargetDuplicate" />
+                <vscode-button icon="trash" @click="handleTargetDelete" />
+            </template>
         </vscode-form-group>
-
-        <vscode-button v-if="targetIndex !== undefined" @click="handleTargetDelete"> Delete target </vscode-button>
-
-        <div style="display: flex; gap: 1rem">
-            <vscode-button style="margin-top: 1rem" @click="handleTargetAdd">Add target</vscode-button>
-            <vscode-button v-if="targetIndex !== undefined" style="margin-top: 1rem" @click="handleTargetDuplicate"
-                >Duplicate target</vscode-button
-            >
-        </div>
 
         <p v-if="targets.length === 0"><b>Error:</b> At least one target is required.</p>
 

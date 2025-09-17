@@ -1,5 +1,6 @@
 <script lang="ts">
 import '@vscode-elements/elements';
+import '@vscode/codicons/dist/codicon.css';
 import {defineComponent} from 'vue';
 
 import {syncedState as projectState} from '../project';

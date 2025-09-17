@@ -22,7 +22,7 @@ export class ProjectProvider extends BaseWebviewViewProvider {
     }
 
     protected getStylePaths() {
-        return [];
+        return [{id: 'vscode-codicon-stylesheet', path: ['dist', 'views', 'project', 'index.css']}];
     }
 
     protected getScriptPaths() {
