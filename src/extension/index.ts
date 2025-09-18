@@ -54,6 +54,9 @@ export const activate = async (context: vscode.ExtensionContext) => {
                 webviewOptions: webviewType.getWebviewOptions()
             })
         );
+        context.subscriptions.push(
+            vscode.window.registerWebviewPanelSerializer(webviewType.getViewID(), webview.getWebviewPanelSerializer())
+        );
     }
 
     await projects.load();

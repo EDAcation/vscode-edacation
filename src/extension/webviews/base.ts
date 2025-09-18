@@ -60,6 +60,14 @@ export abstract class BaseWebviewViewProvider extends BaseWebview implements vsc
         this.initWebview(panel);
     }
 
+    public getWebviewPanelSerializer(): vscode.WebviewPanelSerializer {
+        return {
+            deserializeWebviewPanel: async (webviewPanel: vscode.WebviewPanel, _state: never) => {
+                this.initWebview(webviewPanel);
+            }
+        };
+    }
+
     protected initWebview(viewOrPanel: vscode.WebviewView | vscode.WebviewPanel): void {
         // Track panel instances
         const isPanel = 'reveal' in viewOrPanel;
