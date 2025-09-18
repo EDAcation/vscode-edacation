@@ -1,9 +1,12 @@
 <script lang="ts">
+/* global NodeJS, setTimeout, clearTimeout */
 import type {ProjectTarget} from 'edacation';
 import {defineComponent} from 'vue';
 
 import {syncedState as projectState} from '../../project';
 import {state as globalState} from '../state.js';
+
+let debounceTimer: NodeJS.Timeout | undefined = undefined;
 
 type Errors = Record<'id' | 'name', string>;
 
@@ -42,16 +45,24 @@ export default defineComponent({
             }
             const value = (event.target as HTMLInputElement).value;
 
-            try {
-                if (key === 'id') {
-                    this.target.id = value;
-                } else if (key === 'name') {
-                    this.target.name = value;
-                }
-                delete this.errors[key];
-            } catch (error) {
-                this.errors[key] = (error as Error).message;
+            if (debounceTimer !== undefined) {
+                clearTimeout(debounceTimer);
             }
+            debounceTimer = setTimeout(() => {
+                if (this.target) {
+                    try {
+                        if (key === 'id') {
+                            this.target.id = value;
+                        } else if (key === 'name') {
+                            this.target.name = value;
+                        }
+                        delete this.errors[key];
+                    } catch (error) {
+                        this.errors[key] = (error as Error).message;
+                    }
+                }
+                debounceTimer = undefined;
+            }, 300);
         },
         handleIdChange(event: Event) {
             return this.handleTextFieldChange(event, 'id');

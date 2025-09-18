@@ -1,4 +1,5 @@
 <script lang="ts">
+/* global NodeJS, setTimeout, clearTimeout */
 import type {VscodeSingleSelect} from '@vscode-elements/elements';
 import type {ProjectTarget} from 'edacation';
 import {defineComponent} from 'vue';
@@ -7,6 +8,8 @@ import {syncedState as projectState} from '../../project';
 import {state as globalState} from '../state.js';
 
 import EDATarget from './EDATarget.vue';
+
+let debounceTimer: NodeJS.Timeout | undefined = undefined;
 
 export default defineComponent({
     components: {
@@ -44,7 +47,13 @@ export default defineComponent({
         handleNameChange(event: Event) {
             if (!event.target) return;
 
-            this.projectState.project?.setName((event.target as HTMLInputElement).value);
+            if (debounceTimer !== undefined) {
+                clearTimeout(debounceTimer);
+            }
+            debounceTimer = setTimeout(() => {
+                this.projectState.project?.setName((event.target as HTMLInputElement).value);
+                debounceTimer = undefined;
+            }, 300);
         },
         handleTargetChange(event: Event) {
             this.state.selectedTargetIndex = (event.target as VscodeSingleSelect).selectedIndex;
