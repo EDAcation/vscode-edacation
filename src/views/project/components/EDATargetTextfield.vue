@@ -109,7 +109,7 @@ export default defineComponent({
 
             const value = (event.target as VscodeTextfield).value;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this.target.setConfig([this.workerId, this.configId as any], value);
+            this.target.setConfig([this.workerId, 'options', this.configId as any], value);
         }
     }
 });
