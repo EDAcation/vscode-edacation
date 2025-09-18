@@ -33,11 +33,13 @@ export class ExchangeChannel<Message, SerializedMessage> {
         this.callbacks = new Set();
     }
 
-    subscribe(callback: (message: Message) => void, recvLastMessage = true) {
+    subscribe(callback: (message: Message) => void, recvLastMessage = true): () => void {
         this.callbacks.add(callback);
 
         const lastMsg = this.exchange.getLastMessage();
         if (recvLastMessage && lastMsg.initialized) callback(lastMsg.message);
+
+        return () => this.callbacks.delete(callback);
     }
 
     submit(message: Message) {
