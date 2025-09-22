@@ -1,6 +1,6 @@
 <script lang="ts">
 import '@vscode/codicons/dist/codicon.css';
-import {type TargetConfiguration} from 'edacation';
+import {ProjectTarget} from 'edacation';
 import {defineComponent} from 'vue';
 
 import {syncedState as projectState} from '../../project';
@@ -24,20 +24,14 @@ export default defineComponent({
         };
     },
     computed: {
-        targets(): TargetConfiguration[] {
-            return this.projectState.project?.getConfiguration().targets ?? [];
+        targets(): ProjectTarget[] {
+            return this.projectState.project?.getTargets() ?? [];
         },
-        targetIndex(): number | undefined {
-            if (this.targets.length === 0) return undefined;
-
-            let selectedIndex = this.state.selectedTargetIndex ?? 0;
-            if (selectedIndex < 0) return 0;
-            if (selectedIndex >= this.targets.length) return this.targets.length - 1;
-            return selectedIndex;
-        },
-        selectedTarget(): TargetConfiguration | null {
-            if (this.targetIndex === undefined) return null;
-            return this.targets[this.targetIndex] ?? null;
+        selectedTarget(): ProjectTarget | null {
+            if (this.state.selectedTargetId === undefined) {
+                return this.targets[0] ?? null;
+            }
+            return this.projectState.project?.getTarget(this.state.selectedTargetId) ?? null;
         },
 
         designFiles(): string[] {
@@ -91,10 +85,10 @@ export default defineComponent({
                 <i class="codicon codicon-settings-gear" style="font-size: 1.5em; margin: 0"></i>
             </vscode-button>
 
-            <div v-if="targets.length !== 0" class="list list-vertical" style="flex-grow: 2">
-                <EDATargetSelector v-if="targets.length > 1" :targetIndex="targetIndex" />
-                <EDATargetTLM :targetIndex="targetIndex" />
-                <EDATestbenchSelector v-if="testbenchFiles.length > 1" :targetIndex="targetIndex" />
+            <div v-if="targets.length > 0" class="list list-vertical" style="flex-grow: 2">
+                <EDATargetSelector v-if="targets.length > 1" />
+                <EDATargetTLM />
+                <EDATestbenchSelector v-if="testbenchFiles.length > 1" />
             </div>
         </div>
 

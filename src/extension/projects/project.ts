@@ -17,7 +17,7 @@ import {type ProjectEvent as ExternalProjectEvent, type ProjectEventChannel} fro
 import {decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util.js';
 
 export class Project extends BaseProject {
-    private readonly channel?: ProjectEventChannel;
+    private channel?: [ProjectEventChannel, () => void];
 
     private uri: URI;
     private root: URI;
@@ -43,8 +43,10 @@ export class Project extends BaseProject {
             path: path.dirname(this.uri.path)
         });
 
-        this.channel = channel;
-        this.channel?.subscribe(this.onExternalEvent.bind(this), false);
+        if (channel !== undefined) {
+            const unsubCallback = channel?.subscribe(this.onExternalEvent.bind(this), false);
+            this.channel = [channel, unsubCallback];
+        }
 
         void this.cleanIOFiles();
     }
@@ -240,10 +242,12 @@ export class Project extends BaseProject {
     private onInternalEvent(events: InternalProjectEvent[]) {
         console.log(`[EDAcation] Received project events: ${events.toString()}`);
 
+        console.log(this.channel);
+
         // do 'ensure' checks here
         this.ensureTestbenchPaths();
 
-        if (this.channel) this.channel.submit(this);
+        if (this.channel) this.channel[0].submit(this);
     }
 
     async reloadFromDisk() {
@@ -251,6 +255,13 @@ export class Project extends BaseProject {
 
         const newProject = await Project.load(this.getUri());
         this.importFromProject(newProject, true);
+    }
+
+    disconnectChannel() {
+        if (this.channel) {
+            this.channel[1]();
+            this.channel = undefined;
+        }
     }
 
     async save() {

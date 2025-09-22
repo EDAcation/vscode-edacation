@@ -7,11 +7,6 @@ import {syncedState as projectState} from '../../project';
 import {state as globalState} from '../state';
 
 export default defineComponent({
-    props: {
-        targetIndex: {
-            type: Number
-        }
-    },
     data() {
         return {
             state: globalState,
@@ -19,10 +14,16 @@ export default defineComponent({
         };
     },
     computed: {
-        target(): ProjectTarget | undefined {
-            if (this.targetIndex === undefined) return undefined;
-            return this.projectState.project?.getTargets()[this.targetIndex];
+        targets(): ProjectTarget[] {
+            return this.projectState.project?.getTargets() ?? [];
         },
+        selectedTarget(): ProjectTarget | null {
+            if (this.state.selectedTargetId === undefined) {
+                return this.targets[0] ?? null;
+            }
+            return this.projectState.project?.getTarget(this.state.selectedTargetId) ?? null;
+        },
+
         testbenchFiles(): string[] {
             if (!this.projectState.project) return [];
 
@@ -32,7 +33,7 @@ export default defineComponent({
                 .map((file) => file.path);
         },
         selectedTestbench(): string | null {
-            return this.target?.config.iverilog?.options?.testbenchFile ?? null;
+            return this.selectedTarget?.config.iverilog?.options?.testbenchFile ?? null;
         }
     },
     methods: {
@@ -43,9 +44,9 @@ export default defineComponent({
             this.setTestbench(target.value);
         },
         setTestbench(file: string) {
-            if (!this.target) return;
+            if (!this.selectedTarget) return;
 
-            projectState.project?.setTestbenchPath(this.target.id, file);
+            projectState.project?.setTestbenchPath(this.selectedTarget.id, file);
         }
     }
 });

@@ -24,6 +24,7 @@
     ],
     "activationEvents": [
         "onCommand:workbench.action.tasks.runTask",
+        "onWebviewPanel:edacation.project",
         "onStartupFinished"
     ],
     "main": "./dist/extension/extension.js",

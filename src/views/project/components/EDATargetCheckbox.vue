@@ -106,9 +106,9 @@ export default defineComponent({
                 return;
             }
 
-            const value = (event.target as VscodeCheckbox).value;
+            const checked = (event.target as VscodeCheckbox).checked;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this.target.setConfig([this.workerId, this.configId as any], value);
+            this.target.setConfig([this.workerId, 'options', this.configId as any], checked);
         }
     }
 });

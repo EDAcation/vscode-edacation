@@ -60,7 +60,7 @@ export default defineComponent({
         <code v-if="generatedError" style="color: red; grid-column: span 2">{{ generatedError }}</code>
         <EDATargetValueList
             :targetIndex="targetIndex"
-            :generated="generatedOptions?.steps[0].arguments ?? []"
+            :generated="generatedOptions?.steps[0]?.arguments ?? []"
             workerId="nextpnr"
             workerName="nextpnr"
             configId="arguments"

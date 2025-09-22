@@ -1,4 +1,5 @@
 <script lang="ts">
+/* global NodeJS, setTimeout, clearTimeout */
 import type {VscodeTextfield} from '@vscode-elements/elements';
 import {
     type IVerilogConfiguration,
@@ -23,6 +24,8 @@ import {type PropType, defineComponent} from 'vue';
 
 import {syncedState as projectState} from '../../project';
 import {state as globalState} from '../state';
+
+let debounceTimer: NodeJS.Timeout | undefined = undefined;
 
 export default defineComponent({
     props: {
@@ -108,8 +111,16 @@ export default defineComponent({
             }
 
             const value = (event.target as VscodeTextfield).value;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this.target.setConfig([this.workerId, this.configId as any], value);
+            if (debounceTimer !== undefined) {
+                clearTimeout(debounceTimer);
+            }
+            debounceTimer = setTimeout(() => {
+                if (this.target) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    this.target.setConfig([this.workerId, 'options', this.configId as any], value);
+                }
+                debounceTimer = undefined;
+            }, 300);
         }
     }
 });

@@ -13,8 +13,16 @@ export class ProjectProvider extends BaseWebviewViewProvider {
         return 'EDA Project Configuration';
     }
 
+    public static isSingleton(): boolean {
+        return true;
+    }
+
+    public static getViewPanelColumn(): vscode.ViewColumn {
+        return vscode.ViewColumn.Beside;
+    }
+
     protected getStylePaths() {
-        return [];
+        return [{id: 'vscode-codicon-stylesheet', path: ['dist', 'views', 'project', 'index.css']}];
     }
 
     protected getScriptPaths() {

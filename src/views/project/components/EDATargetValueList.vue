@@ -1,4 +1,5 @@
 <script lang="ts">
+/* global NodeJS, setTimeout, clearTimeout */
 import type {
     ProjectTarget,
     ValueListConfiguration,
@@ -10,6 +11,8 @@ import {type PropType, defineComponent} from 'vue';
 
 import {syncedState as projectState} from '../../project';
 import {state as globalState} from '../state';
+
+let debounceTimer: NodeJS.Timeout | undefined = undefined;
 
 export default defineComponent({
     props: {
@@ -109,8 +112,16 @@ export default defineComponent({
             }
 
             const value = ((event.target as HTMLTextAreaElement).value ?? '').split('\n');
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this.target.setConfig([this.workerId, this.configId as any, key], value);
+            if (debounceTimer !== undefined) {
+                clearTimeout(debounceTimer);
+            }
+            debounceTimer = setTimeout(() => {
+                if (this.target) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    this.target.setConfig([this.workerId, this.configId as any, key], value);
+                }
+                debounceTimer = undefined;
+            }, 300);
         },
         handleValuesChange(event: Event) {
             return this.handleTextAreaChange(event, 'values');
