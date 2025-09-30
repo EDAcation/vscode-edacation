@@ -18,8 +18,10 @@ export class ProjectProvider extends BaseTreeDataProvider<Project> {
     }
 
     getTreeItem(element: Project): vscode.TreeItem {
+        const isCurrent = this.projects.getCurrent() === element;
         return {
-            label: `${element.getName()}${this.projects.getCurrent() === element ? ' (current)' : ''}`,
+            label: element.getName(),
+            description: isCurrent ? '(current)' : undefined,
             iconPath: vscode.ThemeIcon.Folder,
             collapsibleState: vscode.TreeItemCollapsibleState.None,
             command: {

@@ -1,4 +1,6 @@
 <script lang="ts">
+/* global document console */
+import type {VscodeButton, VscodeContextMenu} from '@vscode-elements/elements';
 import '@vscode/codicons/dist/codicon.css';
 import {ProjectTarget} from 'edacation';
 import {defineComponent} from 'vue';
@@ -51,6 +53,27 @@ export default defineComponent({
                 .map((file) => file.path);
         }
     },
+    updated() {
+        const menu = document.querySelector('#dropdown-menu') as VscodeContextMenu;
+        const button = document.querySelector('#toggle-menu-button') as VscodeButton;
+
+        if (!menu || !button) return;
+
+        menu.data = [
+            {
+                label: '/dev/ttyABC1',
+                value: 'abcd'
+            }
+        ];
+
+        button.addEventListener('click', () => {
+            menu.show = !menu.show;
+        });
+
+        menu.addEventListener('vsc-select', (event) => {
+            console.log(event);
+        });
+    },
     methods: {
         executeCommand(command: string, ...args: unknown[]) {
             vscode.vscode.postMessage({
@@ -71,36 +94,53 @@ export default defineComponent({
 </script>
 
 <template>
-    <component is="style" lang="css">
-        .list { display: flex; align-items: stretch; gap: 0.75rem; } .list-vertical { flex-direction: column; }
-        .list-horizontal { flex-direction: row; } vscode-button::part(base){ height: 100%; }
-    </component>
-
-    <div style="width: 100%" class="list list-vertical">
-        <div class="list list-horizontal">
-            <vscode-button
-                style="flex-grow: 1; display: flex; align-items: center"
-                @click="executeCommand('openProjectConfiguration')"
+    <div v-if="targets.length > 0 && designFiles.length > 0" class="project-actions">
+        <div class="actions-grid">
+            <vscode-button @click="executeTargetCommand('runRTL')">RTL</vscode-button>
+            <vscode-button :disabled="testbenchFiles.length === 0" @click="executeTargetCommand('runIverilog')"
+                >Waveform</vscode-button
             >
-                <i class="codicon codicon-settings-gear" style="font-size: 1.5em; margin: 0"></i>
-            </vscode-button>
-
-            <div v-if="targets.length > 0" class="list list-vertical" style="flex-grow: 2">
-                <EDATargetSelector v-if="targets.length > 1" />
-                <EDATargetTLM />
-                <EDATestbenchSelector v-if="testbenchFiles.length > 1" />
-            </div>
+            <vscode-button @click="executeTargetCommand('runYosys')">Synthesize</vscode-button>
+            <vscode-button @click="executeTargetCommand('runNextpnr')">Place & Route</vscode-button>
         </div>
 
-        <template v-if="targets.length > 0 && designFiles.length > 0">
-            <vscode-button @click="executeTargetCommand('runRTL')">Show RTL (Yosys)</vscode-button>
-            <vscode-button v-if="testbenchFiles.length > 0" @click="executeTargetCommand('runIverilog')"
-                >Generate waveform (IVerilog)</vscode-button
-            >
-            <vscode-button @click="executeTargetCommand('runYosys')">Synthesize (Yosys)</vscode-button>
-            <vscode-button @click="executeTargetCommand('runNextpnr')">Place and Route (Nextpnr)</vscode-button>
-        </template>
+        <div class="button-with-menu">
+            <vscode-button-group style="width: 100%">
+                <vscode-button>Flash to /dev/ttyXYZ0</vscode-button>
+                <vscode-button id="toggle-menu-button" icon="chevron-down" title="Select device..." />
+            </vscode-button-group>
+            <vscode-context-menu id="dropdown-menu" class="dropdown-menu" />
+        </div>
+    </div>
+    <div v-else style="margin-top: 1rem">
+        <i>No targets or design files found in the project.</i>
     </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.project-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    align-items: stretch;
+}
+.actions-grid > * {
+    width: 100%;
+}
+
+.button-with-menu {
+    display: inline-block;
+    position: relative;
+}
+.dropdown-menu {
+    width: auto;
+    z-index: 10;
+}
+</style>

@@ -203,7 +203,8 @@
             {
                 "command": "edacation.openProjectConfiguration",
                 "category": "EDAcation",
-                "title": "Open Project Configuration"
+                "title": "Open Project Configuration",
+                "icon": "$(settings-gear)"
             },
             {
                 "command": "edacation.installTool",
@@ -283,6 +284,11 @@
                 {
                     "command": "edacation.newInputFile",
                     "when": "view == edacation-inputFiles",
+                    "group": "navigation"
+                },
+                {
+                    "command": "edacation.openProjectConfiguration",
+                    "when": "view == edacation-config",
                     "group": "navigation"
                 }
             ],
@@ -385,6 +391,11 @@
                 {
                     "id": "edacation-outputFiles",
                     "name": "Output Files"
+                },
+                {
+                    "id": "edacation-config",
+                    "name": "Configuration",
+                    "type": "webview"
                 },
                 {
                     "id": "edacation-actions",
