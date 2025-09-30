@@ -1,6 +1,8 @@
 <script lang="ts">
 import type {VscodeCheckbox} from '@vscode-elements/elements';
 import {
+    type FlasherConfiguration,
+    type FlasherTargetConfiguration,
     type IVerilogConfiguration,
     type IVerilogOptions,
     type IVerilogTargetConfiguration,
@@ -58,7 +60,12 @@ export default defineComponent({
             }
             return this.projectState.project?.getTargets()[this.targetIndex];
         },
-        defaultWorker(): YosysConfiguration | NextpnrConfiguration | IVerilogConfiguration | undefined {
+        defaultWorker():
+            | YosysConfiguration
+            | NextpnrConfiguration
+            | IVerilogConfiguration
+            | FlasherConfiguration
+            | undefined {
             const defaults = this.projectState.project?.getConfiguration().defaults;
             if (!defaults) return undefined;
             return defaults[this.workerId];
@@ -70,6 +77,8 @@ export default defineComponent({
             | NextpnrTargetConfiguration
             | IVerilogConfiguration
             | IVerilogTargetConfiguration
+            | FlasherConfiguration
+            | FlasherTargetConfiguration
             | undefined {
             return this.target ? this.target.config[this.workerId] : this.defaultWorker;
         },
