@@ -240,6 +240,11 @@
                 "command": "edacation.runIverilog",
                 "category": "EDAcation",
                 "title": "Generate waveform using Icarus Verilog"
+            },
+            {
+                "command": "edacation.runFlasher",
+                "category": "EDAcation",
+                "title": "Flash FPGA using openFPGAloader"
             }
         ],
         "customEditors": [

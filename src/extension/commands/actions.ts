@@ -2,7 +2,13 @@ import type {TargetConfiguration} from 'edacation';
 import * as vscode from 'vscode';
 
 import type {Project} from '../projects/index.js';
-import {IVerilogTaskProvider, NextpnrTaskProvider, RTLTaskProvider, YosysTaskProvider} from '../tasks/index.js';
+import {
+    FlasherTaskProvider,
+    IVerilogTaskProvider,
+    NextpnrTaskProvider,
+    RTLTaskProvider,
+    YosysTaskProvider
+} from '../tasks/index.js';
 import {ProjectProvider} from '../webviews/project.js';
 
 import {CurrentProjectCommand} from './base.js';
@@ -107,6 +113,18 @@ export class RunIVerilogCommand extends RunTaskCommand {
     getTaskFilter() {
         return {
             type: IVerilogTaskProvider.getType()
+        };
+    }
+}
+
+export class RunFlasherCommand extends RunTaskCommand {
+    static getID() {
+        return 'edacation.runFlasher';
+    }
+
+    getTaskFilter() {
+        return {
+            type: FlasherTaskProvider.getType()
         };
     }
 }

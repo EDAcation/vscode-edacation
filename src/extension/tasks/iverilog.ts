@@ -75,7 +75,7 @@ class IVerilogTerminalTask extends TerminalTask<IVerilogWorkerOptions> {
 
         try {
             await vscode.workspace.fs.rename(oldUri, newUri, {overwrite: true});
-        } catch (e) {
+        } catch {
             this.warn('Could not auto-detect the VCD file, so it could not be post-processed.');
             this.warn(
                 "Your VCD may have ended up in the project root. It will not be added to EDAcation's output file list,"

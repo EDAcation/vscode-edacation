@@ -131,7 +131,7 @@ export class InstallToolCommand extends ManagedToolCommand {
                     })
             );
         } catch (err) {
-            void vscode.window.showErrorMessage(`Error while installing tool: ${err}`);
+            void vscode.window.showErrorMessage(`Error while installing tool: ${err as Error}`);
             console.error(err);
             return;
         }
@@ -177,7 +177,7 @@ export class UninstallToolCommand extends ManagedToolCommand {
                     await tool.uninstall();
                 } catch (err) {
                     console.error(err);
-                    await vscode.window.showErrorMessage(`Error while uninstalling tool: ${err}`);
+                    await vscode.window.showErrorMessage(`Error while uninstalling tool: ${err as Error}`);
                     return;
                 }
 
