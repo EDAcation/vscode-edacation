@@ -78,6 +78,7 @@ export class InputFilesProvider extends FilesProvider<InputFileTreeItem> {
             return this.getFileTreeItem(element.file, true, element.category);
         }
 
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new Error(`Invalid tree element: ${element}`);
     }
 
@@ -86,7 +87,8 @@ export class InputFilesProvider extends FilesProvider<InputFileTreeItem> {
         if (!element) {
             const categories: InputFileTreeItem[] = [
                 {type: 'category', name: 'Design', category: 'design'},
-                {type: 'category', name: 'Testbench', category: 'testbench'}
+                {type: 'category', name: 'Testbench', category: 'testbench'},
+                {type: 'category', name: 'Pin Constraints', category: 'pinconfig'}
             ];
             // Only show a category if it has any files
             return categories.filter((c) => this.getChildren(c).length !== 0);

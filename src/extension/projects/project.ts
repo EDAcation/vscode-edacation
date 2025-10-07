@@ -1,7 +1,6 @@
 import {
     Project as BaseProject,
     DEFAULT_CONFIGURATION,
-    FILE_EXTENSIONS_HDL,
     type ProjectEvent as InternalProjectEvent,
     type ProjectConfiguration,
     type ProjectInputFileState,
@@ -83,7 +82,7 @@ export class Project extends BaseProject {
     }
 
     async addInputFileUris(fileUris: URI[], notifyUser = true): Promise<void> {
-        const files: {path: string; type: ProjectInputFileState['type']}[] = [];
+        const files: {path: string}[] = [];
         let copiedFileCount = 0;
 
         for (let fileUri of fileUris) {
@@ -100,11 +99,7 @@ export class Project extends BaseProject {
             }
             if (!folderRelativePath || this.hasInputFile(folderRelativePath)) continue;
 
-            const parsedPath = path.parse(fileUri.path);
-            const isTestbench =
-                parsedPath.name.endsWith('_tb') && FILE_EXTENSIONS_HDL.includes(parsedPath.ext.substring(1));
-
-            files.push({path: folderRelativePath, type: isTestbench ? 'testbench' : 'design'});
+            files.push({path: folderRelativePath});
         }
         if (files.length === 0) return;
 
