@@ -189,6 +189,12 @@
                 "icon": "$(arrow-swap)"
             },
             {
+                "command": "edacation.setInputFileActive",
+                "category": "EDAcation",
+                "title": "Set Input File Active",
+                "icon": "$(pass)"
+            },
+            {
                 "command": "edacation.removeOutputFile",
                 "category": "EDAcation",
                 "title": "Remove Output File",
@@ -311,12 +317,17 @@
                 {
                     "command": "edacation.removeInputFile",
                     "when": "view == edacation-inputFiles && viewItem =~ /^file-/",
-                    "group": "inline"
+                    "group": "inline@2"
                 },
                 {
                     "command": "edacation.setInputFileType",
                     "when": "view == edacation-inputFiles && viewItem =~ /^file-/",
-                    "group": "inline"
+                    "group": "inline@1"
+                },
+                {
+                    "command": "edacation.setInputFileActive",
+                    "when": "view == edacation-inputFiles && viewItem =~ /^file-/",
+                    "group": "inline@0"
                 },
                 {
                     "command": "edacation.removeOutputFile",

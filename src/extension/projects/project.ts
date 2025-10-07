@@ -192,34 +192,6 @@ export class Project extends BaseProject {
         });
     }
 
-    private ensureTestbenchPaths() {
-        const testbenches = this.getInputFiles()
-            .filter((file) => file.type == 'testbench')
-            .map((file) => file.path);
-
-        const changes: [string, string | undefined][] = [];
-
-        for (const target of this.getConfiguration().targets) {
-            const tbPath = target.iverilog?.options?.testbenchFile;
-
-            if (tbPath && testbenches.includes(tbPath)) {
-                // testbench is configured and correct
-                continue;
-            } else if (!tbPath && testbenches.length === 0) {
-                // no path configured but also no testbenches present, so ok
-                continue;
-            }
-
-            const newTb = testbenches.length === 0 ? undefined : testbenches[0];
-            changes.push([target.id, newTb]);
-        }
-
-        if (changes.length > 0)
-            this.batchEvents(() => {
-                for (const [targetId, tbPath] of changes) this.setTestbenchPath(targetId, tbPath);
-            });
-    }
-
     private onExternalEvent(project: ExternalProjectEvent) {
         // Only handle events related to our project
         if (!project.isUri(this.getUri())) return;
@@ -236,11 +208,6 @@ export class Project extends BaseProject {
 
     private onInternalEvent(events: InternalProjectEvent[]) {
         console.log(`[EDAcation] Received project events: ${events.toString()}`);
-
-        console.log(this.channel);
-
-        // do 'ensure' checks here
-        this.ensureTestbenchPaths();
 
         if (this.channel) this.channel[0].submit(this);
     }

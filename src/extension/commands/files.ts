@@ -112,6 +112,32 @@ export class SetInputFileTypeCommand extends CurrentProjectCommand {
     }
 }
 
+export class SetInputFileActiveCommand extends CurrentProjectCommand {
+    static getID() {
+        return 'edacation.setInputFileActive';
+    }
+
+    async executeForCurrentProject(project: Project, treeItem: InputFileTreeItem) {
+        // TODO: Globally share 'active' target
+        const target = project.getTargets()[0];
+
+        if (treeItem.type !== 'file') {
+            await vscode.window.showErrorMessage('Setting active input file is not supported for this item');
+            return;
+        }
+
+        if (treeItem.category === 'testbench') {
+            project.setActiveTestbenchPath(target.id, treeItem.file.path);
+        } else if (treeItem.category === 'pinconfig') {
+            project.setActivePinConfigPath(target.id, treeItem.file.path);
+        } else {
+            await vscode.window.showErrorMessage(
+                'Setting active input file is only supported for testbench and pin configuration files'
+            );
+        }
+    }
+}
+
 export class RemoveOutputFileCommand extends CurrentProjectCommand {
     static getID() {
         return 'edacation.removeOutputFile';
