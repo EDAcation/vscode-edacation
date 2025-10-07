@@ -54,6 +54,49 @@ interface InputFileTreeFile {
 
 export type InputFileTreeItem = InputFileTreeCategory | InputFileTreeFile;
 
+class InputFileTreeDragAndDropController implements vscode.TreeDragAndDropController<InputFileTreeItem> {
+    private readonly mimeType = 'application/vnd.code.tree.edacation-inputFiles';
+
+    public readonly dragMimeTypes = [this.mimeType];
+    public readonly dropMimeTypes = [this.mimeType];
+
+    private readonly projects: Projects;
+
+    constructor(projects: Projects) {
+        this.projects = projects;
+    }
+
+    handleDrag(
+        source: InputFileTreeItem[],
+        dataTransfer: vscode.DataTransfer,
+        _token: vscode.CancellationToken
+    ): void | Thenable<void> {
+        const files = source.filter((item) => item.type === 'file').map((item) => item.file.path);
+
+        dataTransfer.set(this.mimeType, new vscode.DataTransferItem(files));
+    }
+
+    handleDrop(
+        target: InputFileTreeItem | undefined,
+        dataTransfer: vscode.DataTransfer,
+        _token: vscode.CancellationToken
+    ): void | Thenable<void> {
+        const transferItem = dataTransfer.get(this.mimeType);
+        const project = this.projects.getCurrent();
+        if (!transferItem || !target || !project) {
+            return;
+        }
+
+        const items = transferItem.value as string[];
+        for (const item of items) {
+            const file = project.getInputFile(item);
+            if (!file) continue;
+
+            file.type = target.category;
+        }
+    }
+}
+
 export class InputFilesProvider extends FilesProvider<InputFileTreeItem> {
     static getViewID() {
         return 'edacation-inputFiles';
@@ -71,6 +114,14 @@ export class InputFilesProvider extends FilesProvider<InputFileTreeItem> {
         this.openProjectsChannel.subscribe((_msg) => this.changeEmitter.fire(undefined));
     }
 
+    override getTreeViewOptions(): vscode.TreeViewOptions<InputFileTreeItem> {
+        return {
+            treeDataProvider: this,
+            canSelectMany: true,
+            dragAndDropController: new InputFileTreeDragAndDropController(this.projects)
+        };
+    }
+
     getTreeItem(element: InputFileTreeItem): vscode.TreeItem {
         if (element.type === 'category') {
             return this.getCategoryTreeItem(element.category, element.name);
@@ -85,13 +136,11 @@ export class InputFilesProvider extends FilesProvider<InputFileTreeItem> {
     getChildren(element?: InputFileTreeItem): InputFileTreeItem[] {
         // Root: list categories
         if (!element) {
-            const categories: InputFileTreeItem[] = [
+            return [
                 {type: 'category', name: 'Design', category: 'design'},
                 {type: 'category', name: 'Testbench', category: 'testbench'},
                 {type: 'category', name: 'Pin Constraints', category: 'pinconfig'}
             ];
-            // Only show a category if it has any files
-            return categories.filter((c) => this.getChildren(c).length !== 0);
         }
 
         const project = this.projects.getCurrent();

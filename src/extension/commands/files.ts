@@ -1,3 +1,4 @@
+import type {ProjectInputFile} from 'edacation';
 import * as vscode from 'vscode';
 
 import type {Project} from '../projects/index.js';
@@ -69,24 +70,45 @@ export class RemoveInputFileCommand extends CurrentProjectCommand {
 }
 
 export class SetInputFileTypeCommand extends CurrentProjectCommand {
+    private static readonly categories: Record<string, ProjectInputFile['type']> = {
+        'Design File': 'design',
+        'Testbench File': 'testbench',
+        'Pin Configuration File': 'pinconfig'
+    };
+
     static getID() {
         return 'edacation.setInputFileType';
     }
 
-    async executeForCurrentProject(project: Project, treeItem: InputFileTreeItem) {
-        if (treeItem.type !== 'file') {
-            await vscode.window.showErrorMessage('Input file type switching is not supported for this item');
+    async executeForCurrentProject(project: Project, treeItem: InputFileTreeItem, selectedItems?: InputFileTreeItem[]) {
+        const items = selectedItems && selectedItems.length > 0 ? selectedItems : [treeItem];
+        const files = items
+            .filter((item) => item.type === 'file')
+            .flatMap((item) => {
+                const file = project.getInputFile(item.file.path);
+                return file ? [file] : [];
+            });
+
+        if (files.length === 0) {
+            await vscode.window.showErrorMessage('No input files selected');
             return;
         }
 
-        if (treeItem.category === 'design') {
-            return project.setInputFileType(treeItem.file.path, 'testbench');
-        } else if (treeItem.category === 'testbench') {
-            return project.setInputFileType(treeItem.file.path, 'design');
-        }
+        const options: vscode.QuickPickItem[] = Object.entries(SetInputFileTypeCommand.categories).map(
+            ([label, _category]) => ({label})
+        );
 
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        throw new Error(`Invalid previous category: ${treeItem.category}`);
+        const item = await vscode.window.showQuickPick(options, {
+            title: 'Select a new type for this input file',
+            canPickMany: false
+        });
+        if (!item) return;
+
+        const category = SetInputFileTypeCommand.categories[item.label];
+        for (const file of files) {
+            if (file.type === category) continue;
+            file.type = category;
+        }
     }
 }
 
