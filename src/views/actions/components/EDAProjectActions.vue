@@ -106,7 +106,7 @@ export default defineComponent({
 
         <div class="button-with-menu">
             <vscode-button-group style="width: 100%">
-                <vscode-button>Flash to /dev/ttyXYZ0</vscode-button>
+                <vscode-button @click="executeTargetCommand('runFlasher')">Flash to /dev/ttyXYZ0</vscode-button>
                 <vscode-button id="toggle-menu-button" icon="chevron-down" title="Select device..." />
             </vscode-button-group>
             <vscode-context-menu id="dropdown-menu" class="dropdown-menu" />
