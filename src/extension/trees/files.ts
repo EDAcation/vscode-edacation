@@ -10,7 +10,7 @@ abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
     protected getFileTreeItem(file: ProjectInputFile | ProjectOutputFile): vscode.TreeItem {
         const project = this.projects.getCurrent();
         const target = project?.getActiveTarget() ?? null;
-        if (!project || !target) {
+        if (!project) {
             return {};
         }
 
@@ -21,6 +21,7 @@ abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
             description = '(stale)';
         } else if (
             file instanceof ProjectInputFile &&
+            target &&
             (file.path === project.getActiveTestbenchPath(target.id) ||
                 file.path === project.getActivePinConfigPath(target.id))
         ) {
