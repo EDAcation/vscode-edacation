@@ -10,14 +10,10 @@ import * as vscode from '../../vscode-wrapper';
 import {state as globalState} from '../state';
 
 import EDATargetSelector from './EDATargetSelector.vue';
-import EDATargetTLM from './EDATargetTLM.vue';
-import EDATestbenchSelector from './EDATestbenchSelector.vue';
 
 export default defineComponent({
     components: {
-        EDATargetSelector,
-        EDATargetTLM,
-        EDATestbenchSelector
+        EDATargetSelector
     },
     data() {
         return {
@@ -26,14 +22,8 @@ export default defineComponent({
         };
     },
     computed: {
-        targets(): ProjectTarget[] {
-            return this.projectState.project?.getTargets() ?? [];
-        },
-        selectedTarget(): ProjectTarget | null {
-            if (this.state.selectedTargetId === undefined) {
-                return this.targets[0] ?? null;
-            }
-            return this.projectState.project?.getTarget(this.state.selectedTargetId) ?? null;
+        target(): ProjectTarget | null {
+            return this.projectState.project?.getActiveTarget() ?? null;
         },
 
         designFiles(): string[] {
@@ -75,26 +65,21 @@ export default defineComponent({
         });
     },
     methods: {
-        executeCommand(command: string, ...args: unknown[]) {
+        executeTargetCommand(command: string) {
+            if (!this.target) return;
+
             vscode.vscode.postMessage({
                 type: 'command',
                 command: `edacation.${command}`,
-                args: args
+                args: [this.target.id]
             });
-        },
-
-        executeTargetCommand(command: string) {
-            if (!this.selectedTarget) {
-                return this.executeCommand(command);
-            }
-            return this.executeCommand(command, this.selectedTarget.id);
         }
     }
 });
 </script>
 
 <template>
-    <div v-if="targets.length > 0 && designFiles.length > 0" class="project-actions">
+    <div v-if="target !== null && designFiles.length > 0" class="project-actions">
         <div class="actions-grid">
             <vscode-button @click="executeTargetCommand('runRTL')">RTL</vscode-button>
             <vscode-button :disabled="testbenchFiles.length === 0" @click="executeTargetCommand('runIverilog')"

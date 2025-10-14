@@ -6,15 +6,13 @@ import {defineComponent} from 'vue';
 import {syncedState as projectState} from '../../project';
 import {state as globalState} from '../state';
 
-import EDADeviceSelector from './EDADeviceSelector.vue';
 import EDATargetSelector from './EDATargetSelector.vue';
 import EDATargetTLM from './EDATargetTLM.vue';
 
 export default defineComponent({
     components: {
         EDATargetSelector,
-        EDATargetTLM,
-        EDADeviceSelector
+        EDATargetTLM
     },
     data() {
         return {
@@ -32,8 +30,10 @@ export default defineComponent({
 
 <template>
     <vscode-form-group v-if="targets.length > 0" variant="vertical" style="margin: 0">
-        <vscode-label>Target</vscode-label>
-        <EDATargetSelector v-if="targets.length > 1" />
+        <template v-if="targets.length > 1">
+            <vscode-label>Target</vscode-label>
+            <EDATargetSelector />
+        </template>
 
         <vscode-label>Top-level module <span class="normal">(verilog only)</span></vscode-label>
         <EDATargetTLM />

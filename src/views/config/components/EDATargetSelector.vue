@@ -14,24 +14,19 @@ export default defineComponent({
         };
     },
     computed: {
-        targetId(): string | undefined {
-            return this.state.selectedTargetId;
-        },
         targets(): ProjectTarget[] {
             return this.projectState.project?.getTargets() ?? [];
         },
         selectedTarget(): ProjectTarget | null {
-            if (this.targetId === undefined) {
-                return this.targets[0] ?? null;
-            }
-            return this.projectState.project?.getTarget(this.targetId) ?? null;
+            return this.projectState.project?.getActiveTarget() ?? null;
         }
     },
     methods: {
         handleTargetChange(event: Event) {
             if (!event.target) return;
 
-            this.state.selectedTargetId = (event.target as VscodeSingleSelect).value;
+            const targetId = (event.target as VscodeSingleSelect).value;
+            this.projectState.project?.setActiveTarget(targetId);
         }
     }
 });

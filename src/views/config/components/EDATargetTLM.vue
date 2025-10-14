@@ -1,7 +1,7 @@
 <script lang="ts">
 /* global NodeJS, setTimeout, clearTimeout */
 import type {VscodeTextfield} from '@vscode-elements/elements';
-import {ProjectTarget, type YosysOptions, getYosysDefaultOptions, getYosysOptions} from 'edacation';
+import {ProjectTarget, type YosysOptions, getYosysOptions} from 'edacation';
 import {defineComponent} from 'vue';
 
 import {syncedState as projectState} from '../../project';
@@ -17,28 +17,15 @@ export default defineComponent({
         };
     },
     computed: {
-        targets(): ProjectTarget[] {
-            return this.projectState.project?.getTargets() ?? [];
-        },
-        selectedTarget(): ProjectTarget | null {
-            if (this.state.selectedTargetId === undefined) {
-                return this.targets[0] ?? null;
-            }
-            return this.projectState.project?.getTarget(this.state.selectedTargetId) ?? null;
+        target(): ProjectTarget | null {
+            return this.projectState.project?.getActiveTarget() ?? null;
         },
 
         effectiveOptions(): YosysOptions | null {
-            if (!this.projectState.project) return null;
+            if (!this.projectState.project || !this.target) return null;
 
             const projectConfig = this.projectState.project.getConfiguration();
-
-            if (!this.selectedTarget) {
-                // Default configuration
-                return getYosysDefaultOptions(projectConfig);
-            } else {
-                // Target configuration
-                return getYosysOptions(projectConfig, this.selectedTarget.id);
-            }
+            return getYosysOptions(projectConfig, this.target.id);
         },
         topLevelModule(): string | null {
             return this.effectiveOptions?.topLevelModule ?? null;
@@ -46,15 +33,15 @@ export default defineComponent({
     },
     methods: {
         handleTLMChange(event: Event) {
-            if (!this.selectedTarget) return;
+            if (!this.target) return;
 
             const newTlm = (event.target as VscodeTextfield).value;
             if (debounceTimer !== undefined) {
                 clearTimeout(debounceTimer);
             }
             debounceTimer = setTimeout(() => {
-                if (this.selectedTarget) {
-                    this.projectState.project?.setTopLevelModule(this.selectedTarget.id, newTlm);
+                if (this.target) {
+                    this.projectState.project?.setTopLevelModule(this.target.id, newTlm);
                 }
                 debounceTimer = undefined;
             }, 300);

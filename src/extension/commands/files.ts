@@ -118,9 +118,12 @@ export class SetInputFileActiveCommand extends CurrentProjectCommand {
     }
 
     async executeForCurrentProject(project: Project, treeItem: InputFileTreeItem) {
-        // TODO: Globally share 'active' target
-        const target = project.getTargets()[0];
+        const target = project.getActiveTarget();
 
+        if (!target) {
+            await vscode.window.showErrorMessage('No active target set in project');
+            return;
+        }
         if (treeItem.type !== 'file') {
             await vscode.window.showErrorMessage('Setting active input file is not supported for this item');
             return;

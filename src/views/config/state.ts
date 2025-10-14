@@ -2,13 +2,10 @@ import {reactive} from 'vue';
 
 import {vscode} from '../vscode-wrapper';
 
-export interface State {
-    selectedTargetId?: string;
-}
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+export interface State {}
 
-export const DEFAULT_STATE = {
-    selectedTargetId: undefined
-};
+export const DEFAULT_STATE = {};
 
 export let state = reactive<State>(DEFAULT_STATE);
 
