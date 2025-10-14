@@ -1,4 +1,4 @@
-import {type ProjectInputFile, type ProjectInputFileState, ProjectOutputFile, type ProjectTarget} from 'edacation';
+import {ProjectInputFile, type ProjectInputFileState, ProjectOutputFile, type ProjectTarget} from 'edacation';
 import {basename, extname} from 'path';
 import * as vscode from 'vscode';
 
@@ -7,28 +7,40 @@ import type {Projects} from '../projects/index.js';
 import {BaseTreeDataProvider} from './base.js';
 
 abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
-    protected getFileTreeItem(
-        file: ProjectInputFile | ProjectOutputFile,
-        showPath = false,
-        ctxSuffix: string = ''
-    ): vscode.TreeItem {
+    protected getFileTreeItem(file: ProjectInputFile | ProjectOutputFile): vscode.TreeItem {
         const project = this.projects.getCurrent();
-        if (!project) {
+        const target = project?.getActiveTarget() ?? null;
+        if (!project || !target) {
             return {};
         }
 
-        // Add 'stale' description if file is output file and stale
-        const isOld = file instanceof ProjectOutputFile && file.stale;
+        let description: boolean | string = false;
+        let contextValue = 'file';
+        if (file instanceof ProjectOutputFile && file.stale) {
+            // Add 'stale' description if file is output file and stale
+            description = '(stale)';
+        } else if (
+            file instanceof ProjectInputFile &&
+            (file.path === project.getActiveTestbenchPath(target.id) ||
+                file.path === project.getActivePinConfigPath(target.id))
+        ) {
+            // Add 'active' description if file is input file and marked as active
+            description = '(active)';
+        } else if (file instanceof ProjectInputFile) {
+            // Add 'activatable' suffix to show button to set active
+            contextValue += '-activatable';
+        }
+
         const uri = project.getFileUri(file.path);
 
         return {
             resourceUri: uri,
 
             label: basename(file.path),
-            description: isOld ? '(stale)' : showPath,
+            description,
             id: file.path,
 
-            contextValue: `file${ctxSuffix ? '-' + ctxSuffix : ''}`,
+            contextValue,
             collapsibleState: vscode.TreeItemCollapsibleState.None,
 
             command: {
@@ -126,7 +138,7 @@ export class InputFilesProvider extends FilesProvider<InputFileTreeItem> {
         if (element.type === 'category') {
             return this.getCategoryTreeItem(element.category, element.name);
         } else if (element.type === 'file') {
-            return this.getFileTreeItem(element.file, true, element.category);
+            return this.getFileTreeItem(element.file);
         }
 
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
