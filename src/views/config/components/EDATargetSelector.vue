@@ -33,7 +33,7 @@ export default defineComponent({
 </script>
 
 <template>
-    <vscode-single-select style="width: initial" :value="selectedTarget?.id" @change="handleTargetChange">
+    <vscode-single-select style="width: 100%" :value="selectedTarget?.id" @change="handleTargetChange">
         <vscode-option v-for="target in targets" :value="target.id">
             {{ target.name }}
         </vscode-option>

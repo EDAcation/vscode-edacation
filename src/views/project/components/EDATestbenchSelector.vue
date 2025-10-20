@@ -32,7 +32,7 @@ export default defineComponent({
                 .map((file) => file.path);
         },
         selectedTestbench(): string | null {
-            return this.target?.config.iverilog?.options?.testbenchFile ?? null;
+            return this.projectState.project?.getActiveTestbenchPath(this.target?.id ?? '') ?? null;
         }
     },
     methods: {
@@ -45,7 +45,7 @@ export default defineComponent({
         setTestbench(file: string) {
             if (!this.target) return;
 
-            projectState.project?.setTestbenchPath(this.target.id, file);
+            projectState.project?.setActiveTestbenchPath(this.target.id, file);
         }
     }
 });

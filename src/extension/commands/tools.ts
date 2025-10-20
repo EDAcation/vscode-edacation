@@ -82,15 +82,21 @@ export class InstallToolCommand extends ManagedToolCommand {
         return 'edacation.installTool';
     }
 
-    override async exec(...toolCommands: string[]): Promise<void> {
+    override async exec(...toolIds: string[]): Promise<void> {
         let tools: RemoteTool[] = [];
-        if (toolCommands.length) {
-            for (const command of toolCommands) {
-                const tool = await this.repository.getRemoteToolFromCommand(command);
+        if (toolIds.length) {
+            for (const command of toolIds) {
+                let tool = await this.repository.getRemoteToolById(command);
                 if (!tool) {
-                    void vscode.window.showErrorMessage(`Could not find managed tool providing "${command}"`);
-                    return;
+                    // Maybe the user passed a command name instead of a tool ID
+                    tool = await this.repository.getRemoteToolFromCommand(command);
+
+                    if (!tool) {
+                        void vscode.window.showErrorMessage(`Could not find managed tool providing "${command}"`);
+                        return;
+                    }
                 }
+
                 if (tools.map((tool) => tool.tool).includes(tool.tool)) {
                     // Command already provided by a tool marked for install
                     continue;
@@ -125,7 +131,7 @@ export class InstallToolCommand extends ManagedToolCommand {
                     })
             );
         } catch (err) {
-            void vscode.window.showErrorMessage(`Error while installing tool: ${err}`);
+            void vscode.window.showErrorMessage(`Error while installing tool: ${err as Error}`);
             console.error(err);
             return;
         }
@@ -171,7 +177,7 @@ export class UninstallToolCommand extends ManagedToolCommand {
                     await tool.uninstall();
                 } catch (err) {
                     console.error(err);
-                    await vscode.window.showErrorMessage(`Error while uninstalling tool: ${err}`);
+                    await vscode.window.showErrorMessage(`Error while uninstalling tool: ${err as Error}`);
                     return;
                 }
 

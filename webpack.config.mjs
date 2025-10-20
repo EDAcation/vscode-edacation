@@ -150,6 +150,7 @@ const workerConfig = Object.assign({}, baseConfig, {
 const viewsConfig = Object.assign({}, baseConfig, {
     entry: {
         actions: './src/views/actions/main.ts',
+        config: './src/views/config/main.ts',
         nextpnr: './src/views/nextpnr/main.ts',
         yosys: './src/views/yosys/main.ts',
         project: './src/views/project/main.ts'
@@ -222,9 +223,9 @@ const viewsConfig = Object.assign({}, baseConfig, {
             {
                 test: /\.m?js$/,
                 resolve: {
-                  fullySpecified: false
-                },
-            },
+                    fullySpecified: false
+                }
+            }
         ]
     },
     plugins: [

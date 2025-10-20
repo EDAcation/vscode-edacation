@@ -1,4 +1,4 @@
-import {type ProjectInputFile, type ProjectInputFileState, ProjectOutputFile, type ProjectTarget} from 'edacation';
+import {ProjectInputFile, type ProjectInputFileState, ProjectOutputFile, type ProjectTarget} from 'edacation';
 import {basename, extname} from 'path';
 import * as vscode from 'vscode';
 
@@ -7,28 +7,41 @@ import type {Projects} from '../projects/index.js';
 import {BaseTreeDataProvider} from './base.js';
 
 abstract class FilesProvider<T> extends BaseTreeDataProvider<T> {
-    protected getFileTreeItem(
-        file: ProjectInputFile | ProjectOutputFile,
-        showPath = false,
-        ctxSuffix: string = ''
-    ): vscode.TreeItem {
+    protected getFileTreeItem(file: ProjectInputFile | ProjectOutputFile): vscode.TreeItem {
         const project = this.projects.getCurrent();
+        const target = project?.getActiveTarget() ?? null;
         if (!project) {
             return {};
         }
 
-        // Add 'stale' description if file is output file and stale
-        const isOld = file instanceof ProjectOutputFile && file.stale;
+        let description: boolean | string = false;
+        let contextValue = 'file';
+        if (file instanceof ProjectOutputFile && file.stale) {
+            // Add 'stale' description if file is output file and stale
+            description = '(stale)';
+        } else if (
+            file instanceof ProjectInputFile &&
+            target &&
+            (file.path === project.getActiveTestbenchPath(target.id) ||
+                file.path === project.getActivePinConfigPath(target.id))
+        ) {
+            // Add 'active' description if file is input file and marked as active
+            description = '(active)';
+        } else if (file instanceof ProjectInputFile) {
+            // Add 'activatable' suffix to show button to set active
+            contextValue += '-activatable';
+        }
+
         const uri = project.getFileUri(file.path);
 
         return {
             resourceUri: uri,
 
             label: basename(file.path),
-            description: isOld ? '(stale)' : showPath,
+            description,
             id: file.path,
 
-            contextValue: `file${ctxSuffix ? '-' + ctxSuffix : ''}`,
+            contextValue,
             collapsibleState: vscode.TreeItemCollapsibleState.None,
 
             command: {
@@ -54,6 +67,49 @@ interface InputFileTreeFile {
 
 export type InputFileTreeItem = InputFileTreeCategory | InputFileTreeFile;
 
+class InputFileTreeDragAndDropController implements vscode.TreeDragAndDropController<InputFileTreeItem> {
+    private readonly mimeType = 'application/vnd.code.tree.edacation-inputFiles';
+
+    public readonly dragMimeTypes = [this.mimeType];
+    public readonly dropMimeTypes = [this.mimeType];
+
+    private readonly projects: Projects;
+
+    constructor(projects: Projects) {
+        this.projects = projects;
+    }
+
+    handleDrag(
+        source: InputFileTreeItem[],
+        dataTransfer: vscode.DataTransfer,
+        _token: vscode.CancellationToken
+    ): void | Thenable<void> {
+        const files = source.filter((item) => item.type === 'file').map((item) => item.file.path);
+
+        dataTransfer.set(this.mimeType, new vscode.DataTransferItem(files));
+    }
+
+    handleDrop(
+        target: InputFileTreeItem | undefined,
+        dataTransfer: vscode.DataTransfer,
+        _token: vscode.CancellationToken
+    ): void | Thenable<void> {
+        const transferItem = dataTransfer.get(this.mimeType);
+        const project = this.projects.getCurrent();
+        if (!transferItem || !target || !project) {
+            return;
+        }
+
+        const items = transferItem.value as string[];
+        for (const item of items) {
+            const file = project.getInputFile(item);
+            if (!file) continue;
+
+            file.type = target.category;
+        }
+    }
+}
+
 export class InputFilesProvider extends FilesProvider<InputFileTreeItem> {
     static getViewID() {
         return 'edacation-inputFiles';
@@ -71,25 +127,33 @@ export class InputFilesProvider extends FilesProvider<InputFileTreeItem> {
         this.openProjectsChannel.subscribe((_msg) => this.changeEmitter.fire(undefined));
     }
 
+    override getTreeViewOptions(): vscode.TreeViewOptions<InputFileTreeItem> {
+        return {
+            treeDataProvider: this,
+            canSelectMany: true,
+            dragAndDropController: new InputFileTreeDragAndDropController(this.projects)
+        };
+    }
+
     getTreeItem(element: InputFileTreeItem): vscode.TreeItem {
         if (element.type === 'category') {
             return this.getCategoryTreeItem(element.category, element.name);
         } else if (element.type === 'file') {
-            return this.getFileTreeItem(element.file, true, element.category);
+            return this.getFileTreeItem(element.file);
         }
 
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new Error(`Invalid tree element: ${element}`);
     }
 
     getChildren(element?: InputFileTreeItem): InputFileTreeItem[] {
         // Root: list categories
         if (!element) {
-            const categories: InputFileTreeItem[] = [
+            return [
                 {type: 'category', name: 'Design', category: 'design'},
-                {type: 'category', name: 'Testbench', category: 'testbench'}
+                {type: 'category', name: 'Testbench', category: 'testbench'},
+                {type: 'category', name: 'Pin Constraints', category: 'pinconfig'}
             ];
-            // Only show a category if it has any files
-            return categories.filter((c) => this.getChildren(c).length !== 0);
         }
 
         const project = this.projects.getCurrent();

@@ -1,7 +1,6 @@
 import {
     Project as BaseProject,
     DEFAULT_CONFIGURATION,
-    FILE_EXTENSIONS_HDL,
     type ProjectEvent as InternalProjectEvent,
     type ProjectConfiguration,
     type ProjectInputFileState,
@@ -83,7 +82,7 @@ export class Project extends BaseProject {
     }
 
     async addInputFileUris(fileUris: URI[], notifyUser = true): Promise<void> {
-        const files: {path: string; type: ProjectInputFileState['type']}[] = [];
+        const files: {path: string}[] = [];
         let copiedFileCount = 0;
 
         for (let fileUri of fileUris) {
@@ -100,11 +99,7 @@ export class Project extends BaseProject {
             }
             if (!folderRelativePath || this.hasInputFile(folderRelativePath)) continue;
 
-            const parsedPath = path.parse(fileUri.path);
-            const isTestbench =
-                parsedPath.name.endsWith('_tb') && FILE_EXTENSIONS_HDL.includes(parsedPath.ext.substring(1));
-
-            files.push({path: folderRelativePath, type: isTestbench ? 'testbench' : 'design'});
+            files.push({path: folderRelativePath});
         }
         if (files.length === 0) return;
 
@@ -197,34 +192,6 @@ export class Project extends BaseProject {
         });
     }
 
-    private ensureTestbenchPaths() {
-        const testbenches = this.getInputFiles()
-            .filter((file) => file.type == 'testbench')
-            .map((file) => file.path);
-
-        const changes: [string, string | undefined][] = [];
-
-        for (const target of this.getConfiguration().targets) {
-            const tbPath = target.iverilog?.options?.testbenchFile;
-
-            if (tbPath && testbenches.includes(tbPath)) {
-                // testbench is configured and correct
-                continue;
-            } else if (!tbPath && testbenches.length === 0) {
-                // no path configured but also no testbenches present, so ok
-                continue;
-            }
-
-            const newTb = testbenches.length === 0 ? undefined : testbenches[0];
-            changes.push([target.id, newTb]);
-        }
-
-        if (changes.length > 0)
-            this.batchEvents(() => {
-                for (const [targetId, tbPath] of changes) this.setTestbenchPath(targetId, tbPath);
-            });
-    }
-
     private onExternalEvent(project: ExternalProjectEvent) {
         // Only handle events related to our project
         if (!project.isUri(this.getUri())) return;
@@ -241,11 +208,6 @@ export class Project extends BaseProject {
 
     private onInternalEvent(events: InternalProjectEvent[]) {
         console.log(`[EDAcation] Received project events: ${events.toString()}`);
-
-        console.log(this.channel);
-
-        // do 'ensure' checks here
-        this.ensureTestbenchPaths();
 
         if (this.channel) this.channel[0].submit(this);
     }

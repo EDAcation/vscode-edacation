@@ -2,24 +2,22 @@
 import type {ProjectTarget} from 'edacation';
 import {defineComponent} from 'vue';
 
-import {state as globalState} from '../state.js';
 import {syncedState as projectState} from '../../project';
+import {state as globalState} from '../state.js';
 
+import EDATargetFlashing from './EDATargetFlashing.vue';
 import EDATargetGeneral from './EDATargetGeneral.vue';
-import EDATargetNextpnr from './EDATargetNextpnr.vue';
 import EDATargetPlacementAndRouting from './EDATargetPlacementAndRouting.vue';
 import EDATargetSynthesis from './EDATargetSynthesis.vue';
 import EDATargetTesting from './EDATargetTesting.vue';
-import EDATargetYosys from './EDATargetYosys.vue';
 
 export default defineComponent({
     components: {
         EDATargetGeneral,
-        EDATargetYosys,
-        EDATargetNextpnr,
         EDATargetSynthesis,
         EDATargetTesting,
-        EDATargetPlacementAndRouting
+        EDATargetPlacementAndRouting,
+        EDATargetFlashing
     },
     props: {
         targetIndex: {
@@ -73,14 +71,9 @@ export default defineComponent({
                 <EDATargetPlacementAndRouting :targetIndex="targetIndex" />
             </vscode-tab-panel>
 
-            <vscode-tab-header slot="header">Yosys</vscode-tab-header>
+            <vscode-tab-header slot="header">Flashing</vscode-tab-header>
             <vscode-tab-panel>
-                <EDATargetYosys :targetIndex="targetIndex" />
-            </vscode-tab-panel>
-
-            <vscode-tab-header slot="header">Nextpnr</vscode-tab-header>
-            <vscode-tab-panel>
-                <EDATargetNextpnr :targetIndex="targetIndex" />
+                <EDATargetFlashing :targetIndex="targetIndex" />
             </vscode-tab-panel>
         </vscode-tabs>
     </template>

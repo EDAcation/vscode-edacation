@@ -23,7 +23,11 @@ export abstract class BaseTreeDataProvider<T> implements vscode.TreeDataProvider
         throw new Error('Not implemented.');
     }
 
+    getTreeViewOptions(): vscode.TreeViewOptions<T> {
+        return {treeDataProvider: this};
+    }
+
     abstract getTreeItem(element: T): vscode.TreeItem | Thenable<vscode.TreeItem>;
 
-    abstract getChildren(element?: T  ): vscode.ProviderResult<T[]>;
+    abstract getChildren(element?: T): vscode.ProviderResult<T[]>;
 }

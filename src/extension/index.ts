@@ -40,10 +40,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
 
     // Register tree data providers
     for (const treeType of Object.values(trees)) {
-        const tree = new treeType(context, projects);
-        context.subscriptions.push(
-            vscode.window.registerTreeDataProvider(treeType.getViewID(), tree as BaseTreeDataProvider<unknown>)
-        );
+        const tree = new treeType(context, projects) as BaseTreeDataProvider<unknown>;
+        context.subscriptions.push(vscode.window.createTreeView(treeType.getViewID(), tree.getTreeViewOptions()));
     }
 
     // Register webview providers

@@ -83,14 +83,13 @@ export default defineComponent({
 
 <template>
     <template v-if="projectState.project">
-        <h1>Project</h1>
+        <h2>Project</h2>
         <vscode-textfield placeholder="Project name" :value="projectState.project?.getName()" @input="handleNameChange">
             Project name
         </vscode-textfield>
 
-        <h1>Targets</h1>
+        <h2>Target</h2>
 
-        <vscode-label>Select target to configure</vscode-label>
         <vscode-form-group variant="horizontal">
             <vscode-single-select style="margin-right: 4px" @input="handleTargetChange">
                 <vscode-option v-for="(target, index) in targets" :selected="targetIndex === index">

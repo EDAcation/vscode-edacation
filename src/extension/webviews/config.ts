@@ -4,21 +4,21 @@ import type {ViewMessage} from '../types.js';
 
 import {BaseWebviewViewProvider} from './base.js';
 
-export class ActionsProvider extends BaseWebviewViewProvider {
+export class QuickConfigProvider extends BaseWebviewViewProvider {
     public static getViewID() {
-        return 'edacation-actions';
+        return 'edacation-config';
     }
 
     public static getTitle() {
-        return 'EDAcation Actions';
+        return 'EDAcation Quick Config';
     }
 
     protected getStylePaths() {
-        return [{id: 'vscode-codicon-stylesheet', path: ['dist', 'views', 'actions', 'index.css']}];
+        return [['dist', 'views', 'config', 'index.css']];
     }
 
     protected getScriptPaths() {
-        return [['dist', 'views', 'actions', 'index.js']];
+        return [['dist', 'views', 'config', 'index.js']];
     }
 
     protected getInitialData(): Record<string, unknown> {
