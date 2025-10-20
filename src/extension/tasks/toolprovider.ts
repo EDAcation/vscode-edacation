@@ -65,20 +65,12 @@ export class WebAssemblyToolProvider extends ToolProvider {
     async run(ctx: Context): Promise<void> {
         const inFiles = await this.readFiles(ctx.project, ctx.inputFiles);
 
-        if (ctx.steps.length !== 1) {
-            throw new Error(
-                `WebAssembly tool provider can only execute 1 step! 
-                Note that IVerilog is currently not supported in web environments.`
-            );
-        }
-
         // Create & start worker
         const worker = this.createWorker();
         worker.sendMessage(
             {
                 type: 'input',
-                command: ctx.steps[0].tool,
-                args: ctx.steps[0].arguments,
+                steps: ctx.steps,
                 inputFiles: inFiles
             },
             inFiles.map(({data}) => data.buffer)
