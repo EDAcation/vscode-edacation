@@ -3,6 +3,7 @@
 import type {VscodeTextfield} from '@vscode-elements/elements';
 import {
     type FlasherConfiguration,
+    type FlasherOptions,
     type FlasherTargetConfiguration,
     type IVerilogConfiguration,
     type IVerilogOptions,
@@ -15,11 +16,9 @@ import {
     type YosysConfiguration,
     type YosysOptions,
     type YosysTargetConfiguration,
-    getIVerilogDefaultOptions,
+    getFlasherOptions,
     getIVerilogOptions,
-    getNextpnrDefaultOptions,
     getNextpnrOptions,
-    getYosysDefaultOptions,
     getYosysOptions
 } from 'edacation';
 import {type PropType, defineComponent} from 'vue';
@@ -35,11 +34,13 @@ export default defineComponent({
             type: Number
         },
         workerId: {
-            type: String as PropType<'yosys' | 'nextpnr' | 'iverilog'>,
+            type: String as PropType<'yosys' | 'nextpnr' | 'iverilog' | 'flasher'>,
             required: true
         },
         configId: {
-            type: String as PropType<keyof YosysOptions | keyof NextpnrOptions | keyof IVerilogOptions>,
+            type: String as PropType<
+                keyof YosysOptions | keyof NextpnrOptions | keyof IVerilogOptions | keyof FlasherOptions
+            >,
             required: true
         },
         configName: {
@@ -86,25 +87,17 @@ export default defineComponent({
             | undefined {
             return this.target ? this.target.config[this.workerId as WorkerId] : this.defaultWorker;
         },
-        effectiveOptions(): YosysOptions | NextpnrOptions | IVerilogOptions | null {
+        effectiveOptions(): YosysOptions | NextpnrOptions | IVerilogOptions | FlasherOptions | null {
             // TODO: move this logic to edacation package
             const projectConfig = this.projectState.project?.getConfiguration();
-            if (!projectConfig) return null;
             const targetId = this.target?.id;
+            if (!projectConfig || !targetId) return null;
 
-            if (!targetId) {
-                // Default configuration
-                if (this.workerId === 'yosys') return getYosysDefaultOptions(projectConfig);
-                if (this.workerId === 'nextpnr') return getNextpnrDefaultOptions(projectConfig);
-                if (this.workerId === 'iverilog') return getIVerilogDefaultOptions(projectConfig);
-                return null;
-            } else {
-                // Target configuration
-                if (this.workerId === 'yosys') return getYosysOptions(projectConfig, targetId);
-                if (this.workerId === 'nextpnr') return getNextpnrOptions(projectConfig, targetId);
-                if (this.workerId === 'iverilog') return getIVerilogOptions(projectConfig, targetId);
-                return null;
-            }
+            if (this.workerId === 'yosys') return getYosysOptions(projectConfig, targetId);
+            if (this.workerId === 'nextpnr') return getNextpnrOptions(projectConfig, targetId);
+            if (this.workerId === 'iverilog') return getIVerilogOptions(projectConfig, targetId);
+            if (this.workerId === 'flasher') return getFlasherOptions(projectConfig, targetId);
+            return null;
         },
         effectiveValue(): boolean | undefined {
             if (!this.effectiveOptions) {
