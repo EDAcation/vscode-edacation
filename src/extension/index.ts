@@ -13,6 +13,26 @@ import * as webviews from './webviews/index.js';
 
 let projects: Projects | undefined;
 
+interface Extension {
+    id: string;
+    name: string;
+    nativeOnly: boolean;
+}
+
+const RECOMMENDED_EXTENSIONS: Extension[] = [
+    {
+        id: 'sndst00m.vscode-native-svg-preview',
+        name: 'SVG Preview',
+        nativeOnly: true
+    },
+    {
+        id: 'surfer-project.surfer',
+        name: 'Surfer',
+        nativeOnly: true
+    }
+];
+const INITIALIZED_KEY = 'edacation-initialized';
+
 export const activate = async (context: vscode.ExtensionContext) => {
     projects = new Projects(context);
 
@@ -59,13 +79,49 @@ export const activate = async (context: vscode.ExtensionContext) => {
 
     await projects.load();
 
+    // Apply tools to terminal and check for updates
     const toolRepo = ToolRepository.get(context);
-
     await toolRepo.applyTerminalContributions();
-
     if (toolRepo.shouldDoUpdateCheck() && node.isAvailable()) {
         // Check environment availability early, because the command might show an error to the user otherwise
         vscode.commands.executeCommand('edacation.checkToolUpdates');
+    }
+
+    // Check for and ask to install recommended extensions
+    const isInitialized = context.globalState.get<boolean>(INITIALIZED_KEY, false);
+    if (!isInitialized) {
+        const notInstalled: Extension[] = [];
+        for (const ext of RECOMMENDED_EXTENSIONS) {
+            if (ext.nativeOnly && !node.isAvailable()) continue;
+
+            const info = vscode.extensions.getExtension(ext.id);
+            if (info === undefined) notInstalled.push(ext);
+        }
+
+        if (notInstalled.length > 0) {
+            const extensions = notInstalled.map((ext) => ext.name).join(', ');
+
+            // Do not await so the extension can continue initializing
+            vscode.window
+                .showInformationMessage(
+                    `EDAcation recommends installing the following extensions for additional functionality: ${extensions}`,
+                    'Install now',
+                    'Ignore'
+                )
+                .then(async (value) => {
+                    if (value !== 'Install now') {
+                        await context.globalState.update(INITIALIZED_KEY, true);
+                        return;
+                    }
+
+                    // Trigger install by extension id
+                    await Promise.allSettled(
+                        notInstalled.map((ext) =>
+                            vscode.commands.executeCommand('workbench.extensions.installExtension', ext.id)
+                        )
+                    );
+                });
+        }
     }
 };
 
