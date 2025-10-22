@@ -104,9 +104,11 @@ const arrayToList = (tree: Tree, path: string[] = []): MessageFile[] => {
 export class WorkerTool {
     static CDN_BASE_URL = 'https://cdn.jsdelivr.net/npm/';
     static TOOL_BUNDLES: Record<string, string> = {
-        yosys: '@yowasp/yosys@release',
-        'nextpnr-ecp5': '@yowasp/nextpnr-ecp5@release',
-        'nextpnr-ice40': '@yowasp/nextpnr-ice40@release'
+        yosys: '@yowasp/yosys',
+        'nextpnr-ecp5': '@yowasp/nextpnr-ecp5',
+        'nextpnr-ice40': '@yowasp/nextpnr-ice40',
+        ecppack: '@yowasp/nextpnr-ecp5',
+        openFPGALoader: '@yowasp/openfpgaloader'
     };
 
     constructor() {
@@ -116,7 +118,7 @@ export class WorkerTool {
     }
 
     protected send(message: ExtensionMessage, transferables: ArrayBufferLike[] = []) {
-        // @ts-ignore: node + web type clashing shenanigans
+        // @ts-expect-error: node + web type clashing shenanigans
         sendMessage(message, transferables);
     }
 
@@ -173,21 +175,36 @@ export class WorkerTool {
                     const inputFileTree = arrayToTree(inputFiles);
                     console.log('input file tree', inputFileTree);
 
-                    // Fetch correct tool command
-                    const bundle = await this.getBundle(message.command);
-                    const toolCommand = bundle.commands[message.command];
-                    if (!toolCommand) throw new Error('Bundle does not contain tool command');
+                    // Load commands
+                    const commands: Map<string, Command> = new Map();
+                    for (const step of message.steps) {
+                        if (commands.has(step.tool)) continue;
+
+                        const bundle = await this.getBundle(step.tool);
+                        const toolCommand = bundle.commands[step.tool];
+                        if (!toolCommand) throw new Error('Bundle does not contain tool command');
+
+                        commands.set(step.tool, toolCommand);
+                    }
 
                     // Execute
-                    const outputFileTree = await toolCommand(message.args, inputFileTree, {
-                        stdout: this.printBytes.bind(this, 'stdout'),
-                        stderr: this.printBytes.bind(this, 'stderr'),
-                        decodeASCII: false
-                    });
+                    let workingTree: Tree = inputFileTree;
+                    for (const step of message.steps) {
+                        const toolCommand = commands.get(step.tool);
+                        if (!toolCommand) throw new Error('Command not found');
+
+                        this.print('stdout', `\n=== Executing ${step.tool} ${step.arguments.join(' ')} ===\n`);
+
+                        workingTree = await toolCommand(step.arguments, workingTree, {
+                            stdout: this.printBytes.bind(this, 'stdout'),
+                            stderr: this.printBytes.bind(this, 'stderr'),
+                            decodeASCII: false
+                        });
+                    }
 
                     // Convert output file tree to an array
-                    console.log('output file tree', outputFileTree);
-                    const outputFiles = arrayToList(outputFileTree).filter(
+                    console.log('output file tree', workingTree);
+                    const outputFiles = arrayToList(workingTree).filter(
                         (outputFile) => !inputFiles.some((inputFile) => inputFile.path === outputFile.path)
                     );
                     console.log('output files', outputFiles);
