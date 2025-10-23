@@ -2,6 +2,7 @@
 import type {VscodeCheckbox} from '@vscode-elements/elements';
 import {
     type FlasherConfiguration,
+    type FlasherOptions,
     type FlasherTargetConfiguration,
     type IVerilogConfiguration,
     type IVerilogOptions,
@@ -14,13 +15,7 @@ import {
     type WorkerId,
     type YosysConfiguration,
     type YosysOptions,
-    type YosysTargetConfiguration,
-    getIVerilogDefaultOptions,
-    getIVerilogOptions,
-    getNextpnrDefaultOptions,
-    getNextpnrOptions,
-    getYosysDefaultOptions,
-    getYosysOptions
+    type YosysTargetConfiguration
 } from 'edacation';
 import {type PropType, defineComponent} from 'vue';
 
@@ -82,25 +77,8 @@ export default defineComponent({
             | undefined {
             return this.target ? this.target.config[this.workerId] : this.defaultWorker;
         },
-        effectiveOptions(): YosysOptions | NextpnrOptions | IVerilogOptions | null {
-            // TODO: move this logic to edacation package
-            const projectConfig = this.projectState.project?.getConfiguration();
-            if (!projectConfig) return null;
-            const targetId = this.target?.id;
-
-            if (!targetId) {
-                // Default configuration
-                if (this.workerId === 'yosys') return getYosysDefaultOptions(projectConfig);
-                if (this.workerId === 'nextpnr') return getNextpnrDefaultOptions(projectConfig);
-                if (this.workerId === 'iverilog') return getIVerilogDefaultOptions(projectConfig);
-                return null;
-            } else {
-                // Target configuration
-                if (this.workerId === 'yosys') return getYosysOptions(projectConfig, targetId);
-                if (this.workerId === 'nextpnr') return getNextpnrOptions(projectConfig, targetId);
-                if (this.workerId === 'iverilog') return getIVerilogOptions(projectConfig, targetId);
-                return null;
-            }
+        effectiveOptions(): YosysOptions | NextpnrOptions | IVerilogOptions | FlasherOptions | null {
+            return this.target?.getEffectiveOptions(this.workerId) ?? null;
         },
         effectiveValue(): boolean | undefined {
             if (!this.effectiveOptions) {
