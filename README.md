@@ -27,7 +27,7 @@ We aim to provide an easy to use front-end to several existing free and open sou
 
 ## Demo
 
-Just getting started? View a quickstart demo/tutorial [here](https://edacation.github.io/assets/tutorial.mp4).
+Just getting started? View a quickstart demo/tutorial [here](https://edacation.github.io/docs/get-started/demo/).
 
 ## Documentation
 
