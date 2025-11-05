@@ -81,10 +81,6 @@ export class YosysTaskProvider extends TaskProvider {
     }
 }
 
-// class YosysPrepareTerminalTask extends BaseYosysTerminalTask {
-//
-// }
-
 class YosysSynthTerminalTask extends BaseYosysTerminalTask {
     getName(): string {
         return 'yosys-synthesis';

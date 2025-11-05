@@ -127,7 +127,10 @@ export class WebAssemblyToolProvider extends ToolProvider {
             if (this.stepIndex < ctx.steps.length) {
                 return await this.executeNextStep(ctx, stepCallback);
             } else {
-                this.done(this.collectedFiles);
+                const filteredFiles = this.collectedFiles.filter((file) =>
+                    ctx.outputFiles.some((of) => of.path === file.path)
+                );
+                this.done(filteredFiles);
             }
         });
     }
