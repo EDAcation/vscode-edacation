@@ -61,23 +61,75 @@ export abstract class ToolProvider extends TerminalMessageEmitter {
 }
 
 export class WebAssemblyToolProvider extends ToolProvider {
+    private stepIndex: number = 0;
+    private collectedFiles: TaskOutputFile[] = [];
+
     async getName(): Promise<string> {
         return 'WebAssembly';
     }
 
-    async run(ctx: Context, _stepCallback: ToolStepCallback): Promise<void> {
-        const inFiles = await this.readFiles(ctx.project, ctx.inputFiles);
+    async run(ctx: Context, stepCallback: ToolStepCallback): Promise<void> {
+        this.stepIndex = 0;
+        this.collectedFiles = [];
 
-        // Create & start worker
+        await this.executeNextStep(ctx, stepCallback);
+    }
+
+    private async executeNextStep(ctx: Context, stepCallback: ToolStepCallback): Promise<void> {
+        const step = ctx.steps[this.stepIndex];
+        this.stepIndex++;
+
+        await stepCallback('start', step);
+
+        // build input files
+        const fileMap = new Map<string, MessageFile>();
+        for (const file of await this.readFiles(ctx.project, ctx.inputFiles)) {
+            // files from workspace
+            fileMap.set(file.path, file);
+        }
+        for (const file of this.collectedFiles) {
+            // ...overwrite with files generated in previous steps
+            if (!file.data) continue;
+
+            const copy = new Uint8Array(file.data);
+            fileMap.set(file.path, {path: file.path, data: copy});
+        }
+        for (const file of step.generatedInputFiles ?? []) {
+            // ...overwrite with generated files
+            fileMap.set(file.name, {path: file.name, data: file.content});
+        }
+        const inputFiles = fileMap.values().toArray();
+
         const worker = this.createWorker();
         worker.sendMessage(
             {
                 type: 'input',
-                steps: ctx.steps,
-                inputFiles: inFiles
+                command: step.tool,
+                args: step.arguments,
+                inputFiles: inputFiles
             },
-            inFiles.map(({data}) => data.buffer)
+            inputFiles.map(({data}) => data.buffer)
         );
+
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        worker.onEvent('message', async (message: ExtensionMessage) => {
+            if (message.type !== 'output') return;
+
+            for (const newFile of message.files) {
+                // add files to collection
+                this.collectedFiles = this.collectedFiles.filter((file) => file.path !== newFile.path);
+                this.collectedFiles.push(newFile);
+            }
+
+            await stepCallback('end', step);
+
+            worker.terminate();
+            if (this.stepIndex < ctx.steps.length) {
+                return await this.executeNextStep(ctx, stepCallback);
+            } else {
+                this.done(this.collectedFiles);
+            }
+        });
     }
 
     private async readFiles(project: Project, inputFiles: TaskIOFile[]): Promise<MessageFile[]> {
@@ -119,9 +171,7 @@ export class WebAssemblyToolProvider extends ToolProvider {
                     break;
                 }
                 case 'output': {
-                    const outputFiles = message.files as TaskOutputFile[];
-                    this.done(outputFiles);
-
+                    // handled in executeNextStep()
                     break;
                 }
                 case 'error': {

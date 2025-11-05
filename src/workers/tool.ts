@@ -8,7 +8,7 @@ try {
     process.on('unhandledRejection', (err) => {
         throw err;
     });
-} catch (err) {
+} catch {
     /* ignore */
 }
 
@@ -162,52 +162,35 @@ export class WorkerTool {
         const entryPoint = packageJson.exports.browser ?? packageJson.exports.default;
         const entryPointURL = new URL(entryPoint, bundleUrl);
 
+        this.print('stdout', `Downloading ${command} entrypoint from ${entryPointURL}`);
+
         return (await importModule(entryPointURL)) as ToolBundle;
     }
 
     private async handleMessage(message: WorkerMessage) {
-        console.log(message);
         try {
             switch (message.type) {
                 case 'input': {
                     // Convert input file array to a tree
                     const inputFiles = sanitizePaths(message.inputFiles);
                     const inputFileTree = arrayToTree(inputFiles);
-                    console.log('input file tree', inputFileTree);
 
-                    // Load commands
-                    const commands: Map<string, Command> = new Map();
-                    for (const step of message.steps) {
-                        if (commands.has(step.tool)) continue;
-
-                        const bundle = await this.getBundle(step.tool);
-                        const toolCommand = bundle.commands[step.tool];
-                        if (!toolCommand) throw new Error('Bundle does not contain tool command');
-
-                        commands.set(step.tool, toolCommand);
-                    }
+                    // Fetch correct tool command
+                    const bundle = await this.getBundle(message.command);
+                    const toolCommand = bundle.commands[message.command];
+                    if (!toolCommand) throw new Error('Bundle does not contain tool command');
 
                     // Execute
-                    let workingTree: Tree = inputFileTree;
-                    for (const step of message.steps) {
-                        const toolCommand = commands.get(step.tool);
-                        if (!toolCommand) throw new Error('Command not found');
-
-                        this.print('stdout', `\n=== Executing ${step.tool} ${step.arguments.join(' ')} ===\n`);
-
-                        workingTree = await toolCommand(step.arguments, workingTree, {
-                            stdout: this.printBytes.bind(this, 'stdout'),
-                            stderr: this.printBytes.bind(this, 'stderr'),
-                            decodeASCII: false
-                        });
-                    }
+                    const outputFileTree = await toolCommand(message.args, inputFileTree, {
+                        stdout: this.printBytes.bind(this, 'stdout'),
+                        stderr: this.printBytes.bind(this, 'stderr'),
+                        decodeASCII: false
+                    });
 
                     // Convert output file tree to an array
-                    console.log('output file tree', workingTree);
-                    const outputFiles = arrayToList(workingTree).filter(
+                    const outputFiles = arrayToList(outputFileTree).filter(
                         (outputFile) => !inputFiles.some((inputFile) => inputFile.path === outputFile.path)
                     );
-                    console.log('output files', outputFiles);
 
                     // Send output to extension
                     this.send(

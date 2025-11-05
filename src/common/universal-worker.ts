@@ -67,6 +67,10 @@ export class UniversalWorker {
         // @ts-ignore: node + web type clashing shenanigans
         this.worker.worker.postMessage(message, transferList);
     }
+
+    public terminate() {
+        this.worker.worker.terminate();
+    }
 }
 
 export const sendMessage = (message: ExtensionMessage, transferables: readonly TransferListItem[] & Transferable[]) => {
