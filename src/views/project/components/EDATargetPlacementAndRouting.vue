@@ -1,7 +1,8 @@
 <script lang="ts">
-import {type NextpnrWorkerOptions, ProjectTarget, generateNextpnrWorkerOptions} from 'edacation';
+import {type NextpnrWorkerOptions, ProjectTarget, getNextpnrWorkerOptions} from 'edacation';
 import {defineComponent} from 'vue';
 
+import type {Project} from '../../../exchange';
 import {syncedState as projectState} from '../../project';
 import {state as globalState} from '../state';
 
@@ -37,10 +38,7 @@ export default defineComponent({
             if (!this.target || !this.projectState.project) return {status: 'ok', res: null};
 
             try {
-                const options = generateNextpnrWorkerOptions(
-                    this.projectState.project.getConfiguration(),
-                    this.target.id
-                );
+                const options = getNextpnrWorkerOptions(this.projectState.project as Project, this.target.id);
                 return {status: 'ok', res: options};
             } catch (err: unknown) {
                 return {status: 'error', err: err as Error};
@@ -49,7 +47,7 @@ export default defineComponent({
         generatedError(): Error | null {
             return this.generated.status === 'error' ? this.generated.err : null;
         },
-        generatedOptions(): ReturnType<typeof generateNextpnrWorkerOptions> | null {
+        generatedOptions(): NextpnrWorkerOptions | null {
             return this.generated.status === 'ok' ? this.generated.res : null;
         }
     }

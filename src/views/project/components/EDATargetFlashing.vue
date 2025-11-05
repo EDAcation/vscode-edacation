@@ -1,7 +1,8 @@
 <script lang="ts">
-import {type FlasherWorkerOptions, ProjectTarget, generateFlasherWorkerOptions} from 'edacation';
+import {type FlasherStep, type FlasherWorkerOptions, ProjectTarget, getFlasherWorkerOptions} from 'edacation';
 import {defineComponent} from 'vue';
 
+import type {Project} from '../../../exchange';
 import {syncedState as projectState} from '../../project';
 import {state as globalState} from '../state';
 
@@ -39,10 +40,7 @@ export default defineComponent({
             if (!this.target || !this.projectState.project) return {status: 'ok', res: null};
 
             try {
-                const options = generateFlasherWorkerOptions(
-                    this.projectState.project.getConfiguration(),
-                    this.target.id
-                );
+                const options = getFlasherWorkerOptions(this.projectState.project as Project, this.target.id);
                 return {status: 'ok', res: options};
             } catch (err: unknown) {
                 return {status: 'error', err: err as Error};
@@ -54,8 +52,11 @@ export default defineComponent({
         generatedOptions(): FlasherWorkerOptions | null {
             return this.generated.status === 'ok' ? this.generated.res : null;
         },
-        flasherArguments(): string[] {
-            return this.generatedOptions?.steps.map((step) => step.arguments).flat() ?? [];
+        packerStep(): FlasherStep | null {
+            return this.generatedOptions?.steps[0] ?? null;
+        },
+        flasherStep(): FlasherStep | null {
+            return this.generatedOptions?.steps[1] ?? null;
         }
     }
 });
@@ -77,12 +78,24 @@ export default defineComponent({
         <code v-if="generatedError" style="color: red; grid-column: span 2">{{ generatedError }}</code>
         <EDATargetValueList
             :targetIndex="targetIndex"
-            :generated="flasherArguments"
+            :generated="packerStep?.arguments ?? []"
+            workerId="flasher"
+            workerName="packer"
+            configId="packerArguments"
+            configName="arguments"
+            :configDescription="`Arguments are passed to ${packerStep?.tool ?? 'the packer'}.`"
+        />
+
+        <vscode-divider style="grid-column: span 2" />
+
+        <EDATargetValueList
+            :targetIndex="targetIndex"
+            :generated="flasherStep?.arguments ?? []"
             workerId="flasher"
             workerName="flasher"
-            configId="arguments"
+            configId="flasherArguments"
             configName="arguments"
-            configDescription="Arguments are passed to the flasher for execution."
+            :configDescription="`Arguments are passed to ${flasherStep?.tool ?? 'the flasher'}.`"
         />
 
         <vscode-divider style="grid-column: span 2" />
@@ -95,7 +108,7 @@ export default defineComponent({
             configId="inputFiles"
             configName="input files"
             configNameOnePerLine
-            configDescription="Input files are sent from the workspace folder to the flasher."
+            configDescription="Input files are sent from the workspace folder to the packer and flasher."
         />
 
         <vscode-divider style="grid-column: span 2" />
@@ -108,7 +121,7 @@ export default defineComponent({
             configId="outputFiles"
             configName="output files"
             configNameOnePerLine
-            configDescription="Output files are sent from the workspace folder to the flasher."
+            configDescription="Output files are sent from the workspace folder to the packer and flasher."
         />
     </div>
 </template>

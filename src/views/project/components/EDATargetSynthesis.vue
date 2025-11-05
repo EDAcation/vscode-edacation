@@ -1,11 +1,5 @@
 <script lang="ts">
-import {
-    type ProjectTarget,
-    type YosysWorkerOptions,
-    generateYosysSynthCommands,
-    generateYosysSynthPrepareCommands,
-    getYosysWorkerOptions
-} from 'edacation';
+import {type ProjectTarget, type YosysWorkerOptions, getYosysSynthesisWorkerOptions} from 'edacation';
 import {defineComponent} from 'vue';
 
 import type {Project} from '../../../exchange';
@@ -46,7 +40,7 @@ export default defineComponent({
             if (!this.target || !this.projectState.project) return {status: 'ok', res: null};
 
             try {
-                const options = getYosysWorkerOptions(this.projectState.project as Project, this.target.id);
+                const options = getYosysSynthesisWorkerOptions(this.projectState.project as Project, this.target.id);
                 return {status: 'ok', res: options};
             } catch (err: unknown) {
                 return {status: 'error', err: err as Error};
@@ -61,10 +55,7 @@ export default defineComponent({
         generatedSynthCommands(): string[] {
             if (!this.generatedOptions) return [];
 
-            const prepareCmds = generateYosysSynthPrepareCommands(this.generatedOptions);
-            const synthCmds = generateYosysSynthCommands(this.generatedOptions);
-
-            return prepareCmds.concat(synthCmds);
+            return this.generatedOptions.steps.flatMap((step) => [...step.commands, '']);
         }
     }
 });
@@ -97,7 +88,7 @@ export default defineComponent({
             :generated="generatedSynthCommands"
             workerId="yosys"
             workerName="Yosys"
-            configId="commands"
+            configId="synthPrepareCommands"
             configName="commands"
             configDescription="Commands are passed to the Yosys worker for excecution."
         />
