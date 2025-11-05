@@ -1,4 +1,4 @@
-import {type YosysWorkerOptions, encodeText, generateYosysRTLCommands} from 'edacation';
+import {type YosysStep, type YosysWorkerOptions, getYosysRTLWorkerOptions} from 'edacation';
 import {basename} from 'path';
 import * as vscode from 'vscode';
 
@@ -27,36 +27,33 @@ export class RTLTaskProvider extends TaskProvider {
         const provider = getConfiguredProvider(this.context);
         const task = new RTLTerminalTask(provider);
 
-        return new TaskTerminal(this.projects, folder, definition, [task]);
+        return new TaskTerminal(this.projects, folder, definition, task);
     }
 }
 
 class RTLTerminalTask extends BaseYosysTerminalTask {
-    getInputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
-        const files = super.getInputFiles(workerOptions);
-
-        const commandsGenerated = generateYosysRTLCommands(workerOptions);
-        return [
-            ...files,
-            {
-                type: 'temp',
-                path: 'design.ys',
-                data: encodeText(commandsGenerated.join('\r\n'))
-            }
-        ];
+    getName(): string {
+        return 'rtl';
     }
 
-    getOutputFiles(_workerOptions: YosysWorkerOptions): TaskIOFile[] {
-        return [
-            {
-                type: 'artifact',
-                path: 'rtl.yosys.json'
-            },
-            {
-                type: 'artifact',
-                path: 'stats.yosys.json'
-            }
-        ];
+    getWorkerOptions(project: Project, targetId: string): YosysWorkerOptions {
+        if (project.getInputFiles().length === 0) {
+            throw new Error('Cannot synthesize project: no input files!');
+        }
+
+        return getYosysRTLWorkerOptions(project, targetId);
+    }
+
+    getWorkerSteps(workerOptions: YosysWorkerOptions): YosysStep[] {
+        return workerOptions.steps;
+    }
+
+    getInputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
+        return workerOptions.inputFiles.map((path) => ({type: 'user', path}));
+    }
+
+    getOutputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
+        return workerOptions.outputFiles.map((path) => ({type: 'artifact', path}));
     }
 
     private async updateFile(uri: vscode.Uri) {

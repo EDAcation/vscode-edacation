@@ -25,7 +25,7 @@ export class NextpnrTaskProvider extends TaskProvider {
         const provider = getConfiguredProvider(this.context);
         const task = new NextpnrTerminalTask(provider);
 
-        return new TaskTerminal(this.projects, folder, definition, [task]);
+        return new TaskTerminal(this.projects, folder, definition, task);
     }
 }
 

@@ -26,7 +26,7 @@ export class IVerilogTaskProvider extends TaskProvider {
         const provider = getConfiguredProvider(this.context);
         const task = new IVerilogTerminalTask(provider);
 
-        return new TaskTerminal(this.projects, folder, definition, [task]);
+        return new TaskTerminal(this.projects, folder, definition, task);
     }
 }
 
