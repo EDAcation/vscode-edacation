@@ -49,9 +49,6 @@ export default defineComponent({
         },
         generatedOptions(): IVerilogWorkerOptions | null {
             return this.generated.status === 'ok' ? this.generated.res : null;
-        },
-        arguments(): string[] | undefined {
-            return this.generatedOptions?.steps[0]?.arguments;
         }
     }
 });
@@ -69,7 +66,7 @@ export default defineComponent({
 
         <EDATargetValueList
             :targetIndex="targetIndex"
-            :generated="arguments ?? []"
+            :generated="generatedOptions?.steps[0]?.arguments ?? []"
             workerId="iverilog"
             workerName="IVerilog"
             configId="arguments"

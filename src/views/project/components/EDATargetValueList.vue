@@ -60,7 +60,11 @@ export default defineComponent({
         },
         config(): ValueListConfigurationTarget | undefined {
             if (!this.worker) {
-                return undefined;
+                return {
+                    useGenerated: true,
+                    useDefault: true,
+                    values: []
+                };
             }
 
             return (
