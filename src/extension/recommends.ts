@@ -11,6 +11,11 @@ interface Extension {
 export class ExtensionRecommendations {
     private static readonly extensions: Extension[] = [
         {
+            id: 'edacation.pincfg-editor',
+            name: 'Pin Constraint Editor',
+            nativeOnly: false
+        },
+        {
             id: 'sndst00m.vscode-native-svg-preview',
             name: 'SVG Preview',
             nativeOnly: true
