@@ -131,6 +131,12 @@
         ],
         "commands": [
             {
+                "command": "edacation.installRecommendedExtensions",
+                "category": "EDAcation",
+                "title": "Install recommended extensions",
+                "icon": "$(desktop-download)"
+            },
+            {
                 "command": "edacation.newProject",
                 "category": "EDAcation",
                 "title": "New Project",
