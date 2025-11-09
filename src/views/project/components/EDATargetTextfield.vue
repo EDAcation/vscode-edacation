@@ -15,11 +15,7 @@ import {
     type WorkerId,
     type YosysConfiguration,
     type YosysOptions,
-    type YosysTargetConfiguration,
-    getFlasherOptions,
-    getIVerilogOptions,
-    getNextpnrOptions,
-    getYosysOptions
+    type YosysTargetConfiguration
 } from 'edacation';
 import {type PropType, defineComponent} from 'vue';
 
@@ -88,16 +84,7 @@ export default defineComponent({
             return this.target ? this.target.config[this.workerId as WorkerId] : this.defaultWorker;
         },
         effectiveOptions(): YosysOptions | NextpnrOptions | IVerilogOptions | FlasherOptions | null {
-            // TODO: move this logic to edacation package
-            const projectConfig = this.projectState.project?.getConfiguration();
-            const targetId = this.target?.id;
-            if (!projectConfig || !targetId) return null;
-
-            if (this.workerId === 'yosys') return getYosysOptions(projectConfig, targetId);
-            if (this.workerId === 'nextpnr') return getNextpnrOptions(projectConfig, targetId);
-            if (this.workerId === 'iverilog') return getIVerilogOptions(projectConfig, targetId);
-            if (this.workerId === 'flasher') return getFlasherOptions(projectConfig, targetId);
-            return null;
+            return this.target?.getEffectiveOptions(this.workerId) ?? null;
         },
         effectiveValue(): boolean | undefined {
             if (!this.effectiveOptions) {

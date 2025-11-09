@@ -1,4 +1,4 @@
-import {type WorkerOptions as _WorkerOptions, decodeText} from 'edacation';
+import {type WorkerStep, type WorkerOptions as _WorkerOptions, decodeText} from 'edacation';
 import path from 'path';
 import type * as vscode from 'vscode';
 
@@ -70,7 +70,16 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions<any, any
 
     abstract handleEnd(project: Project, workerOptions: WorkerOptions, outputFiles: TaskOutputFile[]): Promise<void>;
 
+    async handleStepStart(_project: Project, _workerOptions: WorkerOptions, _step: WorkerStep): Promise<void> {}
+
+    async handleStepEnd(_project: Project, _workerOptions: WorkerOptions, _step: WorkerStep): Promise<void> {}
+
     async execute(project: Project, targetId: string): Promise<WorkerOptions> {
+        const target = project.getTarget(targetId);
+        if (!target) {
+            throw new Error(`Target with ID ${targetId} not found!`);
+        }
+
         const workerOptions = this.getWorkerOptions(project, targetId);
 
         const steps = this.getWorkerSteps(workerOptions);
@@ -98,6 +107,7 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions<any, any
 
         this.toolProvider.setRunContext({
             project,
+            target,
             steps,
             inputFiles,
             outputFiles
@@ -105,13 +115,27 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions<any, any
 
         // Print the tool provider and command to execute
         const toolName = await this.toolProvider.getName();
-        this.println(`Tool commands (${toolName}):`, undefined, AnsiModifier.BOLD);
+        this.println(`Task commands (${toolName}):`, undefined, AnsiModifier.BOLD);
         for (const step of steps) {
             this.println(`  ${step.tool} ${step.arguments.join(' ')}`);
         }
         this.println();
 
-        await this.toolProvider.execute();
+        // Execute
+        await this.toolProvider.execute(async (event, step) => {
+            if (event === 'start') {
+                this.println(
+                    `=== Execute command: '${step.tool} ${step.arguments.join(' ')}' ===`,
+                    undefined,
+                    AnsiModifier.BOLD
+                );
+                await this.handleStepStart(project, workerOptions, step);
+            } else if (event === 'end') {
+                this.println(`=== Command finished ===`, undefined, AnsiModifier.BOLD);
+                this.println();
+                await this.handleStepEnd(project, workerOptions, step);
+            }
+        });
 
         return workerOptions;
     }

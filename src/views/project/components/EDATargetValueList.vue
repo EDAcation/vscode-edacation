@@ -1,12 +1,6 @@
 <script lang="ts">
 /* global NodeJS, setTimeout, clearTimeout */
-import type {
-    ProjectTarget,
-    ValueListConfiguration,
-    ValueListConfigurationTarget,
-    WorkerId,
-    WorkerTargetConfiguration
-} from 'edacation';
+import type {ProjectTarget, ValueListConfigurationTarget, WorkerId, WorkerTargetConfiguration} from 'edacation';
 import {type PropType, defineComponent} from 'vue';
 
 import {syncedState as projectState} from '../../project';
@@ -64,15 +58,17 @@ export default defineComponent({
         worker(): WorkerTargetConfiguration | undefined {
             return this.target?.config[this.workerId];
         },
-        config(): ValueListConfiguration | ValueListConfigurationTarget | undefined {
+        config(): ValueListConfigurationTarget | undefined {
             if (!this.worker) {
-                return undefined;
+                return {
+                    useGenerated: true,
+                    useDefault: true,
+                    values: []
+                };
             }
 
             return (
-                (this.worker as Record<string, ValueListConfiguration | ValueListConfigurationTarget>)[
-                    this.configId
-                ] ?? {
+                (this.worker as Record<string, ValueListConfigurationTarget>)[this.configId] ?? {
                     useGenerated: true,
                     useDefault: true,
                     values: []
@@ -90,7 +86,7 @@ export default defineComponent({
         }
     },
     methods: {
-        handleCheckboxChange(event: Event, key: 'useDefault' | 'useGenerated') {
+        handleCheckboxChange(event: Event, key: 'useGenerated') {
             if (!event.target || !this.target) {
                 return;
             }
@@ -98,9 +94,6 @@ export default defineComponent({
             const value = (event.target as HTMLInputElement).checked;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             this.target.setConfig([this.workerId, this.configId as any, key], value);
-        },
-        handleUseDefaultChange(event: Event) {
-            return this.handleCheckboxChange(event, 'useDefault');
         },
         handleUseGeneratedChange(event: Event) {
             return this.handleCheckboxChange(event, 'useGenerated');
@@ -111,14 +104,15 @@ export default defineComponent({
                 return;
             }
 
-            const value = ((event.target as HTMLTextAreaElement).value ?? '').split('\n');
+            const textValue = (event.target as HTMLTextAreaElement).value ?? '';
+            const configLines = textValue.length ? textValue.split('\n') : [];
             if (debounceTimer !== undefined) {
                 clearTimeout(debounceTimer);
             }
             debounceTimer = setTimeout(() => {
                 if (this.target) {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    this.target.setConfig([this.workerId, this.configId as any, key], value);
+                    this.target.setConfig([this.workerId, this.configId as any, key], configLines);
                 }
                 debounceTimer = undefined;
             }, 300);
@@ -131,36 +125,34 @@ export default defineComponent({
 </script>
 
 <template>
-    <template v-if="true || worker">
-        <div>
-            <h3>{{ workerName }} {{ configName }}</h3>
-            <p>{{ configDescription }}</p>
-            <div v-if="target">
-                <vscode-checkbox
-                    :disabled="config === undefined"
-                    :checked="config?.useGenerated"
-                    @change="handleUseGeneratedChange"
-                >
-                    Use generated {{ configName }}
-                </vscode-checkbox>
-            </div>
-            <div>
-                <vscode-textarea
-                    rows="10"
-                    :placeholder="configNameTitle"
-                    :value="(config?.values ?? []).join('\n')"
-                    style="width: 100%; margin-top: 1rem"
-                    @input="handleValuesChange"
-                >
-                    {{ configNameTitle }}{{ configNameOnePerLine ? ' (one per line)' : '' }}
-                </vscode-textarea>
-            </div>
+    <div>
+        <h3>{{ workerName }} {{ configName }}</h3>
+        <p>{{ configDescription }}</p>
+        <div v-if="target">
+            <vscode-checkbox
+                :disabled="config === undefined"
+                :checked="config?.useGenerated"
+                @change="handleUseGeneratedChange"
+            >
+                Use generated {{ configName }}
+            </vscode-checkbox>
         </div>
         <div>
-            <h3>Combined {{ workerName }} {{ configName }}</h3>
-            <code v-for="(line, index) in combined" :key="index" style="display: block">
-                {{ line.trim().length === 0 ? '&nbsp;' : line }}
-            </code>
+            <vscode-textarea
+                rows="10"
+                :placeholder="configNameTitle"
+                :value="(config?.values ?? []).join('\n')"
+                style="width: 100%; margin-top: 1rem"
+                @input="handleValuesChange"
+            >
+                {{ configNameTitle }}{{ configNameOnePerLine ? ' (one per line)' : '' }}
+            </vscode-textarea>
         </div>
-    </template>
+    </div>
+    <div>
+        <h3>Combined {{ workerName }} {{ configName }}</h3>
+        <code v-for="(line, index) in generated" :key="index" style="display: block">
+            {{ line.trim().length === 0 ? '&nbsp;' : line }}
+        </code>
+    </div>
 </template>

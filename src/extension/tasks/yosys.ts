@@ -1,15 +1,9 @@
-import {
-    type YosysStep,
-    type YosysWorkerOptions,
-    generateYosysSynthCommands,
-    generateYosysSynthPrepareCommands,
-    getYosysWorkerOptions
-} from 'edacation';
+import {type WorkerStep, type YosysStep, type YosysWorkerOptions, getYosysSynthesisWorkerOptions} from 'edacation';
 import path from 'path';
 import * as vscode from 'vscode';
 
 import type {Project} from '../projects/index.js';
-import {decodeJSON, encodeJSON, encodeText} from '../util.js';
+import {decodeJSON, encodeJSON} from '../util.js';
 
 import {AnsiModifier, type TaskOutputFile} from './messaging.js';
 import {type TaskDefinition, type TaskIOFile, TerminalTask} from './task.js';
@@ -18,37 +12,27 @@ import {getConfiguredProvider} from './toolprovider.js';
 
 type JSONValue = string | number | boolean | {[x: string]: JSONValue} | Array<JSONValue>;
 
-export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOptions> {
-    private lastLogMessage?: string;
-
-    getName(): string {
-        return 'yosys';
-    }
-
-    getWorkerOptions(project: Project, targetId: string): YosysWorkerOptions {
-        if (project.getInputFiles().length === 0) {
-            throw new Error('Cannot synthesize project: no input files!');
+const addCellTypes = (record: JSONValue): JSONValue => {
+    if (Array.isArray(record)) {
+        return record.map((v) => addCellTypes(v));
+    } else if (typeof record === 'object') {
+        const res: JSONValue = {};
+        for (const [key, val] of Object.entries(record)) {
+            res[key] = addCellTypes(val);
         }
 
-        return getYosysWorkerOptions(project, targetId);
+        if (res.type && typeof res['attributes'] === 'object' && !Array.isArray(res['attributes'])) {
+            res['attributes']['cellType'] = res.type;
+        }
+
+        return res;
     }
 
-    getWorkerSteps(workerOptions: YosysWorkerOptions): YosysStep[] {
-        const step = workerOptions.steps[0];
-        if (step === undefined) throw new Error('No steps to execute in worker options!');
+    return record;
+};
 
-        return [
-            {
-                tool: step.tool,
-                arguments: [path.join(workerOptions.target.directory ?? '.', 'temp', 'design.ys')],
-                commands: step.commands
-            }
-        ];
-    }
-
-    getInputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
-        return workerOptions.inputFiles.map((path) => ({type: 'user', path}));
-    }
+export abstract class BaseYosysTerminalTask extends TerminalTask<YosysWorkerOptions> {
+    private lastLogMessage?: string;
 
     protected println(line?: string, stream: 'stdout' | 'stderr' = 'stdout', modifier?: AnsiModifier) {
         // Ignore duplicate lines, but allow repeated prints
@@ -91,84 +75,53 @@ export class YosysTaskProvider extends TaskProvider {
         folder: vscode.WorkspaceFolder,
         definition: TaskDefinition
     ): TaskTerminal<YosysWorkerOptions> {
-        const prepareProvider = getConfiguredProvider(this.context);
-        const prepareTask = new YosysPrepareTerminalTask(prepareProvider);
-
-        const synthProvider = getConfiguredProvider(this.context);
-        const synthesisTask = new YosysSynthTerminalTask(synthProvider);
-
-        return new TaskTerminal(this.projects, folder, definition, [prepareTask, synthesisTask]);
-    }
-}
-
-class YosysPrepareTerminalTask extends BaseYosysTerminalTask {
-    getInputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
-        const files = super.getInputFiles(workerOptions);
-
-        const commandsGenerated = generateYosysSynthPrepareCommands(workerOptions);
-        return [
-            ...files,
-            {
-                type: 'temp',
-                path: 'design.ys',
-                data: encodeText(commandsGenerated.join('\r\n'))
-            }
-        ];
-    }
-
-    getOutputFiles(_workerOptions: YosysWorkerOptions): TaskIOFile[] {
-        return [{type: 'artifact', path: 'presynth.yosys.json'}];
-    }
-
-    private addCellTypes(record: JSONValue): JSONValue {
-        if (Array.isArray(record)) {
-            return record.map((v) => this.addCellTypes(v));
-        } else if (typeof record === 'object') {
-            const res: JSONValue = {};
-            for (const [key, val] of Object.entries(record)) {
-                res[key] = this.addCellTypes(val);
-            }
-
-            if (res.type && typeof res['attributes'] === 'object' && !Array.isArray(res['attributes'])) {
-                res['attributes']['cellType'] = res.type;
-            }
-
-            return res;
-        }
-
-        return record;
-    }
-
-    async handleEnd(project: Project, workerOptions: YosysWorkerOptions, outputFiles: TaskOutputFile[]) {
-        await super.handleEnd(project, workerOptions, outputFiles);
-
-        const presynthFile = outputFiles.find((file) => file.path.endsWith('presynth.yosys.json'));
-        if (!presynthFile || !presynthFile.uri) return;
-
-        const oldContent = decodeJSON(await vscode.workspace.fs.readFile(presynthFile.uri)) as JSONValue;
-        const newContent = encodeJSON(this.addCellTypes(oldContent));
-        await vscode.workspace.fs.writeFile(presynthFile.uri, newContent);
+        const provider = getConfiguredProvider(this.context);
+        const task = new YosysSynthTerminalTask(provider);
+        return new TaskTerminal(this.projects, folder, definition, task);
     }
 }
 
 class YosysSynthTerminalTask extends BaseYosysTerminalTask {
+    getName(): string {
+        return 'yosys-synthesis';
+    }
+
+    getWorkerOptions(project: Project, targetId: string): YosysWorkerOptions {
+        if (project.getInputFiles().length === 0) {
+            throw new Error('Cannot synthesize project: no input files!');
+        }
+
+        return getYosysSynthesisWorkerOptions(project, targetId);
+    }
+
+    getWorkerSteps(workerOptions: YosysWorkerOptions): YosysStep[] {
+        return workerOptions.steps;
+    }
+
     getInputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
-        const commandsGenerated = generateYosysSynthCommands(workerOptions);
-        return [
-            {
-                type: 'artifact',
-                path: 'presynth.yosys.json'
-            },
-            {
-                type: 'temp',
-                path: 'design.ys',
-                data: encodeText(commandsGenerated.join('\r\n'))
-            }
-        ];
+        return workerOptions.inputFiles.map((path) => ({type: 'user', path}));
     }
 
     getOutputFiles(workerOptions: YosysWorkerOptions): TaskIOFile[] {
         return workerOptions.outputFiles.map((path) => ({type: 'artifact', path}));
+    }
+
+    async handleStepEnd(project: Project, workerOptions: YosysWorkerOptions, step: WorkerStep): Promise<void> {
+        await super.handleStepEnd(project, workerOptions, step);
+
+        if (step.id !== 'prepare') return;
+
+        const target = project.getTarget(workerOptions.target.id);
+        if (!target) {
+            this.println('Invalid target: element coloring will not be supported!', 'stderr');
+            return;
+        }
+
+        // Update presynth file contents
+        const presynthFile = project.getFileUri(target.getFile('presynth.yosys.json'));
+        const oldContent = decodeJSON(await vscode.workspace.fs.readFile(presynthFile)) as JSONValue;
+        const newContent = encodeJSON(addCellTypes(oldContent));
+        await vscode.workspace.fs.writeFile(presynthFile, newContent);
     }
 
     async handleEnd(project: Project, workerOptions: YosysWorkerOptions, outputFiles: TaskOutputFile[]) {

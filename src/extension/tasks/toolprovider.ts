@@ -1,4 +1,4 @@
-import {type WorkerStep} from 'edacation';
+import {type ProjectTarget, type WorkerStep} from 'edacation';
 import path from 'path';
 import * as vscode from 'vscode';
 
@@ -25,6 +25,7 @@ type ToolInfoStatus = ToolInfoStatusOk | ToolInfoStatusMissing;
 
 interface Context {
     project: Project;
+    target: ProjectTarget;
     steps: WorkerStep[];
 
     inputFiles: TaskIOFile[];
@@ -32,6 +33,8 @@ interface Context {
 }
 
 type ToolConfigOption = 'auto' | 'native-managed' | 'native-host' | 'web';
+
+type ToolStepCallback = (event: 'start' | 'end', step: WorkerStep) => Promise<void>;
 
 export abstract class ToolProvider extends TerminalMessageEmitter {
     protected readonly extensionContext: vscode.ExtensionContext;
@@ -45,36 +48,91 @@ export abstract class ToolProvider extends TerminalMessageEmitter {
 
     abstract getName(): Promise<string>;
 
-    protected abstract run(ctx: Context): Promise<void>;
+    protected abstract run(ctx: Context, stepCallback: ToolStepCallback): Promise<void>;
 
     setRunContext(ctx: Context) {
         this.ctx = ctx;
     }
 
-    async execute(): Promise<void> {
+    async execute(stepCallback: ToolStepCallback): Promise<void> {
         if (!this.ctx) throw new Error('No run context available!');
-        return await this.run(this.ctx);
+        return await this.run(this.ctx, stepCallback);
     }
 }
 
 export class WebAssemblyToolProvider extends ToolProvider {
+    private stepIndex: number = 0;
+    private collectedFiles: TaskOutputFile[] = [];
+
     async getName(): Promise<string> {
         return 'WebAssembly';
     }
 
-    async run(ctx: Context): Promise<void> {
-        const inFiles = await this.readFiles(ctx.project, ctx.inputFiles);
+    async run(ctx: Context, stepCallback: ToolStepCallback): Promise<void> {
+        this.stepIndex = 0;
+        this.collectedFiles = [];
 
-        // Create & start worker
+        await this.executeNextStep(ctx, stepCallback);
+    }
+
+    private async executeNextStep(ctx: Context, stepCallback: ToolStepCallback): Promise<void> {
+        const step = ctx.steps[this.stepIndex];
+        this.stepIndex++;
+
+        await stepCallback('start', step);
+
+        // build input files
+        const fileMap = new Map<string, MessageFile>();
+        for (const file of await this.readFiles(ctx.project, ctx.inputFiles)) {
+            // files from workspace
+            fileMap.set(file.path, file);
+        }
+        for (const file of this.collectedFiles) {
+            // ...overwrite with files generated in previous steps
+            if (!file.data) continue;
+
+            const copy = new Uint8Array(file.data);
+            fileMap.set(file.path, {path: file.path, data: copy});
+        }
+        for (const file of step.generatedInputFiles ?? []) {
+            // ...overwrite with generated files
+            fileMap.set(file.name, {path: file.name, data: file.content});
+        }
+        const inputFiles = fileMap.values().toArray();
+
         const worker = this.createWorker();
         worker.sendMessage(
             {
                 type: 'input',
-                steps: ctx.steps,
-                inputFiles: inFiles
+                command: step.tool,
+                args: step.arguments,
+                inputFiles: inputFiles
             },
-            inFiles.map(({data}) => data.buffer)
+            inputFiles.map(({data}) => data.buffer)
         );
+
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        worker.onEvent('message', async (message: ExtensionMessage) => {
+            if (message.type !== 'output') return;
+
+            for (const newFile of message.files) {
+                // add files to collection
+                this.collectedFiles = this.collectedFiles.filter((file) => file.path !== newFile.path);
+                this.collectedFiles.push(newFile);
+            }
+
+            await stepCallback('end', step);
+
+            worker.terminate();
+            if (this.stepIndex < ctx.steps.length) {
+                return await this.executeNextStep(ctx, stepCallback);
+            } else {
+                const filteredFiles = this.collectedFiles.filter((file) =>
+                    ctx.outputFiles.some((of) => of.path === file.path)
+                );
+                this.done(filteredFiles);
+            }
+        });
     }
 
     private async readFiles(project: Project, inputFiles: TaskIOFile[]): Promise<MessageFile[]> {
@@ -116,9 +174,7 @@ export class WebAssemblyToolProvider extends ToolProvider {
                     break;
                 }
                 case 'output': {
-                    const outputFiles = message.files as TaskOutputFile[];
-                    this.done(outputFiles);
-
+                    // handled in executeNextStep()
                     break;
                 }
                 case 'error': {
@@ -164,7 +220,7 @@ abstract class NativeToolProvider extends ToolProvider {
         return await Promise.all(ctx.steps.map((step) => this.getToolInfoStatus(step.tool)));
     }
 
-    async run(ctx: Context): Promise<void> {
+    async run(ctx: Context, stepCallback: ToolStepCallback): Promise<void> {
         // Write generated input files so the native process can load them
         for (const file of ctx.inputFiles) {
             if (!file.data) continue;
@@ -187,29 +243,75 @@ abstract class NativeToolProvider extends ToolProvider {
         }
 
         const toolsInfo = await this.getToolStatuses(ctx);
-        const dispatchStep = (i: number) => {
+        const dispatchStep = async (i: number) => {
             const info = toolsInfo[i];
             if (info.status === 'missing') {
                 this.error(`Native tool for '${ctx.steps[i].tool}' is unavailable. Aborting.`);
                 return;
             }
 
-            const step = ctx.steps[i];
-            this.runStep(ctx, step, info.execOptions, (code, signal) => {
+            const step = await this.preStep(ctx, ctx.steps[i]);
+            await stepCallback('start', step);
+
+            this.runStep(ctx, step, info.execOptions, async (code, signal) => {
+                await this.postStep(ctx, step);
+                await stepCallback('end', step);
+
                 const isLastStep = i >= ctx.steps.length - 1;
                 const isOk = this.onProcessExit(ctx, code, signal, isLastStep); // only emit done signal if last step
-                if (isOk && !isLastStep) dispatchStep(i + 1); // only run next step if no error and not last
+                if (isOk && !isLastStep) await dispatchStep(i + 1); // only run next step if no error and not last
             });
         };
 
-        dispatchStep(0);
+        await dispatchStep(0);
+    }
+
+    private async preStep(ctx: Context, step: WorkerStep): Promise<WorkerStep> {
+        // some tools require generated input files to function
+        // that need to be written to a file somewhere for the tool to work.
+        // however, the step config only specifies file names, not absolute paths.
+        // so we need to update the file paths
+
+        if (!step.generatedInputFiles) return step;
+
+        const pathMap = new Map<string, string>();
+        for (let i = 0; i < step.generatedInputFiles.length; i++) {
+            const file = step.generatedInputFiles[i];
+
+            // ensure dir
+            const dir = ctx.project.getFileUri(ctx.target.getFile('temp'));
+            await vscode.workspace.fs.createDirectory(dir);
+
+            // write file
+            await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(dir, file.name), file.content);
+
+            const newPath = ctx.target.getFile('temp', file.name);
+            pathMap.set(file.name, newPath);
+            step.generatedInputFiles[i].name = newPath;
+        }
+
+        // rewrite tool arguments: if exact match with previous name, replace with new path
+        for (let i = 0; i < step.arguments.length; i++) {
+            const replace = pathMap.get(step.arguments[i]);
+            if (replace !== undefined) {
+                step.arguments[i] = replace;
+            }
+        }
+
+        return step;
+    }
+
+    private async postStep(ctx: Context, _step: WorkerStep): Promise<void> {
+        // Post-step execution: remove the directory we created earlier
+        const dir = ctx.project.getFileUri(ctx.target.getFile('temp'));
+        await vscode.workspace.fs.delete(dir, {recursive: true, useTrash: false});
     }
 
     private runStep(
         ctx: Context,
         step: WorkerStep,
         options: NativeToolExecutionOptions,
-        onComplete: (code: number | null, signal: string | null) => void
+        onComplete: (code: number | null, signal: string | null) => Promise<void>
     ): void {
         const spawnArgs = {
             cwd: ctx.project.getRoot().fsPath,
@@ -224,7 +326,7 @@ abstract class NativeToolProvider extends ToolProvider {
         proc.stdout.on('data', (data) => this.onProcessData(data as string, 'stdout'));
         proc.stderr.on('data', (data) => this.onProcessData(data as string, 'stderr'));
         proc.on('error', this.onProcessError.bind(this));
-        proc.on('exit', onComplete);
+        proc.on('exit', (code, signal) => void onComplete(code, signal));
     }
 
     private onProcessError(error: unknown) {
@@ -374,12 +476,12 @@ export class AutomaticToolProvider extends ToolProvider {
         return webProvider;
     }
 
-    async run(ctx: Context): Promise<void> {
+    async run(ctx: Context, stepCallback: ToolStepCallback): Promise<void> {
         const provider = await this.getToolProvider(ctx);
         provider.onMessage(this.fire.bind(this));
 
         provider.setRunContext(ctx);
-        return await provider.execute();
+        return await provider.execute(stepCallback);
     }
 }
 
@@ -395,6 +497,7 @@ export const getConfiguredProvider = (context: vscode.ExtensionContext): ToolPro
     } else if (provider === 'web') {
         return new WebAssemblyToolProvider(context);
     } else {
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new Error(`Unrecognized tool provider option: ${provider}`);
     }
 };

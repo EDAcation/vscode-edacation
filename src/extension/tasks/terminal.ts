@@ -10,12 +10,6 @@ import {type TaskDefinition, type TerminalTask} from './task.js';
 
 const PROJECT_PATTERN = '**/*.edaproject';
 
-interface JobDefinition<WO extends WorkerOptions<any, any>> {
-    task: TerminalTask<WO>;
-    targetId: string;
-    workerOptions?: WO;
-}
-
 export abstract class TaskProvider extends BaseTaskProvider {
     private taskPromise?: Promise<vscode.Task[]> | undefined;
     private fileSystemWatcher: vscode.FileSystemWatcher;
@@ -125,14 +119,14 @@ export class TaskTerminal<WO extends WorkerOptions<any, any>> implements vscode.
     private folder: vscode.WorkspaceFolder;
     private definition: TaskDefinition;
 
-    private tasks: TerminalTask<WO>[];
-    private curJob: JobDefinition<WO> | null;
+    private task: TerminalTask<WO>;
+    private targetId: string | null;
+    private workerOptions: WO | null;
 
     private curProject: Project | null;
 
     private logMessages: string[];
 
-    private taskFinishEmitter = new vscode.EventEmitter<number>();
     private writeEmitter = new vscode.EventEmitter<string>();
     private closeEmitter = new vscode.EventEmitter<number>();
 
@@ -143,24 +137,24 @@ export class TaskTerminal<WO extends WorkerOptions<any, any>> implements vscode.
         projects: Projects,
         folder: vscode.WorkspaceFolder,
         definition: TaskDefinition,
-        tasks: TerminalTask<WO>[]
+        task: TerminalTask<WO>
     ) {
         this.projects = projects;
         this.folder = folder;
         this.definition = definition;
 
-        this.tasks = tasks;
-        this.curJob = null;
+        this.task = task;
+        this.targetId = null;
+        this.workerOptions = null;
 
         this.curProject = null;
 
         this.logMessages = [];
-
-        this.taskFinishEmitter.event(this.executeNextTask.bind(this));
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     async open() {
-        await this.executeNextTask();
+        await this.executeTask();
     }
 
     close() {
@@ -183,27 +177,25 @@ export class TaskTerminal<WO extends WorkerOptions<any, any>> implements vscode.
     }
 
     protected async exit(code: number) {
-        if (!this.curJob) return;
-
         let uri: vscode.Uri | undefined = undefined;
         try {
             // Write logs
             uri = vscode.Uri.joinPath(
                 this.curProject ? this.curProject.getRoot() : this.folder.uri,
                 'logs',
-                `${this.curJob.task.getName()}.log`
+                `${this.task.getName()}.log`
             );
             await vscode.workspace.fs.writeFile(uri, encodeText(this.logMessages.join('')));
         } catch (err) {
             console.error(err);
         }
 
-        this.taskFinishEmitter.fire(code);
-
-        if (uri && this.curProject) {
+        if (uri && this.curProject && this.targetId !== null) {
             // Add log to output files
-            await this.curProject.addOutputFileUris([uri], this.curJob.targetId);
+            await this.curProject.addOutputFileUris([uri], this.targetId);
         }
+
+        this.closeEmitter.fire(code);
     }
 
     protected async error(error: unknown) {
@@ -218,7 +210,7 @@ export class TaskTerminal<WO extends WorkerOptions<any, any>> implements vscode.
         await this.exit(1);
     }
 
-    private async executeNextTask(prevExitCode: number = 0): Promise<void> {
+    private async executeTask(): Promise<void> {
         // Set current project once
         if (!this.curProject) {
             this.curProject = this.projects.getCurrent() ?? null;
@@ -228,44 +220,31 @@ export class TaskTerminal<WO extends WorkerOptions<any, any>> implements vscode.
             }
         }
 
-        const projectConfig = this.curProject.getConfiguration();
-        if (projectConfig.targets.length === 0) {
+        const targets = this.curProject.getTargets();
+        if (targets.length === 0) {
             await this.error(new Error('The current project has no targets defined!'));
             return;
         }
-
-        if (this.tasks.length === 0 || prevExitCode !== 0) {
-            this.curJob = null;
-            this.curProject = null;
-
-            this.closeEmitter.fire(prevExitCode);
-            return;
-        }
-
-        this.curJob = {
-            task: this.tasks[0],
-            targetId: this.definition.targetId ?? projectConfig.targets[0].id
-        };
-        this.tasks.splice(0, 1);
+        this.targetId = this.definition.targetId ?? targets[0].id;
 
         this.println(`Executing task for target "${this.definition.targetId}"`);
 
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        this.curJob.task.onMessage(this.handleMessage.bind(this, this.curJob));
+        this.task.onMessage(this.handleMessage.bind(this));
 
         try {
             // Ensure that target dirs are set correctly BEFORE running the task
             await this.curProject.updateTargetDirectories();
 
-            await this.curJob.task.handleStart(this.curProject);
+            await this.task.handleStart(this.curProject);
 
-            this.curJob.workerOptions = await this.curJob.task.execute(this.curProject, this.curJob.targetId);
+            this.workerOptions = await this.task.execute(this.curProject, this.targetId);
         } catch (err) {
             await this.error(err);
         }
     }
 
-    private async handleMessage(job: JobDefinition<WO>, message: TerminalMessage) {
+    private async handleMessage(message: TerminalMessage) {
         if (!this.curProject) {
             console.warn(`Received message but no project active! ${JSON.stringify(message)}`);
             return;
@@ -284,7 +263,7 @@ export class TaskTerminal<WO extends WorkerOptions<any, any>> implements vscode.
                     break;
                 }
                 case 'done': {
-                    if (!job.workerOptions) {
+                    if (!this.workerOptions) {
                         throw new Error('Task did not deposit worker options, cannot handle finish');
                     }
 
@@ -302,12 +281,14 @@ export class TaskTerminal<WO extends WorkerOptions<any, any>> implements vscode.
                         }
                     }
 
-                    await job.task.handleEnd(this.curProject, job.workerOptions, outputFiles);
-                    job.task.cleanup();
+                    await this.task.handleEnd(this.curProject, this.workerOptions, outputFiles);
+                    this.task.cleanup();
 
                     // Add output files to project output
-                    const uris = outputFiles.map((outp) => outp.uri).filter((outp): outp is vscode.Uri => !!outp);
-                    await this.curProject.addOutputFileUris(uris, job.targetId);
+                    if (this.targetId) {
+                        const uris = outputFiles.map((outp) => outp.uri).filter((outp): outp is vscode.Uri => !!outp);
+                        await this.curProject.addOutputFileUris(uris, this.targetId);
+                    }
 
                     await this.exit(0);
 
