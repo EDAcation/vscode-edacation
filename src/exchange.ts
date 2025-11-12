@@ -72,8 +72,8 @@ export class ExchangePortal<Message, SerializedMessage> {
         this.sendCallback = sendCallback;
     }
 
-    private isExchangeMessage(obj: any): obj is ExchangeCommand<SerializedMessage> {
-        return obj && typeof obj === 'object' && obj.type === 'exchange';
+    private isExchangeMessage(obj: unknown): obj is ExchangeCommand<SerializedMessage> {
+        return !!obj && typeof obj === 'object' && 'type' in obj && obj.type === 'exchange';
     }
 
     transmit(message: ExchangeCommand<SerializedMessage>) {
@@ -106,8 +106,8 @@ export class ExchangePortal<Message, SerializedMessage> {
 }
 
 export class Exchange<Message, SerializedMessage> {
-    private channels: Set<WeakRef<ExchangeChannel<Message, SerializedMessage>>> = new Set();
-    private portals: Set<WeakRef<ExchangePortal<Message, SerializedMessage>>> = new Set();
+    private channels: Set<ExchangeChannel<Message, SerializedMessage>> = new Set();
+    private portals: Set<ExchangePortal<Message, SerializedMessage>> = new Set();
 
     private lastMessage: {initialized: false} | {initialized: true; message: Message} = {initialized: false};
 
@@ -134,24 +134,21 @@ export class Exchange<Message, SerializedMessage> {
 
     createChannel() {
         const channel = new ExchangeChannel<Message, SerializedMessage>(this);
-        this.channels.add(new WeakRef(channel));
+        this.channels.add(channel);
+
+        console.warn(`Created new channel for ${this.topic} - current size: ${this.channels.size}`);
         return channel;
     }
 
     destroyChannel(channel: ExchangeChannel<Message, SerializedMessage>) {
-        for (const storedChannel of this.channels) {
-            if (storedChannel.deref() === channel) {
-                this.channels.delete(storedChannel);
-                return;
-            }
-        }
+        this.channels.delete(channel);
     }
 
     attachPortal(
         sendCallback: (value: ExchangeCommand<SerializedMessage>) => void
     ): ExchangePortal<Message, SerializedMessage> {
         const portal = new ExchangePortal(this, sendCallback);
-        this.portals.add(new WeakRef(portal));
+        this.portals.add(portal);
 
         if (this.options.isPrimary && this.lastMessage.initialized) {
             // Primary exchange: emit last message into new portals if initialized
@@ -167,12 +164,7 @@ export class Exchange<Message, SerializedMessage> {
     }
 
     detachPortal(portal: ExchangePortal<Message, SerializedMessage>) {
-        for (const storedPortal of this.portals) {
-            if (storedPortal.deref() === portal) {
-                this.portals.delete(storedPortal);
-                return;
-            }
-        }
+        this.portals.delete(portal);
     }
 
     broadcast(
@@ -184,9 +176,8 @@ export class Exchange<Message, SerializedMessage> {
             message
         };
 
-        for (const chanRef of this.channels) {
-            const channel = chanRef.deref();
-            if (channel === undefined || channel === source) continue;
+        for (const channel of this.channels) {
+            if (channel === source) continue;
 
             for (const cb of channel.callbacks) {
                 try {
@@ -198,9 +189,8 @@ export class Exchange<Message, SerializedMessage> {
         }
 
         const portalPayload: ExchangeCommand<SerializedMessage> = this.getPortalPayload(message);
-        for (const portalRef of this.portals) {
-            const portal = portalRef.deref();
-            if (portal === undefined || portal === source) continue;
+        for (const portal of this.portals) {
+            if (portal === source) continue;
 
             portal.transmit(portalPayload);
         }
@@ -234,8 +224,11 @@ export interface SerializedProjectEvent {
 export const serializeProjectEvent = (project: ProjectEvent): SerializedProjectEvent => {
     return {path: project.getUri().path, project: Project.serialize(project)};
 };
-export const deserializeProjectEvent = (value: SerializedProjectEvent, channel?: ProjectEventChannel): ProjectEvent => {
-    return Project.deserialize(value.project, URI.parse(value.path), channel);
+export const deserializeProjectEvent = (
+    value: SerializedProjectEvent,
+    exchange?: ProjectEventExchange
+): ProjectEvent => {
+    return Project.deserialize(value.project, URI.parse(value.path), exchange);
 };
 export class ProjectEventExchange extends Exchange<ProjectEvent, SerializedProjectEvent> {}
 export class ProjectEventChannel extends ExchangeChannel<ProjectEvent, SerializedProjectEvent> {}
@@ -244,7 +237,7 @@ export const createProjectEventExchange = (options?: ExchangeOptions): ProjectEv
     const exchange = new ProjectEventExchange(
         'projectEvent',
         serializeProjectEvent,
-        (value): ProjectEvent => deserializeProjectEvent(value, exchange.createChannel()),
+        (value): ProjectEvent => deserializeProjectEvent(value, exchange),
         options
     );
     return exchange;
@@ -267,11 +260,11 @@ export const serializeOpenProjects = (projects: ProjectsState): SerializedProjec
 };
 export const deserializeOpenProjects = (
     value: SerializedProjectsState,
-    channel?: ProjectEventChannel
+    exchange?: ProjectEventExchange
 ): ProjectsState => {
     return {
-        projects: value.projects.map((project) => deserializeProjectEvent(project, channel)),
-        currentProject: value.currentProject ? deserializeProjectEvent(value.currentProject, channel) : undefined
+        projects: value.projects.map((project) => deserializeProjectEvent(project, exchange)),
+        currentProject: value.currentProject ? deserializeProjectEvent(value.currentProject, exchange) : undefined
     };
 };
 export class OpenProjectsExchange extends Exchange<ProjectsState, SerializedProjectsState> {}
@@ -284,7 +277,7 @@ export const createOpenProjectsExchange = (
     return new OpenProjectsExchange(
         'openProjects',
         serializeOpenProjects,
-        (value): ProjectsState => deserializeOpenProjects(value, projectEventExchange?.createChannel()),
+        (value): ProjectsState => deserializeOpenProjects(value, projectEventExchange),
         options
     );
 };

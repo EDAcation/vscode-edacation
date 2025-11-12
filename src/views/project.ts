@@ -38,7 +38,7 @@ projectEventChannel.subscribe((project) => {
     // note that we need to reassign in order to trigger Vue reactivity,
     // even though the project instance itself is already subscribed to the channel.
     if (syncedState.project && syncedState.project.isUri(project.getUri())) {
-        syncedState.project.disconnectChannel();
+        syncedState.project.detachChannel();
         syncedState.project = project;
     }
 });
@@ -47,7 +47,7 @@ openProjectsChannel.subscribe((message) => {
     console.log(message.currentProject);
 
     if (syncedState.project) {
-        syncedState.project.disconnectChannel();
+        syncedState.project.detachChannel();
     }
 
     syncedState.project = message.currentProject;

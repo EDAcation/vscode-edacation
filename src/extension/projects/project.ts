@@ -12,11 +12,16 @@ import * as vscode from 'vscode';
 import {type URI, Utils} from 'vscode-uri';
 
 import * as node from '../../common/node-modules.js';
-import {type ProjectEvent as ExternalProjectEvent, type ProjectEventChannel} from '../../exchange.js';
+import {
+    type ProjectEvent as ExternalProjectEvent,
+    type ProjectEventChannel,
+    type ProjectEventExchange
+} from '../../exchange.js';
 import {decodeJSON, encodeJSON, getWorkspaceRelativePath} from '../util.js';
 
 export class Project extends BaseProject {
-    private channel?: [ProjectEventChannel, () => void];
+    private exchange?: ProjectEventExchange;
+    private channel?: ProjectEventChannel;
 
     private uri: URI;
     private root: URI;
@@ -27,7 +32,7 @@ export class Project extends BaseProject {
         inputFiles: string[] | ProjectInputFileState[] = [],
         outputFiles: string[] | ProjectOutputFileState[] = [],
         configuration: ProjectConfiguration = DEFAULT_CONFIGURATION,
-        channel?: ProjectEventChannel
+        exchange?: ProjectEventExchange
     ) {
         super(
             name ? name : path.basename(uri.path, '.edaproject'),
@@ -42,10 +47,7 @@ export class Project extends BaseProject {
             path: path.dirname(this.uri.path)
         });
 
-        if (channel !== undefined) {
-            const unsubCallback = channel?.subscribe(this.onExternalEvent.bind(this), false);
-            this.channel = [channel, unsubCallback];
-        }
+        this.exchange = exchange;
 
         void this.cleanIOFiles();
     }
@@ -209,7 +211,7 @@ export class Project extends BaseProject {
     private onInternalEvent(events: InternalProjectEvent[]) {
         console.log(`[EDAcation] Received project events: ${events.toString()}`);
 
-        if (this.channel) this.channel[0].submit(this);
+        this.getChannel()?.submit(this);
     }
 
     async reloadFromDisk() {
@@ -219,11 +221,22 @@ export class Project extends BaseProject {
         this.importFromProject(newProject, true);
     }
 
-    disconnectChannel() {
-        if (this.channel) {
-            this.channel[1]();
-            this.channel = undefined;
-        }
+    private getChannel(): ProjectEventChannel | undefined {
+        if (this.channel) return this.channel;
+
+        if (!this.exchange) return;
+
+        this.channel = this.exchange.createChannel();
+        this.channel.subscribe(this.onExternalEvent.bind(this), false);
+
+        return this.channel;
+    }
+
+    detachChannel() {
+        this.channel?.destroy();
+
+        this.channel = undefined;
+        this.exchange = undefined;
     }
 
     async save() {
@@ -236,18 +249,18 @@ export class Project extends BaseProject {
         return BaseProject.serialize(project);
     }
 
-    static deserialize(data: ProjectState, uri: URI, channel?: ProjectEventChannel): Project {
+    static deserialize(data: ProjectState, uri: URI, exchange?: ProjectEventExchange): Project {
         const name = data.name;
         const inputFiles = data.inputFiles ?? [];
         const outputFiles = data.outputFiles ?? [];
         const configuration = data.configuration ?? ({} as ProjectConfiguration);
 
-        return new Project(uri, name, inputFiles, outputFiles, configuration, channel);
+        return new Project(uri, name, inputFiles, outputFiles, configuration, exchange);
     }
 
-    static async load(uri: URI, channel?: ProjectEventChannel): Promise<Project> {
+    static async load(uri: URI, exchange?: ProjectEventExchange): Promise<Project> {
         const data = decodeJSON(await vscode.workspace.fs.readFile(uri));
-        const project = Project.deserialize(data as ProjectState, uri, channel);
+        const project = Project.deserialize(data as ProjectState, uri, exchange);
         return project;
     }
 
