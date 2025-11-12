@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 
 import type {Project} from '../projects/index.js';
 import {type InputFileTreeItem, type OutputFileTreeItem} from '../trees/files.js';
-import {FILE_FILTERS_HDL} from '../util.js';
+import {FILE_FILTERS_INPUT} from '../util.js';
 
 import {CurrentProjectCommand} from './base.js';
 
@@ -18,7 +18,7 @@ export class AddInputFileCommand extends CurrentProjectCommand {
             canSelectFolders: false,
             canSelectFiles: true,
             canSelectMany: true,
-            filters: FILE_FILTERS_HDL
+            filters: FILE_FILTERS_INPUT
         });
 
         if (!fileUris || fileUris.length === 0) {
@@ -37,7 +37,7 @@ export class NewInputFileCommand extends CurrentProjectCommand {
     async executeForCurrentProject(project: Project) {
         const fileUri = await vscode.window.showSaveDialog({
             title: 'New File',
-            filters: FILE_FILTERS_HDL
+            filters: FILE_FILTERS_INPUT
         });
 
         if (!fileUri) {
