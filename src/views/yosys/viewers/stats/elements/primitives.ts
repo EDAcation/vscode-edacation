@@ -54,7 +54,8 @@ export class PrimitivesOverviewGrid extends InteractiveDataGrid<Module, Primitiv
     }
 
     protected getAvailableOptions(): PrimitivesOverviewOptions[] {
-        return this.modules[0]?.globalPrimitives.map((prim) => prim.name) ?? [];
+        const primNames = this.modules[0]?.globalPrimitives.map((prim) => prim.name) ?? [];
+        return [...new Set(primNames)].sort(); // filter duplicates
     }
 
     protected getNewOption(): PrimitivesOverviewOptions {
