@@ -235,11 +235,11 @@ export class Projects {
     }
 
     private async loadProject(uri: vscode.Uri): Promise<Project> {
-        return Project.load(uri, this.createProjectEventChannel());
+        return Project.load(uri, this.projectEventExchange);
     }
 
     private createProject(uri: vscode.Uri): Project {
-        return new Project(uri, undefined, undefined, undefined, undefined, this.createProjectEventChannel());
+        return new Project(uri, undefined, undefined, undefined, undefined, this.projectEventExchange);
     }
 
     private emitState() {

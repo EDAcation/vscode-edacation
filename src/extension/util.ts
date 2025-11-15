@@ -1,4 +1,4 @@
-import {FILE_EXTENSIONS_HDL} from 'edacation';
+import {FILE_EXTENSIONS_HDL, FILE_EXTENSIONS_PINCFG} from 'edacation';
 import path from 'path';
 import * as vscode from 'vscode';
 
@@ -53,8 +53,9 @@ export const encodeJSON = (input: unknown, pretty = false) =>
 export const decodeText = (input: Uint8Array): string => textDecoder.decode(input);
 export const decodeJSON = (input: Uint8Array): unknown => JSON.parse(decodeText(input));
 
-export const FILE_FILTERS_HDL = {
-    'HDL (*.v, *.vh, *.sv, *.svh, *.vhd, *.vhdl)': FILE_EXTENSIONS_HDL
+export const FILE_FILTERS_INPUT = {
+    'HDL (*.v, *.vh, *.sv, *.svh, *.vhd, *.vhdl)': FILE_EXTENSIONS_HDL,
+    'Pin Constraint File (*.lpf, *.pcf)': FILE_EXTENSIONS_PINCFG
 };
 
 export const asWorkspaceRelativeFolderPath = (folderUri: vscode.Uri) =>
