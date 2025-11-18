@@ -119,6 +119,10 @@ export class WebAssemblyToolProvider extends ToolProvider {
                 // add files to collection
                 this.collectedFiles = this.collectedFiles.filter((file) => file.path !== newFile.path);
                 this.collectedFiles.push(newFile);
+
+                // write file to disk
+                const uri = ctx.project.getFileUri(newFile.path);
+                await vscode.workspace.fs.writeFile(uri, newFile.data);
             }
 
             await stepCallback('end', step);
@@ -127,10 +131,7 @@ export class WebAssemblyToolProvider extends ToolProvider {
             if (this.stepIndex < ctx.steps.length) {
                 return await this.executeNextStep(ctx, stepCallback);
             } else {
-                const filteredFiles = this.collectedFiles.filter((file) =>
-                    ctx.outputFiles.some((of) => of.path === file.path)
-                );
-                this.done(filteredFiles);
+                this.done(ctx.outputFiles);
             }
         });
     }
