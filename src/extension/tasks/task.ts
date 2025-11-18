@@ -1,5 +1,4 @@
 import {type WorkerStep, type WorkerOptions as _WorkerOptions, decodeText} from 'edacation';
-import path from 'path';
 import type * as vscode from 'vscode';
 
 import {type Project} from '../projects/index.js';
@@ -18,25 +17,6 @@ export interface TaskIOFile {
     path: string;
     data?: Uint8Array;
 }
-
-const getTaskFilePaths = (files: TaskIOFile[], relDir: string = '.'): TaskIOFile[] => {
-    return files.map((file) => {
-        // user files should not be touched
-        if (file.type === 'user') return file;
-
-        // Do nothing if already in relDir
-        const rel = path.relative(relDir, file.path);
-        if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) return file;
-
-        if (file.type === 'temp') {
-            // temporary file
-            return {...file, path: path.join(relDir, 'temp', file.path)};
-        } else {
-            // artifact
-            return {...file, path: path.join(relDir, file.path)};
-        }
-    });
-};
 
 export abstract class TerminalTask<WorkerOptions extends _WorkerOptions<any, any>> extends TerminalMessageEmitter {
     private readonly toolProvider: ToolProvider;
@@ -83,8 +63,8 @@ export abstract class TerminalTask<WorkerOptions extends _WorkerOptions<any, any
         const workerOptions = this.getWorkerOptions(project, targetId);
 
         const steps = this.getWorkerSteps(workerOptions);
-        const inputFiles = getTaskFilePaths(this.getInputFiles(workerOptions), workerOptions.target.directory);
-        const outputFiles = getTaskFilePaths(this.getOutputFiles(workerOptions), workerOptions.target.directory);
+        const inputFiles = this.getInputFiles(workerOptions);
+        const outputFiles = this.getOutputFiles(workerOptions);
 
         // Pretty-print input files and their contents (if generated)
         this.println('Input files:', undefined, AnsiModifier.BOLD);

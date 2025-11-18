@@ -64,8 +64,8 @@ export class Project extends BaseProject {
         return this.root;
     }
 
-    getFileUri(path: string): URI {
-        return Utils.joinPath(this.getRoot(), path);
+    getFileUri(...paths: string[]): URI {
+        return Utils.joinPath(this.getRoot(), ...paths);
     }
 
     getTargetDirectory(targetId: string): string {

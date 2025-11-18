@@ -119,6 +119,10 @@ export class WebAssemblyToolProvider extends ToolProvider {
                 // add files to collection
                 this.collectedFiles = this.collectedFiles.filter((file) => file.path !== newFile.path);
                 this.collectedFiles.push(newFile);
+
+                // write file to disk
+                const uri = ctx.project.getFileUri(newFile.path);
+                await vscode.workspace.fs.writeFile(uri, newFile.data);
             }
 
             await stepCallback('end', step);
@@ -127,10 +131,7 @@ export class WebAssemblyToolProvider extends ToolProvider {
             if (this.stepIndex < ctx.steps.length) {
                 return await this.executeNextStep(ctx, stepCallback);
             } else {
-                const filteredFiles = this.collectedFiles.filter((file) =>
-                    ctx.outputFiles.some((of) => of.path === file.path)
-                );
-                this.done(filteredFiles);
+                this.done(ctx.outputFiles);
             }
         });
     }
@@ -279,15 +280,16 @@ abstract class NativeToolProvider extends ToolProvider {
             const file = step.generatedInputFiles[i];
 
             // ensure dir
-            const dir = ctx.project.getFileUri(ctx.target.getFile('temp'));
-            await vscode.workspace.fs.createDirectory(dir);
+            const targetDir = ctx.target.config.directory ?? '.';
+            const dirUri = ctx.project.getFileUri(targetDir, 'temp');
+            await vscode.workspace.fs.createDirectory(dirUri);
 
             // write file
-            await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(dir, file.name), file.content);
+            const fileUri = vscode.Uri.joinPath(dirUri, file.name);
+            await vscode.workspace.fs.writeFile(fileUri, file.content);
 
-            const newPath = ctx.target.getFile('temp', file.name);
-            pathMap.set(file.name, newPath);
-            step.generatedInputFiles[i].name = newPath;
+            pathMap.set(file.name, fileUri.fsPath);
+            step.generatedInputFiles[i].name = fileUri.fsPath;
         }
 
         // rewrite tool arguments: if exact match with previous name, replace with new path
