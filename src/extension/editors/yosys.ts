@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import {Utils} from 'vscode-uri';
 
 import type {GlobalStoreMessage, ViewMessage} from '../types.js';
 import * as util from '../util.js';
@@ -67,7 +68,7 @@ export class YosysEditor extends BaseEditor {
             return true;
         } else if (message.type === 'requestSave') {
             // Save to project root, or the parent dir of the current editor's file if we can't find it
-            const projectRoot = util.findProjectRoot(document.uri) || util.getParentUri(document.uri);
+            const projectRoot = util.findProjectRoot(document.uri) || Utils.dirname(document.uri);
             const path = vscode.Uri.joinPath(projectRoot, message.data.defaultPath || '');
 
             const uri = await util.offerSaveFile(message.data.fileContents, {

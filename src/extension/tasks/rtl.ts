@@ -1,6 +1,6 @@
 import {type YosysStep, type YosysWorkerOptions, getYosysRTLWorkerOptions} from 'edacation';
-import {basename} from 'path';
 import * as vscode from 'vscode';
+import {Utils} from 'vscode-uri';
 
 import type {Project} from '../projects/index.js';
 import {decodeJSON, encodeJSON} from '../util.js';
@@ -57,14 +57,13 @@ class RTLTerminalTask extends BaseYosysTerminalTask {
     }
 
     private async updateFile(uri: vscode.Uri) {
-        const fileName = basename(uri.path);
+        const fileName = Utils.basename(uri);
         let fileType: string;
         if (fileName === 'rtl.yosys.json') {
             fileType = 'rtl';
         } else if (fileName === 'stats.yosys.json') {
             fileType = 'stats';
         } else {
-            this.warn(`Output file "${fileName}" not recognized. It might not be compatible with EDAcation.`);
             return;
         }
 

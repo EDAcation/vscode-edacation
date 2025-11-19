@@ -1,6 +1,6 @@
 import {type WorkerStep, type YosysStep, type YosysWorkerOptions, getYosysSynthesisWorkerOptions} from 'edacation';
-import path from 'path';
 import * as vscode from 'vscode';
+import {Utils} from 'vscode-uri';
 
 import type {Project} from '../projects/index.js';
 import {decodeJSON, encodeJSON} from '../util.js';
@@ -131,7 +131,7 @@ class YosysSynthTerminalTask extends BaseYosysTerminalTask {
         const outFiles = outputFiles.filter((file) => file.path.endsWith('.json'));
         if (outFiles.length !== 1) return;
         const synthUri = project.getFileUri(outFiles[0].path);
-        const lutUri = vscode.Uri.file(path.join(path.dirname(synthUri.fsPath), 'luts.yosys.json'));
+        const lutUri = vscode.Uri.joinPath(Utils.dirname(synthUri), 'luts.yosys.json');
 
         // Write LUT file
         const oldContent = await vscode.workspace.fs.readFile(synthUri);
