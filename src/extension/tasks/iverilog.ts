@@ -1,7 +1,7 @@
 import {type IVerilogWorkerOptions, type WorkerStep, getIVerilogWorkerOptions} from 'edacation';
 import {getTargetFile} from 'edacation/dist/project/target';
-import path from 'path';
 import * as vscode from 'vscode';
+import {Utils} from 'vscode-uri';
 
 import type {Project} from '../projects/index.js';
 
@@ -66,12 +66,13 @@ class IVerilogTerminalTask extends TerminalTask<IVerilogWorkerOptions> {
         this.println();
 
         const vcdFile = outputFiles.find((file) => file.path.endsWith('.vcd'));
-        if (!vcdFile) return;
+        if (!vcdFile || !vcdFile.uri) return;
 
         // VPP places the file in the root directory with no real way to configure this,
         // so we move it to its respective target directory first
-        const oldUri = project.getFileUri(path.basename(vcdFile.path));
-        const newUri = project.getFileUri(getTargetFile(workerOptions.target, path.basename(vcdFile.path)));
+        const vcdFileName = Utils.basename(vcdFile.uri);
+        const oldUri = project.getFileUri(vcdFileName);
+        const newUri = project.getFileUri(getTargetFile(workerOptions.target, vcdFileName));
 
         try {
             await vscode.workspace.fs.rename(oldUri, newUri, {overwrite: true});

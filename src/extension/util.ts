@@ -105,8 +105,6 @@ export const offerSaveFile = async (
     return chosenUri;
 };
 
-export const getParentUri = (uri: vscode.Uri): vscode.Uri => vscode.Uri.file(path.dirname(uri.fsPath));
-
 export const findProjectRoot = (fileUri: vscode.Uri): vscode.Uri | null => {
     const workspaces = vscode.workspace.workspaceFolders;
     if (!workspaces) return null;

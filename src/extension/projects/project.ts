@@ -7,7 +7,6 @@ import {
     type ProjectOutputFileState,
     type ProjectState
 } from 'edacation';
-import path from 'path';
 import * as vscode from 'vscode';
 import {type URI, Utils} from 'vscode-uri';
 
@@ -34,18 +33,12 @@ export class Project extends BaseProject {
         configuration: ProjectConfiguration = DEFAULT_CONFIGURATION,
         exchange?: ProjectEventExchange
     ) {
-        super(
-            name ? name : path.basename(uri.path, '.edaproject'),
-            inputFiles,
-            outputFiles,
-            configuration,
-            (_project, events) => this.onInternalEvent(events)
+        super(name ? name : Utils.basename(uri), inputFiles, outputFiles, configuration, (_project, events) =>
+            this.onInternalEvent(events)
         );
 
         this.uri = uri;
-        this.root = this.uri.with({
-            path: path.dirname(this.uri.path)
-        });
+        this.root = Utils.dirname(this.uri);
 
         this.exchange = exchange;
 
@@ -127,7 +120,7 @@ export class Project extends BaseProject {
         }
 
         const targetDir = this.getFileUri('src');
-        const targetUri = Utils.joinPath(targetDir, path.basename(uri.path));
+        const targetUri = Utils.joinPath(targetDir, Utils.basename(uri));
 
         const newUri: URI | undefined = await new Promise((resolve: (newUri: URI) => void, reject) => {
             node.fs().mkdir(targetDir.fsPath, {recursive: true}, (err) => {
