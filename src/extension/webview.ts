@@ -43,7 +43,7 @@ export abstract class BaseWebview<Args = Record<string, never>> {
                     ${this.getHtmlStyles(webview)}
                 </head>
                 <body>
-                    <div id="app">
+                    <div id="app" style="padding: 0px;">
                         <vscode-progress-ring></vscode-progress-ring>
                     </div>
 

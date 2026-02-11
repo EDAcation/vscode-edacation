@@ -89,18 +89,15 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
                 device: deviceName
             },
             data: decodeJSON(oldContent),
-            criticalPaths: [] as unknown[]
+            report: {} as unknown
         };
 
         const reportFile = outputFiles.find((file) => file.path.endsWith('report.json'));
         if (reportFile) {
-            this.println('[EDAcation] Merging timing info from timing.json...');
+            this.println('[EDAcation] Merging timing & utilization info from report.json...');
             const reportFileUri = project.getFileUri(reportFile.path);
-            const reportContents = decodeJSON(await vscode.workspace.fs.readFile(reportFileUri)) as Record<
-                string,
-                unknown[]
-            >;
-            newContent.criticalPaths = reportContents['critical_paths'];
+            const reportContents = decodeJSON(await vscode.workspace.fs.readFile(reportFileUri));
+            newContent.report = reportContents;
         }
 
         await vscode.workspace.fs.writeFile(uri, encodeJSON(newContent));
