@@ -74,6 +74,12 @@ export default defineComponent({
             configId="routedJson"
             configName="Enable routed JSON output"
         />
+        <EDATargetCheckbox
+            :targetIndex="targetIndex"
+            workerId="nextpnr"
+            configId="reportJson"
+            configName="Enable timing & utilization report JSON output"
+        />
     </div>
 
     <vscode-divider />

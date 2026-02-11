@@ -81,17 +81,27 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
         const target = workerOptions.target;
         const deviceName = VENDORS[target.vendor]?.families[target.family].devices[target.device].device;
 
-        this.println('Updating output file...');
+        this.println('[EDAcation] Updating routed.nextpnr.json...');
         const oldContent = await vscode.workspace.fs.readFile(uri);
-        const newContent = encodeJSON({
+        const newContent = {
             chip: {
                 family: target.family,
                 device: deviceName
             },
-            data: decodeJSON(oldContent)
-        });
-        await vscode.workspace.fs.writeFile(uri, newContent);
-        this.println('Done.');
+            data: decodeJSON(oldContent),
+            report: {} as unknown
+        };
+
+        const reportFile = outputFiles.find((file) => file.path.endsWith('report.json'));
+        if (reportFile) {
+            this.println('[EDAcation] Merging timing & utilization info from report.json...');
+            const reportFileUri = project.getFileUri(reportFile.path);
+            const reportContents = decodeJSON(await vscode.workspace.fs.readFile(reportFileUri));
+            newContent.report = reportContents;
+        }
+
+        await vscode.workspace.fs.writeFile(uri, encodeJSON(newContent));
+        this.println('[EDAcation] Done.');
 
         // Open file in nextpnr editor
         await vscode.commands.executeCommand('vscode.open', uri);
