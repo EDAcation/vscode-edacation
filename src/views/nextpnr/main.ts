@@ -44,6 +44,11 @@ class View {
         addEventListener('messageerror', this.handleMessageError.bind(this));
         addEventListener('resize', this.handleResize.bind(this));
 
+        // override default vscode padding
+        document.body.style.padding = '';
+        document.body.style.paddingLeft = '0px';
+        document.body.style.paddingRight = '0px';
+
         // Populate cell colors from EDAcation library
         for (const elemGroup of getElementGroups().values()) {
             for (const elem of elemGroup.elements) {
