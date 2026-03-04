@@ -20,7 +20,7 @@ type Message = MessageDocument;
 
 interface NextpnrJSON {
     creator: string;
-    modules: any;
+    modules: unknown;
 }
 
 interface NextpnrFileFormat {
@@ -107,7 +107,7 @@ class View {
 
     handleResize() {
         if (this.viewer) {
-            this.viewer.resize(...this.getSize());
+            void this.viewer.resize(...this.getSize());
         }
     }
 
@@ -124,6 +124,7 @@ class View {
             // Deduce exact chip to render
             let chip: {family: string; device: string};
             let data: NextpnrJSON;
+            let report: unknown;
             if ('chip' in json) {
                 chip = json.chip;
                 data = json.data;
@@ -134,6 +135,9 @@ class View {
                     device: '25k'
                 };
                 data = json;
+            }
+            if ('report' in json) {
+                report = json.report;
             }
 
             // Verify if chip is actually supported
@@ -170,9 +174,9 @@ class View {
 
             // Render nextpnr document
             const viewer = this.viewer;
-            viewer.showJson(JSON.stringify(data)).then(() => {
+            void viewer.showJson(JSON.stringify(data), JSON.stringify(report)).then(() => {
                 // Delay first render until after showJson is called, this allows for internal optimizations
-                viewer.render();
+                void viewer.render();
             });
         } catch (err) {
             this.handleError(err);
@@ -202,6 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!state) {
         // Use initial data from VS Code extension
         // @ts-expect-error: initialData does not exist on window
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         state = window.initialData;
 
         if (state) {
