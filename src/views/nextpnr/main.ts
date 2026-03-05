@@ -102,7 +102,7 @@ class View {
         const rect = document.body.getBoundingClientRect();
 
         // NOTE: subtract default VS Code padding
-        return [rect.width - 40, rect.height];
+        return [rect.width, rect.height];
     }
 
     handleResize() {
