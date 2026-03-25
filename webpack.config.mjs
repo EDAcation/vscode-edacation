@@ -25,6 +25,9 @@ const baseConfig = {
         hints: false
     },
     devtool: 'nosources-source-map',
+    experiments: {
+        asyncWebAssembly: true
+    },
     infrastructureLogging: {
         level: 'log'
     }
@@ -128,15 +131,13 @@ const workerConfig = Object.assign({}, baseConfig, {
             },
             {
                 test: /\.wasm$/,
-                type: 'asset/inline'
+                type: 'asset/resource'
             },
             {
                 test: /\.(bin|json|v)$/,
-                type: 'asset/inline',
+                type: 'asset/resource',
                 generator: {
-                    dataUrl: {
-                        mimetype: 'text/plain'
-                    }
+                    filename: './[name][ext]'
                 }
             }
         ]
