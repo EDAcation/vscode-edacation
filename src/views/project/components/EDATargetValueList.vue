@@ -34,7 +34,7 @@ export default defineComponent({
             default: false
         },
         configDescription: {
-            type: String,
+            type: [Array, String] as PropType<string[] | string>,
             required: true
         },
         generated: {
@@ -127,7 +127,9 @@ export default defineComponent({
 <template>
     <div>
         <h3>{{ workerName }} {{ configName }}</h3>
-        <p>{{ configDescription }}</p>
+        <template v-for="paragraph in typeof configDescription === 'string' ? [configDescription] : configDescription">
+            <p>{{ paragraph }}</p>
+        </template>
         <div v-if="target">
             <vscode-checkbox
                 :disabled="config === undefined"

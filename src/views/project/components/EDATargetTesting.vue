@@ -98,7 +98,7 @@ export default defineComponent({
             configId="outputFiles"
             configName="output files"
             configNameOnePerLine
-            configDescription="Output files are sent from the workspace folder to IVerilog."
+            configDescription="Output files are sent from IVerilog to the workspace folder."
         />
     </div>
 </template>

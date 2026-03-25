@@ -51,11 +51,6 @@ export default defineComponent({
         },
         generatedOptions(): YosysWorkerOptions | null {
             return this.generated.status === 'ok' ? this.generated.res : null;
-        },
-        generatedSynthCommands(): string[] {
-            if (!this.generatedOptions) return [];
-
-            return this.generatedOptions.steps.flatMap((step) => [...step.commands, '']);
         }
     }
 });
@@ -85,12 +80,28 @@ export default defineComponent({
         <code v-if="generatedError" style="color: red; grid-column: span 2">{{ generatedError }}</code>
         <EDATargetValueList
             :targetIndex="targetIndex"
-            :generated="generatedSynthCommands"
+            :generated="generatedOptions?.steps[0]?.commands ?? []"
             workerId="yosys"
             workerName="Yosys"
             configId="synthPrepareCommands"
-            configName="commands"
-            configDescription="Commands are passed to the Yosys worker for excecution."
+            configName="commands (preparation)"
+            :configDescription="[
+                'Preparation commands for Yosys.',
+                'If after this step a file called \'presynth.yosys.json\' exists in the target directory, information about the cell types will be injected into the file. This allows partial cell information to be recovered post-synthesis.'
+            ]"
+        />
+
+        <EDATargetValueList
+            :targetIndex="targetIndex"
+            :generated="generatedOptions?.steps[1]?.commands ?? []"
+            workerId="yosys"
+            workerName="Yosys"
+            configId="synthCommands"
+            configName="commands (synthesis)"
+            :configDescription="[
+                'Synthesis commands for Yosys.',
+                'These commands are run after the preparation step, and should perform the actual synthesis.'
+            ]"
         />
 
         <vscode-divider style="grid-column: span 2" />
@@ -116,7 +127,7 @@ export default defineComponent({
             configId="outputFiles"
             configName="output files"
             configNameOnePerLine
-            configDescription="Output files are sent from the workspace folder to the Yosys worker."
+            configDescription="Output files are sent from the the workspace folder to the Yosys worker."
         />
     </div>
 </template>

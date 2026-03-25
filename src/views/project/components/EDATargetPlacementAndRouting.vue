@@ -119,7 +119,7 @@ export default defineComponent({
             configId="outputFiles"
             configName="output files"
             configNameOnePerLine
-            configDescription="Output files are sent from the workspace folder to the nextpnr worker."
+            configDescription="Output files are sent from the nextpnr worker to the workspace folder."
         />
     </div>
 </template>

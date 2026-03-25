@@ -121,7 +121,7 @@ export default defineComponent({
             configId="outputFiles"
             configName="output files"
             configNameOnePerLine
-            configDescription="Output files are sent from the workspace folder to the packer and flasher."
+            configDescription="Output files are sent from the packer and flasher to the workspace folder."
         />
     </div>
 </template>
