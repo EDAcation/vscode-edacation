@@ -35,10 +35,12 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         webview.onDidReceiveMessage(this.onDidReceiveMessage.bind(this, document, webview));
 
         // Add text document listener
+        // VS Code fires onDidChangeTextDocument with empty contentChanges when initially resolving
+        // a custom text editor, skip those spurious events to avoid a double update on open.
         disposables.push(
             vscode.workspace.onDidChangeTextDocument((event) => {
-                if (event.document.uri.toString() === document.uri.toString()) {
-                    void this.update(document, webview, true);
+                if (event.document.uri.toString() === document.uri.toString() && event.contentChanges.length > 0) {
+                    void this.update(document, webview);
                 }
             })
         );
@@ -69,16 +71,21 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
                 disposable.dispose();
             }
         });
-
-        // Update document
-        void this.update(document, webview, false);
     }
 
     protected async onDidReceiveMessage(
-        _document: vscode.TextDocument,
+        document: vscode.TextDocument,
         webview: vscode.Webview,
         message: ViewMessage | GlobalStoreMessage
     ): Promise<boolean> {
+        if (message.type === 'ready') {
+            await webview.postMessage({
+                type: 'document',
+                document: document.getText()
+            });
+            return true;
+        }
+
         if (message.type === 'globalStore') {
             if (message.action === 'set') {
                 await this.context.globalState.update(message.name, message.value);
@@ -111,9 +118,5 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
 
     protected abstract onClose(document: vscode.TextDocument, webview: vscode.Webview): void;
 
-    protected abstract update(
-        document: vscode.TextDocument,
-        webview: vscode.Webview,
-        isDocumentChange: boolean
-    ): Promise<void>;
+    protected abstract update(document: vscode.TextDocument, webview: vscode.Webview): Promise<void>;
 }

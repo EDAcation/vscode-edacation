@@ -1,6 +1,5 @@
-import * as vscode from 'vscode';
+import type * as vscode from 'vscode';
 
-import type {GlobalStoreMessage, ViewMessage} from '../types.js';
 import {getWebviewUri} from '../util.js';
 
 import {BaseEditor} from './base.js';
@@ -35,25 +34,6 @@ export class NextpnrEditor extends BaseEditor {
         `;
     }
 
-    protected async onDidReceiveMessage(
-        document: vscode.TextDocument,
-        webview: vscode.Webview,
-        message: ViewMessage | GlobalStoreMessage
-    ): Promise<boolean> {
-        if (await super.onDidReceiveMessage(document, webview, message)) {
-            return true;
-        }
-        if (message.type === 'ready') {
-            await webview.postMessage({
-                type: 'document',
-                document: document.getText()
-            });
-            return true;
-        }
-
-        return false;
-    }
-
     protected async onSave(_document: vscode.TextDocument, _webview: vscode.Webview): Promise<void> {
         // Do nothing
     }
@@ -62,11 +42,7 @@ export class NextpnrEditor extends BaseEditor {
         // Do nothing
     }
 
-    protected async update(document: vscode.TextDocument, webview: vscode.Webview, isDocumentChange: boolean) {
-        if (!isDocumentChange) {
-            await vscode.commands.executeCommand('edacation-projects.focus');
-        }
-
+    protected async update(document: vscode.TextDocument, webview: vscode.Webview) {
         await webview.postMessage({
             type: 'document',
             document: document.getText()

@@ -29,12 +29,6 @@ export class ProjectProvider extends BaseWebviewViewProvider {
         return [['dist', 'views', 'project', 'index.js']];
     }
 
-    protected getInitialData(): Record<string, unknown> {
-        return {
-            project: undefined
-        };
-    }
-
     protected async onDidReceiveMessage(_webview: vscode.Webview, message: ViewMessage): Promise<void> {
         if (message.type === 'command') {
             await vscode.commands.executeCommand(message.command, ...(message.args ?? []));
