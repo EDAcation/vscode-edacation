@@ -2,6 +2,7 @@
 
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import path from 'path';
+import TerserPlugin from 'terser-webpack-plugin';
 import {fileURLToPath} from 'url';
 import {VueLoaderPlugin} from 'vue-loader';
 import webpack from 'webpack';
@@ -238,7 +239,19 @@ const viewsConfig = Object.assign({}, baseConfig, {
             process: 'process/browser',
             os: 'os-browserify/browser'
         })
-    ]
+    ],
+    optimization: {
+        minimizer: [
+            new TerserPlugin({
+                terserOptions: {
+                    // Bundled code in the Nextpnr viewer uses class names to figure out which
+                    // viewer should be selected, and sends that to a non-minified worker.
+                    // If the class names are minified, the viewer selection breaks.
+                    keep_classnames: /^Viewer.+$/
+                }
+            })
+        ]
+    }
 });
 
 export default [extensionConfig, workerConfig, viewsConfig];
