@@ -1,5 +1,10 @@
 <script lang="ts">
-import {type ProjectTarget, type YosysWorkerOptions, getYosysSynthesisWorkerOptions} from 'edacation';
+import {
+    type ProjectTarget,
+    type YosysWorkerOptions,
+    getYosysRTLWorkerOptions,
+    getYosysSynthesisWorkerOptions
+} from 'edacation';
 import {defineComponent} from 'vue';
 
 import type {Project} from '../../../exchange';
@@ -36,7 +41,7 @@ export default defineComponent({
             }
             return this.projectState.project?.getTargets()[this.targetIndex];
         },
-        generated(): PotentialError<YosysWorkerOptions | null> {
+        synthGenerated(): PotentialError<YosysWorkerOptions | null> {
             if (!this.target || !this.projectState.project) return {status: 'ok', res: null};
 
             try {
@@ -46,11 +51,27 @@ export default defineComponent({
                 return {status: 'error', err: err as Error};
             }
         },
-        generatedError(): Error | null {
-            return this.generated.status === 'error' ? this.generated.err : null;
+        synthGeneratedError(): Error | null {
+            return this.synthGenerated.status === 'error' ? this.synthGenerated.err : null;
         },
-        generatedOptions(): YosysWorkerOptions | null {
-            return this.generated.status === 'ok' ? this.generated.res : null;
+        synthGeneratedOptions(): YosysWorkerOptions | null {
+            return this.synthGenerated.status === 'ok' ? this.synthGenerated.res : null;
+        },
+        rtlGenerated(): PotentialError<YosysWorkerOptions | null> {
+            if (!this.target || !this.projectState.project) return {status: 'ok', res: null};
+
+            try {
+                const options = getYosysRTLWorkerOptions(this.projectState.project as Project, this.target.id);
+                return {status: 'ok', res: options};
+            } catch (err: unknown) {
+                return {status: 'error', err: err as Error};
+            }
+        },
+        rtlGeneratedError(): Error | null {
+            return this.rtlGenerated.status === 'error' ? this.rtlGenerated.err : null;
+        },
+        rtlGeneratedOptions(): YosysWorkerOptions | null {
+            return this.rtlGenerated.status === 'ok' ? this.rtlGenerated.res : null;
         }
     }
 });
@@ -58,7 +79,8 @@ export default defineComponent({
 
 <template>
     <div style="width: 100%">
-        <code v-if="generatedError" style="color: red">{{ generatedError }}</code>
+        <code v-if="synthGeneratedError" style="color: red">{{ synthGeneratedError.message }}</code>
+        <code v-if="rtlGeneratedError" style="color: red">{{ rtlGeneratedError.message }}</code>
 
         <p style="margin-bottom: 40px">
             These options configure the RTL and synthesis tasks performed by
@@ -108,7 +130,7 @@ export default defineComponent({
         <div style="width: 100%; display: grid; gap: 1rem">
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generatedOptions?.steps[0]?.commands ?? []"
+                :generated="synthGeneratedOptions?.steps[0]?.commands ?? []"
                 workerId="yosys"
                 workerName="Synthesis Preparation"
                 configId="synthPrepareCommands"
@@ -123,7 +145,7 @@ export default defineComponent({
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generatedOptions?.steps[1]?.commands ?? []"
+                :generated="synthGeneratedOptions?.steps[1]?.commands ?? []"
                 workerId="yosys"
                 workerName="Synthesis"
                 configId="synthCommands"
@@ -139,7 +161,7 @@ export default defineComponent({
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generatedOptions?.steps[1]?.commands ?? []"
+                :generated="rtlGeneratedOptions?.steps[0]?.commands ?? []"
                 workerId="yosys"
                 workerName="RTL"
                 configId="rtlCommands"
@@ -155,7 +177,7 @@ export default defineComponent({
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generatedOptions?.inputFiles ?? []"
+                :generated="synthGeneratedOptions?.inputFiles ?? []"
                 workerId="yosys"
                 workerName="Yosys"
                 configId="inputFiles"
@@ -170,7 +192,7 @@ export default defineComponent({
 
             <EDATargetValueList
                 :targetIndex="targetIndex"
-                :generated="generatedOptions?.outputFiles ?? []"
+                :generated="synthGeneratedOptions?.outputFiles ?? []"
                 workerId="yosys"
                 workerName="Yosys"
                 configId="outputFiles"
