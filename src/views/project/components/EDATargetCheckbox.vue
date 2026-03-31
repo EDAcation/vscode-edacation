@@ -120,7 +120,7 @@ export default defineComponent({
     </vscode-form-group>
 </template>
 
-<style>
+<style scoped>
 .target-form-vertical {
     margin-top: 0;
     margin-bottom: 0;

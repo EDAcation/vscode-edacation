@@ -62,11 +62,12 @@ export default defineComponent({
         <vscode-label :for="textfieldId">Selected testbench file</vscode-label>
         <vscode-form-group variant="vertical" class="target-form-vertical">
             <vscode-single-select
+                :id="textfieldId"
                 :value="selectedTestbench"
                 :disabled="testbenchFiles.length < 2"
                 @change="handleTestbenchChange"
             >
-                <vscode-option v-for="file in testbenchFiles" :value="file">
+                <vscode-option v-for="file in testbenchFiles" :key="file" :value="file">
                     {{ file }}
                 </vscode-option>
             </vscode-single-select>
@@ -80,7 +81,7 @@ export default defineComponent({
     </vscode-form-group>
 </template>
 
-<style>
+<style scoped>
 .target-form-vertical {
     margin-top: 0;
     margin-bottom: 0;
