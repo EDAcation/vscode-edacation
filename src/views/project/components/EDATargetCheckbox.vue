@@ -45,7 +45,8 @@ export default defineComponent({
     data() {
         return {
             state: globalState,
-            projectState
+            projectState,
+            textfieldId: `textfield-${Math.random().toString(36).slice(2, 10)}`
         };
     },
     computed: {
@@ -102,9 +103,28 @@ export default defineComponent({
 </script>
 
 <template>
-    <div>
-        <vscode-checkbox :checked="effectiveValue" :disabled="target === undefined" @change="handleCheckboxChange">{{
-            configName
-        }}</vscode-checkbox>
-    </div>
+    <vscode-form-group variant="horizontal">
+        <vscode-label :for="textfieldId">{{ configName }}</vscode-label>
+        <vscode-form-group variant="vertical" class="target-form-vertical">
+            <vscode-checkbox
+                :id="textfieldId"
+                :checked="effectiveValue"
+                :disabled="target === undefined"
+                @change="handleCheckboxChange"
+                >Enable</vscode-checkbox
+            >
+            <vscode-form-helper>
+                <p><slot></slot></p>
+            </vscode-form-helper>
+        </vscode-form-group>
+    </vscode-form-group>
 </template>
+
+<style scoped>
+.target-form-vertical {
+    margin-top: 0;
+    margin-bottom: 0;
+    min-width: 0;
+    flex: 1;
+}
+</style>

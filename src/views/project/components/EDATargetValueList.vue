@@ -33,10 +33,6 @@ export default defineComponent({
             type: Boolean,
             default: false
         },
-        configDescription: {
-            type: String,
-            required: true
-        },
         generated: {
             type: Array as PropType<string[]>,
             required: true
@@ -74,11 +70,6 @@ export default defineComponent({
                     values: []
                 }
             );
-        },
-        combined(): string[] {
-            if (!this.target) return [];
-
-            return this.target.getEffectiveTextConfig(this.workerId, this.configId, this.generated);
         },
         configNameTitle(): string {
             // Capitalize first letter
@@ -125,34 +116,36 @@ export default defineComponent({
 </script>
 
 <template>
-    <div>
-        <h3>{{ workerName }} {{ configName }}</h3>
-        <p>{{ configDescription }}</p>
-        <div v-if="target">
-            <vscode-checkbox
-                :disabled="config === undefined"
-                :checked="config?.useGenerated"
-                @change="handleUseGeneratedChange"
-            >
-                Use generated {{ configName }}
-            </vscode-checkbox>
+    <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem">
+        <div>
+            <h3>{{ workerName }} {{ configName }}</h3>
+            <p><slot></slot></p>
+            <div v-if="target">
+                <vscode-checkbox
+                    :disabled="config === undefined"
+                    :checked="config?.useGenerated"
+                    @change="handleUseGeneratedChange"
+                >
+                    Use generated {{ configName }}
+                </vscode-checkbox>
+            </div>
+            <div>
+                <vscode-textarea
+                    rows="10"
+                    :placeholder="configNameTitle"
+                    :value="(config?.values ?? []).join('\n')"
+                    style="width: 100%; margin-top: 1rem"
+                    @input="handleValuesChange"
+                >
+                    {{ configNameTitle }}{{ configNameOnePerLine ? ' (one per line)' : '' }}
+                </vscode-textarea>
+            </div>
         </div>
         <div>
-            <vscode-textarea
-                rows="10"
-                :placeholder="configNameTitle"
-                :value="(config?.values ?? []).join('\n')"
-                style="width: 100%; margin-top: 1rem"
-                @input="handleValuesChange"
-            >
-                {{ configNameTitle }}{{ configNameOnePerLine ? ' (one per line)' : '' }}
-            </vscode-textarea>
+            <h3>Combined {{ configName }}</h3>
+            <code v-for="(line, index) in generated" :key="index" style="display: block">
+                {{ line.trim().length === 0 ? '\u00A0' : line }}
+            </code>
         </div>
-    </div>
-    <div>
-        <h3>Combined {{ workerName }} {{ configName }}</h3>
-        <code v-for="(line, index) in generated" :key="index" style="display: block">
-            {{ line.trim().length === 0 ? '&nbsp;' : line }}
-        </code>
     </div>
 </template>

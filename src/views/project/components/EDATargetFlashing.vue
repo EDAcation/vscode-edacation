@@ -63,65 +63,113 @@ export default defineComponent({
 </script>
 
 <template>
-    <div style="width: 100%; display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem">
+    <div style="width: 100%">
+        <code v-if="generatedError" style="color: red">{{ generatedError }}</code>
+
+        <p style="margin-bottom: 40px">
+            These options configure the flashing task, which is used to load a design onto a physical FPGA.
+            <br />
+            Packing can be performed by various tools such as icepack (provided by
+            <a href="https://github.com/YosysHQ/icestorm">Project IceStorm</a>) or ecppack (provided by
+            <a href="https://github.com/YosysHQ/prjtrellis">Project Trellis</a>), depending on your device.
+            <br />
+            Flashing functionality is provided by
+            <a href="https://github.com/trabucayre/openFPGALoader">OpenFPGALoader</a>.
+        </p>
+
         <EDATargetTextfield
             :targetIndex="targetIndex"
             workerId="flasher"
             configId="board"
             configName="Target board to flash"
-        />
-    </div>
+        >
+            Name of the target board to flash. This should be a board supported by OpenFPGALoader. Please refer to
+            <a href="https://trabucayre.github.io/openFPGALoader/compatibility/board.html"
+                >OpenFPGALoader's documentation</a
+            >
+            for an up-to-date list of supported boards.
+        </EDATargetTextfield>
 
-    <vscode-divider />
-
-    <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem">
-        <code v-if="generatedError" style="color: red; grid-column: span 2">{{ generatedError }}</code>
-        <EDATargetValueList
+        <EDATargetCheckbox
             :targetIndex="targetIndex"
-            :generated="packerStep?.arguments ?? []"
             workerId="flasher"
-            workerName="packer"
-            configId="packerArguments"
-            configName="arguments"
-            :configDescription="`Arguments are passed to ${packerStep?.tool ?? 'the packer'}.`"
-        />
+            configId="programToFlash"
+            configName="Program to flash"
+        >
+            If enabled, the design will be programmed to flash memory instead of SRAM. Programming to SRAM is faster,
+            but not persistent across power cycles.
+        </EDATargetCheckbox>
 
-        <vscode-divider style="grid-column: span 2" />
+        <vscode-divider />
 
-        <EDATargetValueList
-            :targetIndex="targetIndex"
-            :generated="flasherStep?.arguments ?? []"
-            workerId="flasher"
-            workerName="flasher"
-            configId="flasherArguments"
-            configName="arguments"
-            :configDescription="`Arguments are passed to ${flasherStep?.tool ?? 'the flasher'}.`"
-        />
+        <h2>Advanced Options</h2>
 
-        <vscode-divider style="grid-column: span 2" />
+        <p style="margin-bottom: 40px">
+            Advanced options should not be used unless you are familiar with the underlying tools. Modifying them may
+            overwrite the basic options defined above.
+        </p>
 
-        <EDATargetValueList
-            :targetIndex="targetIndex"
-            :generated="generatedOptions?.inputFiles ?? []"
-            workerId="flasher"
-            workerName="flasher"
-            configId="inputFiles"
-            configName="input files"
-            configNameOnePerLine
-            configDescription="Input files are sent from the workspace folder to the packer and flasher."
-        />
+        <div style="width: 100%; display: grid; gap: 1rem">
+            <EDATargetValueList
+                :targetIndex="targetIndex"
+                :generated="packerStep?.arguments ?? []"
+                workerId="flasher"
+                workerName="Packer"
+                configId="packerArguments"
+                configName="arguments"
+            >
+                Arguments are passed to <code>{{ packerStep?.tool ?? 'the packer' }}</code
+                >. Packing is a necessary step in the flashing process. <br /><br />
+                The packer command should write its output to a specific file in the target directory. This is necessary
+                for the flasher to find the file. Please inspect the generated arguments for more details.
+            </EDATargetValueList>
 
-        <vscode-divider style="grid-column: span 2" />
+            <EDATargetValueList
+                :targetIndex="targetIndex"
+                :generated="flasherStep?.arguments ?? []"
+                workerId="flasher"
+                workerName="Flasher"
+                configId="flasherArguments"
+                configName="arguments"
+            >
+                Arguments are passed to <code>{{ flasherStep?.tool ?? 'the flasher' }}</code
+                >. This is the final step in the flashing process. <br /><br />
+                The flasher command should read its input from a specific file in the target directory. Please inspect
+                the generated arguments for more details.
+            </EDATargetValueList>
 
-        <EDATargetValueList
-            :targetIndex="targetIndex"
-            :generated="generatedOptions?.outputFiles ?? []"
-            workerId="flasher"
-            workerName="flasher"
-            configId="outputFiles"
-            configName="output files"
-            configNameOnePerLine
-            configDescription="Output files are sent from the workspace folder to the packer and flasher."
-        />
+            <vscode-divider />
+
+            <EDATargetValueList
+                :targetIndex="targetIndex"
+                :generated="generatedOptions?.inputFiles ?? []"
+                workerId="flasher"
+                workerName="Flasher"
+                configId="inputFiles"
+                configName="input files"
+                configNameOnePerLine
+            >
+                Input files for the packer and flasher.
+                <br /><br />
+                This list helps EDAcation understand which files may be ingested by the packer and flasher. This is
+                necessary for some tool providers that do not have direct access to your workspace.
+            </EDATargetValueList>
+
+            <EDATargetValueList
+                :targetIndex="targetIndex"
+                :generated="generatedOptions?.outputFiles ?? []"
+                workerId="flasher"
+                workerName="Flasher"
+                configId="outputFiles"
+                configName="output files"
+                configNameOnePerLine
+            >
+                Output files for the packer and flasher.
+                <br /><br />
+                This list helps EDAcation understand which files may be generated by the packer and flasher. This is
+                necessary to correctly process task results, as well as for some tool providers that do not have direct
+                access to your workspace.
+            </EDATargetValueList>
+        </div>
     </div>
 </template>
