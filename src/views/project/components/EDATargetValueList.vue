@@ -71,11 +71,6 @@ export default defineComponent({
                 }
             );
         },
-        combined(): string[] {
-            if (!this.target) return [];
-
-            return this.target.getEffectiveTextConfig(this.workerId, this.configId, this.generated);
-        },
         configNameTitle(): string {
             // Capitalize first letter
             return `${this.configName.substring(0, 1).toUpperCase()}${this.configName.substring(1)}`;
@@ -149,7 +144,7 @@ export default defineComponent({
         <div>
             <h3>Combined {{ configName }}</h3>
             <code v-for="(line, index) in generated" :key="index" style="display: block">
-                {{ line.trim().length === 0 ? '&nbsp;' : line }}
+                {{ line.trim().length === 0 ? '\u00A0' : line }}
             </code>
         </div>
     </div>
