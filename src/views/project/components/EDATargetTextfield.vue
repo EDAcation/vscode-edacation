@@ -51,7 +51,8 @@ export default defineComponent({
     data() {
         return {
             state: globalState,
-            projectState
+            projectState,
+            textfieldId: `textfield-${Math.random().toString(36).slice(2, 10)}`
         };
     },
     computed: {
@@ -116,10 +117,27 @@ export default defineComponent({
 </script>
 
 <template>
-    <div>
-        <vscode-form-group variant="vertical">
-            <vscode-label>{{ configName }}</vscode-label>
-            <vscode-textfield :placeholder="placeholder" :value="effectiveValue" @input="handleTextfieldChange" />
+    <vscode-form-group variant="horizontal">
+        <vscode-label :for="textfieldId">{{ configName }}</vscode-label>
+        <vscode-form-group variant="vertical" class="target-form-vertical">
+            <vscode-textfield
+                :id="textfieldId"
+                :placeholder="placeholder"
+                :value="effectiveValue"
+                @input="handleTextfieldChange"
+            />
+            <vscode-form-helper>
+                <p><slot></slot></p>
+            </vscode-form-helper>
         </vscode-form-group>
-    </div>
+    </vscode-form-group>
 </template>
+
+<style>
+.target-form-vertical {
+    margin-top: 0;
+    margin-bottom: 0;
+    min-width: 0;
+    flex: 1;
+}
+</style>

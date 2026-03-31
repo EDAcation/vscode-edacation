@@ -106,8 +106,6 @@ export default defineComponent({
 
         <p v-if="targets.length === 0"><b>Error:</b> At least one target is required.</p>
 
-        <vscode-divider style="margin-top: 1rem" />
-
         <EDATarget v-if="targetIndex !== undefined" :targetIndex="Number(targetIndex)" />
     </template>
     <template v-else>

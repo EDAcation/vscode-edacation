@@ -55,71 +55,116 @@ export default defineComponent({
 </script>
 
 <template>
-    <div style="width: 100%; display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem">
-        <EDATargetCheckbox
-            :targetIndex="targetIndex"
-            workerId="nextpnr"
-            configId="placedSvg"
-            configName="Enable placed SVG output"
-        />
-        <EDATargetCheckbox
-            :targetIndex="targetIndex"
-            workerId="nextpnr"
-            configId="routedSvg"
-            configName="Enable routed SVG output"
-        />
+    <div style="width: 100%">
+        <code v-if="generatedError" style="color: red">{{ generatedError }}</code>
+
+        <p style="margin-bottom: 40px">
+            These options configure the placement and routing task performed by
+            <a href="https://github.com/YosysHQ/nextpnr">nextpnr</a>.
+        </p>
+
         <EDATargetCheckbox
             :targetIndex="targetIndex"
             workerId="nextpnr"
             configId="routedJson"
-            configName="Enable routed JSON output"
-        />
+            configName="Write routed JSON"
+        >
+            Write a JSON file with routing results. This option must be enabled to use the nextpnr viewer.
+        </EDATargetCheckbox>
+
         <EDATargetCheckbox
             :targetIndex="targetIndex"
             workerId="nextpnr"
             configId="reportJson"
-            configName="Enable timing & utilization report JSON output"
-        />
-    </div>
+            configName="Write timing & utilization JSON"
+        >
+            Write a JSON file with detailed timing and utilization information. This option must be enabled to see
+            timing information in the nextpnr viewer.
+        </EDATargetCheckbox>
 
-    <vscode-divider />
-
-    <div style="width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem">
-        <code v-if="generatedError" style="color: red; grid-column: span 2">{{ generatedError }}</code>
-        <EDATargetValueList
+        <EDATargetCheckbox
             :targetIndex="targetIndex"
-            :generated="generatedOptions?.steps[0]?.arguments ?? []"
             workerId="nextpnr"
-            workerName="nextpnr"
-            configId="arguments"
-            configName="arguments"
-            configDescription="Arguments are passed to the nextpnr worker for execution."
-        />
+            configId="placedSvg"
+            configName="Write placed SVG"
+        >
+            Write an SVG file with placement results.
+            <br /><br />
+            Warning: this option may cause severe performance issues in certain environments. We recommend leaving it
+            disabled and using the nextpnr viewer to inspect placement results instead.
+        </EDATargetCheckbox>
 
-        <vscode-divider style="grid-column: span 2" />
-
-        <EDATargetValueList
+        <EDATargetCheckbox
             :targetIndex="targetIndex"
-            :generated="generatedOptions?.inputFiles ?? []"
             workerId="nextpnr"
-            workerName="nextpnr"
-            configId="inputFiles"
-            configName="input files"
-            configNameOnePerLine
-            configDescription="Input files are sent from the workspace folder to the nextpnr worker."
-        />
+            configId="routedSvg"
+            configName="Write routed SVG"
+        >
+            Write an SVG file with routing results.
+            <br /><br />
+            Warning: this option may cause severe performance issues in certain environments. We recommend leaving it
+            disabled and using the nextpnr viewer to inspect routing results instead.
+        </EDATargetCheckbox>
 
-        <vscode-divider style="grid-column: span 2" />
+        <vscode-divider />
 
-        <EDATargetValueList
-            :targetIndex="targetIndex"
-            :generated="generatedOptions?.outputFiles ?? []"
-            workerId="nextpnr"
-            workerName="nextpnr"
-            configId="outputFiles"
-            configName="output files"
-            configNameOnePerLine
-            configDescription="Output files are sent from the nextpnr worker to the workspace folder."
-        />
+        <h2>Advanced Options</h2>
+
+        <p style="margin-bottom: 40px">
+            Advanced options should not be used unless you are familiar with the underlying tools. Modifying them may
+            overwrite the basic options defined above.
+        </p>
+
+        <div style="width: 100%; display: grid; gap: 1rem">
+            <EDATargetValueList
+                :targetIndex="targetIndex"
+                :generated="generatedOptions?.steps[0]?.arguments ?? []"
+                workerId="nextpnr"
+                workerName="Nextpnr"
+                configId="arguments"
+                configName="arguments"
+            >
+                Arguments passed to nextpnr for placement and routing.
+                <br /><br />
+                The nextpnr command should write bitstream information to specific files in the target directory. This
+                is necessary for FPGA flashing to work. Please inspect the generated commands for more details.
+                <br /><br />
+                If after this step a file called <code>routed.nextpnr.json</code> exists in the target directory, the
+                nextpnr viewer will be automatically opened.
+            </EDATargetValueList>
+
+            <vscode-divider />
+
+            <EDATargetValueList
+                :targetIndex="targetIndex"
+                :generated="generatedOptions?.inputFiles ?? []"
+                workerId="nextpnr"
+                workerName="Nextpnr"
+                configId="inputFiles"
+                configName="input files"
+                configNameOnePerLine
+            >
+                Input files for placement and routing.
+                <br /><br />
+                This list helps EDAcation understand which files may be ingested by nextpnr. This is necessary for some
+                tool providers that do not have direct access to your workspace.
+            </EDATargetValueList>
+
+            <EDATargetValueList
+                :targetIndex="targetIndex"
+                :generated="generatedOptions?.outputFiles ?? []"
+                workerId="nextpnr"
+                workerName="Nextpnr"
+                configId="outputFiles"
+                configName="output files"
+                configNameOnePerLine
+            >
+                Output files for placement and routing.
+                <br /><br />
+                This list helps EDAcation understand which files may be generated by nextpnr. This is necessary to
+                correctly process task results, as well as for some tool providers that do not have direct access to
+                your workspace.
+            </EDATargetValueList>
+        </div>
     </div>
 </template>

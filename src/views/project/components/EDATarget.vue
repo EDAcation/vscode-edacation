@@ -8,13 +8,13 @@ import {state as globalState} from '../state.js';
 import EDATargetFlashing from './EDATargetFlashing.vue';
 import EDATargetGeneral from './EDATargetGeneral.vue';
 import EDATargetPlacementAndRouting from './EDATargetPlacementAndRouting.vue';
-import EDATargetSynthesis from './EDATargetSynthesis.vue';
+import EDATargetRTLSynthesis from './EDATargetRTLSynthesis.vue';
 import EDATargetTesting from './EDATargetTesting.vue';
 
 export default defineComponent({
     components: {
         EDATargetGeneral,
-        EDATargetSynthesis,
+        EDATargetRTLSynthesis,
         EDATargetTesting,
         EDATargetPlacementAndRouting,
         EDATargetFlashing
@@ -44,21 +44,15 @@ export default defineComponent({
 
 <template>
     <template v-if="projectState.project">
-        <h2 v-if="target">
-            <span v-if="target.name">{{ target.name }}</span>
-            <span v-else>&ZeroWidthSpace;</span>
-        </h2>
-        <h2 v-else>Defaults for all targets</h2>
-
         <vscode-tabs>
             <vscode-tab-header v-if="target" slot="header">General</vscode-tab-header>
             <vscode-tab-panel v-if="target">
                 <EDATargetGeneral :targetIndex="targetIndex" />
             </vscode-tab-panel>
 
-            <vscode-tab-header slot="header">Synthesis</vscode-tab-header>
+            <vscode-tab-header slot="header">Synthesis & RTL</vscode-tab-header>
             <vscode-tab-panel>
-                <EDATargetSynthesis :targetIndex="targetIndex" />
+                <EDATargetRTLSynthesis :targetIndex="targetIndex" />
             </vscode-tab-panel>
 
             <vscode-tab-header slot="header">Testing</vscode-tab-header>
