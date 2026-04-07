@@ -50,7 +50,7 @@ export default defineComponent({
                 <EDATargetGeneral :targetIndex="targetIndex" />
             </vscode-tab-panel>
 
-            <vscode-tab-header slot="header">Synthesis & RTL</vscode-tab-header>
+            <vscode-tab-header slot="header">RTL & Synthesis</vscode-tab-header>
             <vscode-tab-panel>
                 <EDATargetRTLSynthesis :targetIndex="targetIndex" />
             </vscode-tab-panel>
