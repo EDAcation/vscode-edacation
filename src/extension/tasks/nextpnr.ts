@@ -89,7 +89,7 @@ class NextpnrTerminalTask extends TerminalTask<NextpnrWorkerOptions> {
                 device: deviceName
             },
             data: decodeJSON(oldContent),
-            report: {} as unknown
+            report: null as unknown
         };
 
         const reportFile = outputFiles.find((file) => file.path.endsWith('report.json'));
