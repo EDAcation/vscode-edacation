@@ -222,7 +222,7 @@ export interface SerializedProjectEvent {
     project: ProjectState;
 }
 export const serializeProjectEvent = (project: ProjectEvent): SerializedProjectEvent => {
-    return {path: project.getUri().path, project: Project.serialize(project)};
+    return {path: project.getUri().toString(), project: Project.serialize(project)};
 };
 export const deserializeProjectEvent = (
     value: SerializedProjectEvent,
