@@ -1,15 +1,15 @@
-import {type ProjectTarget, type WorkerStep} from 'edacation';
+import { type ProjectTarget, type WorkerStep } from 'edacation';
 import path from 'path';
 import * as vscode from 'vscode';
 
-import type {ExtensionMessage, MessageFile} from '../../common/messages.js';
+import type { ExtensionMessage, MessageFile } from '../../common/messages.js';
 import * as node from '../../common/node-modules.js';
-import {UniversalWorker} from '../../common/universal-worker.js';
-import {type Project} from '../projects/index.js';
-import {type NativeToolExecutionOptions, ToolRepository} from '../tools';
+import { UniversalWorker } from '../../common/universal-worker.js';
+import { type Project } from '../projects/index.js';
+import { type NativeToolExecutionOptions, ToolRepository } from '../tools';
 
-import {type TaskOutputFile, TerminalMessageEmitter} from './messaging.js';
-import type {TaskIOFile} from './task.js';
+import { type TaskOutputFile, TerminalMessageEmitter } from './messaging.js';
+import type { TaskIOFile } from './task.js';
 
 interface ToolInfoStatusOk {
     status: 'ok';
@@ -81,9 +81,17 @@ export class WebAssemblyToolProvider extends ToolProvider {
 
         await stepCallback('start', step);
 
+        let rawInputFiles: MessageFile[];
+        try {
+            rawInputFiles = await this.readFiles(ctx.project, ctx.inputFiles);
+        } catch {
+            await stepCallback('end', step);
+            return;
+        }
+
         // build input files
         const fileMap = new Map<string, MessageFile>();
-        for (const file of await this.readFiles(ctx.project, ctx.inputFiles)) {
+        for (const file of rawInputFiles) {
             // files from workspace
             fileMap.set(file.path, file);
         }
@@ -141,14 +149,21 @@ export class WebAssemblyToolProvider extends ToolProvider {
         for (const file of inputFiles) {
             if (file.data) {
                 files.push({path: file.path, data: file.data});
-            } else {
-                const data = await vscode.workspace.fs.readFile(project.getFileUri(file.path));
-
-                files.push({
-                    path: file.path,
-                    data
-                });
+                continue;
             }
+
+            let data: Uint8Array;
+            try {
+                data = await vscode.workspace.fs.readFile(project.getFileUri(file.path));
+            } catch {
+                this.error(`Failed to read input file: ${file.path}`);
+                continue;
+            }
+
+            files.push({
+                path: file.path,
+                data
+            });
         }
 
         return files;
