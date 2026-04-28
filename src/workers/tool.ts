@@ -118,7 +118,6 @@ export class WorkerTool {
     }
 
     protected send(message: ExtensionMessage, transferables: ArrayBufferLike[] = []) {
-        // @ts-expect-error: node + web type clashing shenanigans
         sendMessage(message, transferables);
     }
 

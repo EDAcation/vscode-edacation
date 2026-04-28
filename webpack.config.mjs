@@ -13,6 +13,10 @@ import webpack from 'webpack';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 
+const nodeProtocolPlugin = new webpack.NormalModuleReplacementPlugin(/^node:(.+)$/, (resource) => {
+    resource.request = resource.request.replace(/^node:/, '');
+});
+
 /** @type WebpackConfig */
 const baseConfig = {
     mode: 'none',
@@ -61,7 +65,10 @@ const extensionConfig = Object.assign({}, baseConfig, {
     externals: {
         vscode: 'commonjs vscode',
         fs: 'fs',
-        'fs/promises': 'fs/promises'
+        'fs/promises': 'fs/promises',
+        'node:fs': 'node:fs',
+        'node:fs/promises': 'node:fs/promises',
+        'node:path': 'node:path'
     },
     module: {
         rules: [
@@ -115,6 +122,7 @@ const workerConfig = Object.assign({}, baseConfig, {
         }
     },
     plugins: [
+        nodeProtocolPlugin,
         new webpack.optimize.LimitChunkCountPlugin({
             maxChunks: 1
         })
@@ -231,6 +239,7 @@ const viewsConfig = Object.assign({}, baseConfig, {
         ]
     },
     plugins: [
+        nodeProtocolPlugin,
         new VueLoaderPlugin(),
         new webpack.DefinePlugin({
             __VUE_OPTIONS_API__: 'true',

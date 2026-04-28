@@ -73,11 +73,11 @@ export class UniversalWorker {
     }
 }
 
-export const sendMessage = (message: ExtensionMessage, transferables: readonly TransferListItem[] & Transferable[]) => {
+export const sendMessage = (message: ExtensionMessage, transferables: ArrayBufferLike[] = []) => {
     if (isNodeJs) {
-        node.workerThreads().parentPort?.postMessage(message, transferables);
+        (node.workerThreads().parentPort as any)?.postMessage(message, transferables as readonly TransferListItem[]);
     } else {
-        postMessage(message, transferables);
+        (postMessage as any)(message, transferables as Transferable[]);
     }
 };
 
