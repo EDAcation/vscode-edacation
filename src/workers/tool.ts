@@ -108,7 +108,7 @@ export class WorkerTool {
         'nextpnr-ecp5': '@yowasp/nextpnr-ecp5',
         'nextpnr-ice40': '@yowasp/nextpnr-ice40',
         ecppack: '@yowasp/nextpnr-ecp5',
-        openFPGALoader: '@yowasp/openfpgaloader'
+        openFPGALoader: '@yowasp/openfpgaloader@1.0.0-16.156'
     };
 
     constructor() {
