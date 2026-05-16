@@ -1,6 +1,6 @@
 /* This module is committing so many crimes we might as well disable ESLint for the entire file */
 /* eslint-disable */
-import type {TransferListItem} from 'worker_threads';
+import type {Transferable} from 'worker_threads';
 
 import type {ExtensionMessage, WorkerMessage} from './messages.js';
 import * as node from './node-modules.js';
@@ -75,7 +75,7 @@ export class UniversalWorker {
 
 export const sendMessage = (message: ExtensionMessage, transferables: ArrayBufferLike[] = []) => {
     if (isNodeJs) {
-        (node.workerThreads().parentPort as any)?.postMessage(message, transferables as readonly TransferListItem[]);
+        (node.workerThreads().parentPort as any)?.postMessage(message, transferables as readonly Transferable[]);
     } else {
         (postMessage as any)(message, transferables as Transferable[]);
     }
