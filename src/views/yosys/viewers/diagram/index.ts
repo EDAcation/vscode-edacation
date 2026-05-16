@@ -165,8 +165,9 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
             }
         });
 
-        // Render circuit
+        // Render circuit (attach before display so cell sizes are correct)
         const elementCircuit = document.createElement('div');
+        this.root.appendChild(elementCircuit);
         const mainPaper = circuit.displayOn(elementCircuit);
 
         // Zoom buttons
@@ -193,8 +194,6 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
                 circuit.scaleAndRefreshPaper(mainPaper, zoomLevel);
             }
         });
-
-        this.root.appendChild(elementCircuit);
     }
 
     private requestExport(elem: Element, defaultPath: string) {
