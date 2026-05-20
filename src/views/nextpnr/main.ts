@@ -1,7 +1,14 @@
 import '@vscode-elements/elements';
 import '@vscode/codicons/dist/codicon.css';
 import {getElementGroups} from 'edacation';
-import {NextPNRViewer, SUPPORTED_DEVICES, type SupportedChip, isSupported} from 'nextpnr-viewer';
+import {
+    NextPNRViewer,
+    type NextpnrJson,
+    type ReportJson,
+    SUPPORTED_DEVICES,
+    type SupportedChip,
+    isSupported
+} from 'nextpnr-viewer';
 
 import {vscode} from '../vscode-wrapper';
 
@@ -18,14 +25,10 @@ interface MessageDocument {
 
 type Message = MessageDocument;
 
-interface NextpnrJSON {
-    creator: string;
-    modules: unknown;
-}
-
 interface NextpnrFileFormat {
     chip: SupportedChip;
-    data: NextpnrJSON;
+    report?: ReportJson;
+    data: NextpnrJson;
 }
 
 class View {
@@ -118,13 +121,13 @@ class View {
             }
 
             // Parse nextpnr document from JSON string
-            // Support old file format as well (raw NextpnrJSON)
-            const json = JSON.parse(this.state.document) as NextpnrFileFormat | NextpnrJSON;
+            // Support old file format as well (raw NextpnrJson)
+            const json = JSON.parse(this.state.document) as NextpnrFileFormat | NextpnrJson;
 
             // Deduce exact chip to render
             let chip: {family: string; device: string};
-            let data: NextpnrJSON;
-            let report: unknown;
+            let data: NextpnrJson;
+            let report: ReportJson | undefined = undefined;
             if ('chip' in json) {
                 chip = json.chip;
                 data = json.data;
@@ -174,7 +177,7 @@ class View {
 
             // Render nextpnr document
             const viewer = this.viewer;
-            void viewer.showJson(JSON.stringify(data), JSON.stringify(report)).then(() => {
+            void viewer.showJson(data, report).then(() => {
                 // Delay first render until after showJson is called, this allows for internal optimizations
                 void viewer.render();
             });
