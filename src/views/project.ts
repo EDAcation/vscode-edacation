@@ -6,6 +6,7 @@ import {vscode} from './vscode-wrapper';
 
 interface ProjectState {
     project?: Project;
+    openProjects?: Project[];
 }
 
 const projectEventExchange = createProjectEventExchange({isPrimary: false});
@@ -51,4 +52,5 @@ openProjectsChannel.subscribe((message) => {
     }
 
     syncedState.project = message.currentProject;
+    syncedState.openProjects = message.projects;
 });
