@@ -57,7 +57,19 @@ export const activate = async (context: vscode.ExtensionContext) => {
         );
     }
 
+    // Load projects
     await projects.load();
+
+    // Offer to open found project files
+    // Do this after loading projects!
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+            if (event.added.length === 0) return;
+
+            void vscode.commands.executeCommand('edacation.discoverProjectFiles', false);
+        })
+    );
+    void vscode.commands.executeCommand('edacation.discoverProjectFiles', false);
 
     // Apply tools to terminal and check for updates
     const toolRepo = ToolRepository.get(context);

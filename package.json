@@ -72,6 +72,11 @@
                         "Monthly",
                         "Never"
                     ]
+                },
+                "edacation.autoDiscoverProjects": {
+                    "type": "boolean",
+                    "markdownDescription": "Whether EDAcation should automatically discover projects in workspace folders.",
+                    "default": true
                 }
             }
         },
@@ -135,6 +140,12 @@
                 "category": "EDAcation",
                 "title": "Install recommended extensions",
                 "icon": "$(desktop-download)"
+            },
+            {
+                "command": "edacation.discoverProjectFiles",
+                "category": "EDAcation",
+                "title": "Discover Project Files",
+                "icon": "$(search)"
             },
             {
                 "command": "edacation.newProject",

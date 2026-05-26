@@ -33,3 +33,63 @@ export class InstallRecommendedExtensionsCommand extends BaseCommand {
         }
     }
 }
+
+export class DiscoverProjectFilesCommand extends BaseCommand {
+    static getID(): string {
+        return 'edacation.discoverProjectFiles';
+    }
+
+    async execute(force = true): Promise<void> {
+        const autoDiscoverProjects =
+            vscode.workspace.getConfiguration('edacation').get<boolean>('autoDiscoverProjects') ?? true;
+        if (!autoDiscoverProjects && !force) return;
+
+        // Find up to 2 levels deep
+        const results = (
+            await Promise.all(
+                ['*.edaproject', '*/*.edaproject'].map((pattern) =>
+                    vscode.workspace.findFiles(pattern, '**/node_modules/**')
+                )
+            )
+        ).flat();
+
+        const newProjectUris = results.filter((uri) => !this.projects.has(uri));
+        if (newProjectUris.length === 0) return;
+
+        const choice = await vscode.window.showInformationMessage(
+            `Found ${newProjectUris.length} new project file(s). Do you want to open them?`,
+            'Open',
+            'Ignore',
+            'Disable auto-discover'
+        );
+        if (!choice || choice === 'Ignore') return;
+
+        if (choice === 'Disable auto-discover') {
+            await vscode.workspace
+                .getConfiguration('edacation')
+                .update('autoDiscoverProjects', false, vscode.ConfigurationTarget.Workspace);
+            void vscode.window.showInformationMessage(
+                'Project auto-discovery has been disabled for this workspace. You can re-enable it from settings.'
+            );
+            return;
+        }
+
+        // Add all projects except last one without selecting as current
+        // to avoid a new-current-project event storm
+        for (const uri of newProjectUris.slice(0, -1)) {
+            await this.projects.add(uri, false, false);
+        }
+
+        const shouldSetCurrent = this.projects.getCurrent() === undefined; // Set current only if no current project
+        await this.projects.add(newProjectUris[newProjectUris.length - 1], shouldSetCurrent, false);
+
+        if (shouldSetCurrent) {
+            await vscode.commands.executeCommand('edacation.openProjectConfiguration');
+            void vscode.window.showInformationMessage(
+                `Opened ${newProjectUris.length} new project(s). Active project is "${this.projects.getCurrent()?.getName()}".`
+            );
+        } else {
+            void vscode.window.showInformationMessage(`Opened ${newProjectUris.length} new project(s).`);
+        }
+    }
+}
