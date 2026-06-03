@@ -163,7 +163,8 @@ const viewsConfig = Object.assign({}, baseConfig, {
         config: './src/views/config/main.ts',
         nextpnr: './src/views/nextpnr/main.ts',
         yosys: './src/views/yosys/main.ts',
-        project: './src/views/project/main.ts'
+        project: './src/views/project/main.ts',
+        'project-file': './src/views/project-file/main.ts'
     },
     output: {
         filename: '[name]/index.js',
