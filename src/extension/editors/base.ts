@@ -40,7 +40,7 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         disposables.push(
             vscode.workspace.onDidChangeTextDocument((event) => {
                 if (event.document.uri.toString() === document.uri.toString() && event.contentChanges.length > 0) {
-                    void this.update(document, webview);
+                    void this.update(event.document, webview);
                 }
             })
         );
@@ -54,7 +54,7 @@ export abstract class BaseEditor extends BaseWebview<EditorWebviewArgs> implemen
         disposables.push(
             vscode.workspace.onDidSaveTextDocument((event) => {
                 if (event.uri.toString() === document.uri.toString()) {
-                    void this.onSave(document, webview);
+                    void this.onSave(event, webview);
                 }
             })
         );

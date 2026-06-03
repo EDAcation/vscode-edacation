@@ -78,15 +78,25 @@ export class View {
         this.renderDocument(true);
     }
 
-    private findViewer(): BaseViewer<YosysFile['data']> {
+    private getFileData(): YosysFile {
         if (!this.state.document) {
-            throw new Error('No data to find viewer!');
+            throw new Error('No data to get file data!');
         }
 
         const fileData = JSON.parse(this.state.document) as YosysFile;
         if (!fileData['type'] || !fileData['data']) {
             throw new Error('File is missing type or data keys.');
         }
+
+        return fileData;
+    }
+
+    private findViewer(): BaseViewer<YosysFile['data']> {
+        if (!this.state.document) {
+            throw new Error('No data to find viewer!');
+        }
+
+        const fileData = this.getFileData();
 
         if (fileData['type'] === 'rtl' || fileData['type'] === 'luts') {
             return new DiagramViewer(this, fileData['data'], fileData['type']);
@@ -105,6 +115,7 @@ export class View {
                 this.viewer = this.findViewer();
             }
 
+            this.viewer.updateData(this.getFileData().data);
             this.viewer.render(isUpdate).catch((err) => this.handleError(err, this.viewer));
         } catch (err) {
             this.handleError(err);
