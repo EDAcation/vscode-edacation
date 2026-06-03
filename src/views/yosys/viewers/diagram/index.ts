@@ -1,6 +1,6 @@
 import {Circuit, getCellTypeStr} from 'digitaljs';
 import {getElementGroups} from 'edacation';
-import {yosys2digitaljs} from 'yosys2digitaljs';
+import {yosys2digitaljs} from 'yosys2digitaljs/core';
 
 import type {View} from '../../main';
 import type {ForeignViewMessage} from '../../messages';
@@ -82,7 +82,7 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
         const cellAttrs: Record<string, CellAttrDef> = {};
         for (const [name, group] of getElementGroups().entries()) {
             const fullName = '$' + name;
-            const attrs = {body: {fill: group.color}};
+            const attrs = {body: {style: {fill: group.color}}};
 
             cellAttrs[fullName] = attrs;
 
@@ -94,11 +94,11 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
             // In LUTS mode all 'luts' are rendered as subcircuits.
             // We explicitly hide the subcircuit 'peek' feature so that
             // people do not look inside the cells, as this is not rendered properly.
-            cellAttrs['Subcircuit'] = {tooltip: {width: 0, height: 0}};
+            cellAttrs['Subcircuit'] = {tooltip: {style: {width: 0, height: 0}}};
         } else {
             // In RTL mode, highlight all subcircuits instead to make it
             // more clear that they can be opened and explored.
-            cellAttrs['Subcircuit'] = {body: {stroke: 'blue'}};
+            cellAttrs['Subcircuit'] = {body: {style: {stroke: 'blue'}}};
         }
 
         // Initialize circuit
@@ -140,20 +140,24 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
         const buttonZoomOut = document.getElementById('digitaljs-zoomout');
         const buttonZoomIn = document.getElementById('digitaljs-zoomin');
 
-        buttonStart?.addEventListener('click', () => circuit.start());
-        buttonStop?.addEventListener('click', () => circuit.stop());
-        buttonExport?.addEventListener('click', () => {
-            const svgElems = document.getElementsByTagName('svg');
-            if (!svgElems) {
-                throw new Error('Could not find SVG element to export');
-            }
-            const svgElem = svgElems[0];
-            if (!svgElem) {
-                throw new Error('Could not find SVG element to export');
-            }
+        buttonStart?.addEventListener('click', () => circuit.start(), {passive: true});
+        buttonStop?.addEventListener('click', () => circuit.stop(), {passive: true});
+        buttonExport?.addEventListener(
+            'click',
+            () => {
+                const svgElems = document.getElementsByTagName('svg');
+                if (!svgElems) {
+                    throw new Error('Could not find SVG element to export');
+                }
+                const svgElem = svgElems[0];
+                if (!svgElem) {
+                    throw new Error('Could not find SVG element to export');
+                }
 
-            this.requestExport(svgElem, 'topLevel.svg');
-        });
+                this.requestExport(svgElem, 'topLevel.svg');
+            },
+            {passive: true}
+        );
 
         circuit.on('changeRunning', () => {
             if (circuit.running) {
@@ -172,14 +176,22 @@ export class DiagramViewer extends BaseViewer<YosysRTL> {
 
         // Zoom buttons
         let zoomLevel = 0;
-        buttonZoomOut?.addEventListener('click', () => {
-            zoomLevel -= 1;
-            circuit.scaleAndRefreshPaper(mainPaper, zoomLevel);
-        });
-        buttonZoomIn?.addEventListener('click', () => {
-            zoomLevel += 1;
-            circuit.scaleAndRefreshPaper(mainPaper, zoomLevel);
-        });
+        buttonZoomOut?.addEventListener(
+            'click',
+            () => {
+                zoomLevel -= 1;
+                circuit.scaleAndRefreshPaper(mainPaper, zoomLevel);
+            },
+            {passive: true}
+        );
+        buttonZoomIn?.addEventListener(
+            'click',
+            () => {
+                zoomLevel += 1;
+                circuit.scaleAndRefreshPaper(mainPaper, zoomLevel);
+            },
+            {passive: true}
+        );
 
         // Ctrl + wheel zooming
         addEventListener('wheel', (ev) => {

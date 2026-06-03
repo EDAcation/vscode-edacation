@@ -142,6 +142,8 @@ export class View {
         const elementHeader = document.createElement('h3');
         elementHeader.textContent = 'Unable to open DigitalJS file';
 
+        console.error(error);
+
         const elementCode = document.createElement('code');
         elementCode.style.whiteSpace = 'pre-wrap';
         if (sourceViewer !== null) {
