@@ -460,7 +460,7 @@
         ]
     },
     "scripts": {
-        "postinstall": "sed -i \"s/require('topsort');/require('topsort').default;/\" node_modules/yosys2digitaljs/dist/index.js",
+        "postinstall": "sed -i \"s/require('topsort');/require('topsort').default;/\" node_modules/yosys2digitaljs/dist/core.js",
         "run-in-browser": "vscode-test-web --browserType=none --extensionDevelopmentPath=. ../example-project",
         "watch-web": "webpack --watch",
         "compile-web": "tsc && webpack",

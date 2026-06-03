@@ -252,7 +252,8 @@ const viewsConfig = Object.assign({}, baseConfig, {
         }),
         new webpack.ProvidePlugin({
             process: 'process/browser',
-            os: 'os-browserify/browser'
+            os: 'os-browserify/browser',
+            _: 'lodash'
         })
     ],
     optimization: {

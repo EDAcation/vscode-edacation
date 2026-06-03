@@ -3,7 +3,7 @@ import type {ForeignViewMessage, ViewMessage} from '../messages';
 
 export abstract class BaseViewer<InitialData> {
     private readonly mainView: View;
-    protected readonly data: InitialData;
+    protected data: InitialData;
 
     constructor(mainView: View, initData: InitialData) {
         this.mainView = mainView;
@@ -13,6 +13,10 @@ export abstract class BaseViewer<InitialData> {
     abstract render(isUpdate: boolean): Promise<void>;
 
     abstract handleForeignViewMessage(message: ForeignViewMessage): void;
+
+    public updateData(newData: InitialData) {
+        this.data = newData;
+    }
 
     protected get root(): HTMLDivElement {
         return this.mainView.root;

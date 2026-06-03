@@ -1,4 +1,4 @@
-import type {yosys2digitaljs} from 'yosys2digitaljs';
+import type {yosys2digitaljs} from 'yosys2digitaljs/core';
 
 export interface YosysModuleStats {
     num_wires: number;
