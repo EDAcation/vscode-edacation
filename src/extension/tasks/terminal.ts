@@ -78,9 +78,7 @@ export abstract class TaskProvider extends BaseTaskProvider {
                 const targets = project.getConfiguration().targets;
 
                 for (const target of targets) {
-                    tasks.push(
-                        this.getTask(folder, path, vscode.workspace.asRelativePath(path.fsPath, false), target.id)
-                    );
+                    tasks.push(this.getTask(folder, path, vscode.workspace.asRelativePath(path, false), target.id));
                 }
             }
         }
